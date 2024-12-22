@@ -29,7 +29,7 @@ To run Query Analyzer, create a python file and import Query Analyzer and all ne
 ```Python
 # Import Query types and Query Analyzer
 from search_query import OrQuery, AndQuery
-from query_analyzer impoer QueryAnalyzer
+from search_query.query_analyzer.query_analyzer import QueryAnalyzer
 
 # Build your query programmatically with search-query
 digital_synonyms = OrQuery(["digital", "virtual", "online"], search_field="Abstract")
