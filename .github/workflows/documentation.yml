@@ -51,10 +51,10 @@ jobs:
           cp -r search-query/* _build/html/gui/search-query/
         fi
 
-      - name: Upload Pages Artifact
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: ./_build/html
+    - name: Upload Pages Artifact
+      uses: actions/upload-pages-artifact@v3
+      with:
+        path: ./_build/html
 
   deploy:
     environment:
