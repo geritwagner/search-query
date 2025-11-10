@@ -41,7 +41,7 @@ jobs:
           # create gui dir in built docs
           mkdir -p _build/html/gui
 
-          # copy your custom GUI index.html
+          # copy your custom GUI index.html (adjust path if different)
           cp docs/gui/index.html _build/html/gui/index.html
 
           # copy optional css/js for the gui
@@ -52,10 +52,11 @@ jobs:
             cp docs/gui/script.js _build/html/gui/script.js
           fi
 
-          # copy top-level search-query/ into gui/search-query/
+          # copy the top-level search-query/ into gui/search_query/
+          # (your JS tries to load .../gui/search_query/..., so we must create that)
           if [ -d "search-query" ]; then
-            mkdir -p _build/html/gui/search-query
-            cp -r search-query/* _build/html/gui/search-query/
+            mkdir -p _build/html/gui/search_query
+            cp -r search-query/* _build/html/gui/search_query/
           fi
 
       - name: Upload Pages Artifact
