@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>search-query linter</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header>
+    <h1>search-query linter</h1>
+    <p>Paste a query, select a platform, and run the linter in your browser.</p>
+  </header>
+
+  <div id="status">Loading Pyodide…</div>
+
+  <label for="query">Query</label>
+  <textarea id="query">(TI=(platform* OR "digital work") AND PY=2020-2025)</textarea>
+
+  <label for="platform">Platform</label>
+  <select id="platform">
+    <option value="wos">wos</option>
+    <option value="pubmed">pubmed</option>
+    <option value="ebscohost">ebscohost</option>
+    <option value="scopus">scopus</option>
+  </select>
+
+  <div class="row">
+    <button id="btn-lint" disabled>Lint</button>
+  </div>
+
+  <details id="output-wrap">
+    <summary>Output</summary>
+    <pre id="output"></pre>
+  </details>
+
+  <h2 id="messages-title" style="display:none;">Messages</h2>
+  <div id="lint-view" style="display:none;"></div>
+
+  <script src="https://cdn.jsdelivr.net/pyodide/v0.26.2/full/pyodide.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>
