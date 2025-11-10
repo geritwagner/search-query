@@ -16,45 +16,52 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-    - name: Set up Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: '3.10'
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
 
-    - name: Install uv and dependencies
-      run: |
-        pip install uv
-        uv venv
-        uv pip install -e .[docs]
-        echo "Dependencies installed successfully"
+      - name: Install uv and dependencies
+        run: |
+          pip install uv
+          uv venv
+          uv pip install -e .[docs]
+          echo "Dependencies installed successfully"
 
-    - name: Build documentation
-      run: |
-        uv run sphinx-build -b html docs/source _build/html
-        echo "Documentation built successfully"
+      - name: Build documentation
+        run: |
+          uv run sphinx-build -b html docs/source _build/html
+          echo "Documentation built successfully"
 
-    - name: Add GUI assets
-      run: |
-        # create gui dir in built docs
-        mkdir -p _build/html/gui
+      - name: Add GUI assets
+        run: |
+          # create gui dir in built docs
+          mkdir -p _build/html/gui
 
-        # copy your custom GUI index.html
-        # adjust this path if your file is elsewhere
-        cp docs/gui/index.html _build/html/gui/index.html
+          # copy your custom GUI index.html
+          cp docs/gui/index.html _build/html/gui/index.html
 
-        # copy top-level search-query/ into gui/search-query/
-        if [ -d "search-query" ]; then
-          mkdir -p _build/html/gui/search-query
-          cp -r search-query/* _build/html/gui/search-query/
-        fi
+          # copy optional css/js for the gui
+          if [ -f docs/gui/style.css ]; then
+            cp docs/gui/style.css _build/html/gui/style.css
+          fi
+          if [ -f docs/gui/script.js ]; then
+            cp docs/gui/script.js _build/html/gui/script.js
+          fi
 
-    - name: Upload Pages Artifact
-      uses: actions/upload-pages-artifact@v3
-      with:
-        path: ./_build/html
+          # copy top-level search-query/ into gui/search-query/
+          if [ -d "search-query" ]; then
+            mkdir -p _build/html/gui/search-query
+            cp -r search-query/* _build/html/gui/search-query/
+          fi
+
+      - name: Upload Pages Artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: ./_build/html
 
   deploy:
     environment:
