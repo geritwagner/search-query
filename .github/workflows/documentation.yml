@@ -41,10 +41,10 @@ jobs:
           # create gui dir in built docs
           mkdir -p _build/html/gui
 
-          # copy your custom GUI index.html (adjust path if different)
+          # copy your custom GUI index.html
           cp docs/gui/index.html _build/html/gui/index.html
 
-          # copy optional css/js for the gui
+          # optional css/js
           if [ -f docs/gui/style.css ]; then
             cp docs/gui/style.css _build/html/gui/style.css
           fi
@@ -52,11 +52,19 @@ jobs:
             cp docs/gui/script.js _build/html/gui/script.js
           fi
 
-          # copy the top-level search-query/ into gui/search_query/
-          # (your JS tries to load .../gui/search_query/..., so we must create that)
-          if [ -d "search-query" ]; then
-            mkdir -p _build/html/gui/search_query
-            cp -r search-query/* _build/html/gui/search_query/
+          # now copy the Python package so Pyodide can load it
+          # we try several common locations
+          TARGET_DIR="_build/html/gui/search_query"
+          mkdir -p "$TARGET_DIR"
+
+          if [ -d "search_query" ]; then
+            cp -r search_query/* "$TARGET_DIR"/
+          elif [ -d "search-query" ]; then
+            cp -r search-query/* "$TARGET_DIR"/
+          elif [ -d "src/search_query" ]; then
+            cp -r src/search_query/* "$TARGET_DIR"/
+          else
+            echo "No search_query source directory found to copy."
           fi
 
       - name: Upload Pages Artifact
