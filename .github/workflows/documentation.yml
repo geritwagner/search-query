@@ -38,31 +38,12 @@ jobs:
 
       - name: Add GUI assets
         run: |
-          # create gui dir in built docs
           mkdir -p _build/html/gui
+          cp -r docs/gui/* _build/html/gui/
 
-          # copy your custom GUI index.html
-          cp docs/gui/index.html _build/html/gui/index.html
-          cp docs/gui/tokenizer.html _build/html/gui/tokenizer.html
-          cp docs/gui/style.css _build/html/gui/style.css
-          cp docs/gui/script.js _build/html/gui/script.js
-          cp docs/gui/tokenize.js _build/html/gui/tokenize.js
-
-
-          # now copy the Python package so Pyodide can load it
-          # we try several common locations
           TARGET_DIR="_build/html/gui/search_query"
           mkdir -p "$TARGET_DIR"
-
-          if [ -d "search_query" ]; then
-            cp -r search_query/* "$TARGET_DIR"/
-          elif [ -d "search-query" ]; then
-            cp -r search-query/* "$TARGET_DIR"/
-          elif [ -d "src/search_query" ]; then
-            cp -r src/search_query/* "$TARGET_DIR"/
-          else
-            echo "No search_query source directory found to copy."
-          fi
+          cp -r search_query/* "$TARGET_DIR"/
 
       - name: Upload Pages Artifact
         uses: actions/upload-pages-artifact@v3
