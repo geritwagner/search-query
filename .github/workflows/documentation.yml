@@ -43,14 +43,11 @@ jobs:
 
           # copy your custom GUI index.html
           cp docs/gui/index.html _build/html/gui/index.html
+          cp docs/gui/tokenizer.html _build/html/gui/tokenizer.html
+          cp docs/gui/style.css _build/html/gui/style.css
+          cp docs/gui/script.js _build/html/gui/script.js
+          cp docs/gui/tokenize.js _build/html/gui/tokenize.js
 
-          # optional css/js
-          if [ -f docs/gui/style.css ]; then
-            cp docs/gui/style.css _build/html/gui/style.css
-          fi
-          if [ -f docs/gui/script.js ]; then
-            cp docs/gui/script.js _build/html/gui/script.js
-          fi
 
           # now copy the Python package so Pyodide can load it
           # we try several common locations
