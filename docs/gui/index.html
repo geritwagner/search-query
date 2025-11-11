@@ -2,42 +2,77 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>search-query linter</title>
+  <title>search-query GUI</title>
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <link rel="stylesheet" href="style.css" />
+  <style>
+    body {
+      max-width: 42rem;
+      margin: 0 auto;
+      padding: 1.5rem 1rem 3rem;
+    }
+    header h1 {
+      margin-bottom: 0.25rem;
+    }
+    header p {
+      margin-top: 0;
+      color: #4b5563;
+    }
+    .nav {
+      margin-top: 1.5rem;
+      display: grid;
+      gap: 1rem;
+    }
+    .card {
+      border: 1px solid #e5e7eb;
+      border-radius: 0.5rem;
+      padding: 1rem 1.25rem;
+      background: #fff;
+    }
+    .card h2 {
+      margin: 0 0 0.25rem;
+      font-size: 1.05rem;
+    }
+    .card p {
+      margin: 0 0 0.5rem;
+      color: #6b7280;
+      font-size: 0.9rem;
+    }
+    .card a {
+      color: #2563eb;
+      text-decoration: none;
+      font-weight: 500;
+    }
+    .card a:hover {
+      text-decoration: underline;
+    }
+  </style>
 </head>
 <body>
   <header>
-    <h1>search-query linter</h1>
-    <p>Paste a query, select a platform, and run the linter in your browser.</p>
+    <h1>search-query GUI</h1>
+    <p>Pick a tool to work with a query in the browser.</p>
   </header>
 
-  <div id="status">Loading Pyodide…</div>
+  <section class="nav">
+    <article class="card">
+      <h2><a href="tokenizer.html">Tokenize</a></h2>
+      <p>Parse a query for a specific platform and inspect the tokens.</p>
+      <a href="tokenizer.html">Open tokenizer →</a>
+    </article>
 
-  <label for="query">Query</label>
-  <textarea id="query">(TI=(platform* OR "digital work") AND PY=2020-2025)</textarea>
+    <article class="card">
+      <h2><a href="lint.html">Lint</a></h2>
+      <p>Run the platform-specific linter and see suggestions / normalized output.</p>
+      <a href="lint.html">Open linter →</a>
+    </article>
 
-  <label for="platform">Platform</label>
-  <select id="platform">
-    <option value="wos">wos</option>
-    <option value="pubmed">pubmed</option>
-    <option value="ebscohost">ebscohost</option>
-    <option value="scopus">scopus</option>
-  </select>
+    <article class="card">
+      <h2><a href="translate.html">Translate</a></h2>
+      <p>Translate a query from one platform (e.g., WoS) to another (e.g., PubMed).</p>
+      <a href="translate.html">Open translator →</a>
+    </article>
 
-  <div class="row">
-    <button id="btn-lint" disabled>Lint</button>
-  </div>
-
-  <details id="output-wrap">
-    <summary>Output</summary>
-    <pre id="output"></pre>
-  </details>
-
-  <h2 id="messages-title" style="display:none;">Messages</h2>
-  <div id="lint-view" style="display:none;"></div>
-
-  <script src="https://cdn.jsdelivr.net/pyodide/v0.26.2/full/pyodide.js"></script>
-  <script src="script.js"></script>
+  </section>
 </body>
 </html>
