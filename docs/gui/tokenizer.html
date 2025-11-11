@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>search-query tokenizer</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <link rel="stylesheet" href="style.css" />
+  <style>
+    #tokens-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 1rem;
+      background: white;
+      border: 1px solid #e5e7eb;
+      border-radius: 0.5rem;
+      overflow: hidden;
+    }
+    #tokens-table th,
+    #tokens-table td {
+      padding: 0.4rem 0.6rem;
+      border-bottom: 1px solid #e5e7eb;
+      font-size: 0.8rem;
+    }
+    #tokens-table th {
+      text-align: left;
+      background: #f1f5f9;
+    }
+    #tokens-table tr:last-child td {
+      border-bottom: none;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>search-query tokenizer</h1>
+    <p>Paste a query, select a platform, and see the raw tokens from <code>tokenize()</code>.</p>
+  </header>
+
+  <div id="status">Loading Pyodide…</div>
+
+  <label for="query">Query</label>
+  <textarea id="query">(TI=(platform* OR "digital work") AND PY=2020-2025)</textarea>
+
+  <label for="platform">Platform</label>
+  <select id="platform">
+    <option value="wos">wos</option>
+    <option value="pubmed">pubmed</option>
+    <option value="ebscohost">ebscohost</option>
+    <option value="scopus">scopus</option>
+  </select>
+
+  <div class="row">
+    <button id="btn-tokenize" disabled>Tokenize</button>
+  </div>
+
+  <details id="output-wrap">
+    <summary>Raw JSON</summary>
+    <pre id="output"></pre>
+  </details>
+
+  <h2 id="tokens-title" style="display:none;">Tokens</h2>
+  <div id="tokens-container"></div>
+
+  <!-- Pyodide -->
+  <script src="https://cdn.jsdelivr.net/pyodide/v0.26.2/full/pyodide.js"></script>
+  <!-- our logic -->
+  <script src="tokenize.js"></script>
+</body>
+</html>

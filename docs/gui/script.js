@@ -32,6 +32,8 @@ const PKG_TREE = {
     "upgrade.py",
     "utils.py"
   ],
+
+  // platform packages that really exist on disk in your repo
   ebscohost: [
     "__init__.py",
     "constants.py",
@@ -47,15 +49,21 @@ const PKG_TREE = {
     "translator.py"
   ],
   "ebscohost/v_1_0_0": ["__init__.py"],
+
   generic: ["__init__.py", "linter.py", "serializer.py"],
   "generic/v_1": ["__init__.py", "serializer.py"],
+
   json_db: [
     "ais_senior_scholars_basket.json",
     "ais_senior_scholars_list_of_premier_journals.json",
     "blocks_bmi_343.json",
     "journals_FT50.json"
   ],
+
+  // these two matters for registry._discover()
   pre_notation: ["__init__.py"],
+  structured: ["__init__.py"],
+
   pubmed: [
     "__init__.py",
     "constants.py",
@@ -70,7 +78,7 @@ const PKG_TREE = {
     "serializer.py",
     "translator.py"
   ],
-  structured: ["__init__.py"],
+
   wos: [
     "__init__.py",
     "constants.py",
@@ -87,6 +95,8 @@ const PKG_TREE = {
 const platformAliases = {
   ebsco: "ebscohost"
 };
+
+// allow all the things we just made sure to create
 const allowedPlatforms = new Set([
   "wos",
   "pubmed",
@@ -125,6 +135,7 @@ async function loadPackageFilesIntoPyodide(pyodide) {
       const resp = await fetch(url);
       if (!resp.ok) {
         appendStatus(`⚠️ Could not fetch ${url} (${resp.status})`);
+        // ensure a pkg exists so importlib can still import it
         if (filename === "__init__.py") {
           pyodide.FS.writeFile(`${dirPath}/__init__.py`, "# generated\n");
         }
@@ -255,18 +266,10 @@ function renderLintMessages(messages, queryStr, platform) {
     const msgs = grouped[String(line)];
     if (!msgs || !msgs.length) return;
 
-    const title = document.createElement("div");
-    title.className = "lint-group-title";
-    title.textContent = line === -1 ? "General messages" : `Line ${line}`;
-    container.appendChild(title);
+    const card = document.createElement("div");
+    card.className = "lint-card";
 
     msgs.forEach((msg) => {
-      const card = document.createElement("div");
-      card.className = "lint-card";
-      if (msg.is_fatal) {
-        card.classList.add("lint-card-fatal");
-      }
-
       const label = msg.label || msg.code || "message";
       const code = msg.code ? `(${msg.code})` : "";
       const emoji = msg.is_fatal ? "🚨 " : "ℹ️ ";
@@ -350,9 +353,9 @@ function renderLintMessages(messages, queryStr, platform) {
         pre.innerHTML = highlightQuery(queryStr, msg.position);
         card.appendChild(pre);
       }
-
-      container.appendChild(card);
     });
+
+    container.appendChild(card);
   });
 }
 
