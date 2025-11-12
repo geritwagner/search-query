@@ -5,6 +5,8 @@
     <title>search-query translator</title>
     <meta name="viewport" content="width=device-width,initial-scale=1" />
     
+    <script src="https://cdn.jsdelivr.net/pyodide/v0.26.2/full/pyodide.js"></script>
+
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
     
     <style>
@@ -96,7 +98,7 @@
             inset: 0; 
             background-color: rgba(255, 255, 255, 0.95);
             z-index: 1000;
-            display: none; /* Controlled by JS */
+            display: none; 
             flex-direction: column;
             justify-content: center;
             align-items: center;
@@ -192,8 +194,7 @@
 
         // --- Cross-Origin Height Communication ---
         function sendHeight() {
-            // Only send height if content is visible
-            if (loader.style.display !== 'none') return;
+            if (document.body.classList.contains('loading-active')) return;
 
             const height = document.body.scrollHeight;
             if (window.parent) {
@@ -211,13 +212,18 @@
             if (statusDiv) {
                 statusDiv.textContent = msg; 
             }
-            console.log("Pyodide Hook:", msg); 
+            // console.log("Pyodide Hook:", msg); // Kept for debugging flow
         };
         
         window.appendStatus = function(msg) {
             // 1. Update the visual status text
-            const cleanMsg = msg.replace(/\u001b\[.*?m/g, ''); 
-            if (loadingText) loadingText.textContent = cleanMsg;
+            // We strip ANSI codes (e.g., color codes) just in case the backend sends them
+            const cleanMsg = msg.replace(/\u001b\[.*?m/g, '').trim(); 
+            
+            // Check if the message is new before updating the display
+            if (loadingText.textContent !== cleanMsg && cleanMsg) {
+                 loadingText.textContent = cleanMsg;
+            }
 
             // 2. Control the visual transition state and viewport lock
             if (cleanMsg.includes('Done') || cleanMsg.includes('ready') || cleanMsg.includes('Ready')) {
@@ -228,8 +234,8 @@
 
                 setTimeout(() => {
                     loader.style.display = 'none';
-                    document.body.style.overflow = '';
-                    sendHeight();
+                    document.body.style.overflow = ''; // Allow scrolling on content
+                    sendHeight(); // Final resize
                 }, 500);
             } else {
                 // Loading: Lock viewport
