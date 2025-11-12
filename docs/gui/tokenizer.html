@@ -123,7 +123,8 @@
         }
         
         /* Utility to hide the content on load */
-        #content-wrapper { transition: opacity 0.5s ease; opacity: 1; }
+        #content-wrapper { transition: opacity 0.5s ease; opacity: 0; }
+        
     </style>
 </head>
 <body>
@@ -136,7 +137,7 @@
     <div id="content-wrapper">
         <header>
             <h1>search-query tokenizer</h1>
-            <p>Parse a query for a specific platform and inspect the tokens.</p>
+            <p>Paste a query, select a platform, and see the raw tokens from the <code>tokenize()</code>.</p>
         </header>
 
         <div id="status">Loading Pyodide…</div> 
@@ -204,15 +205,23 @@
         // --- Pyodide Status Hook and Loader Control ---
         
         const originalAppendStatus = window.appendStatus || function(msg) { 
-            console.log("Status Hook (Original):", msg); 
+            // This is the original function from the Pyodide example setup, 
+            // which usually just writes to a hidden #status div.
+            const statusDiv = document.getElementById('status');
+            if (statusDiv) {
+                // If Pyodide outputs complex status (which includes ANSI codes), append it for debug if needed, 
+                // but we primarily use it to trigger our visual updates.
+                statusDiv.textContent = msg; 
+            }
+            console.log("Pyodide Hook:", msg); 
         };
         
         window.appendStatus = function(msg) {
-            // 1. Update the visible status text
+            // 1. Update the visible status text inside the loading overlay
             const cleanMsg = msg.replace(/\u001b\[.*?m/g, ''); // Strip ANSI codes
-            if (statusDisplay) statusDisplay.textContent = cleanMsg;
+            if (loadingText) loadingText.textContent = cleanMsg;
 
-            // 2. Control the full-screen loader state
+            // 2. Control the visual transition state
             if (cleanMsg.includes('Done') || cleanMsg.includes('ready') || cleanMsg.includes('Ready')) {
                 // Fade out the loader and show content
                 loader.style.opacity = '0';
@@ -221,16 +230,16 @@
                 setTimeout(() => {
                     loader.style.display = 'none';
                     document.body.style.overflow = '';
-                    sendHeight();
+                    sendHeight(); // Final resize after content is fully visible
                 }, 500);
             } else {
-                // Show loader if Pyodide is actively loading
+                // Keep loader visible during loading steps
                 loader.style.display = 'flex';
                 loader.style.opacity = '1';
                 contentWrapper.style.opacity = '0';
             }
 
-            // 3. Call the original function and re-trigger height update 
+            // 3. Call the original function to ensure Pyodide's internal status tracking is correct
             originalAppendStatus(msg);
             setTimeout(sendHeight, 50); 
         };
@@ -242,10 +251,10 @@
             document.body.style.overflow = 'hidden';
             loader.style.display = 'flex'; 
 
-            // 1. Send height immediately on initialization
+            // 1. Send initial minimal height
             window.addEventListener('load', sendHeight);
             
-            // 2. Observe DOM changes (Crucial for when the output dynamically appears)
+            // 2. Observe DOM changes (Crucial for when the output table appears/disappears)
             const observer = new MutationObserver(sendHeight);
             observer.observe(document.body, { attributes: true, childList: true, subtree: true });
         });
