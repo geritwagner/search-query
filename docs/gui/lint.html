@@ -5,8 +5,6 @@
     <title>search-query Linter</title>
     <meta name="viewport" content="width=device-width,initial-scale=1" />
     
-    <script src="https://cdn.jsdelivr.net/pyodide/v0.26.2/full/pyodide.js"></script>
-
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
     
     <style>
@@ -28,14 +26,15 @@
             padding: 1.5rem; 
             min-height: 100vh;
             overflow-x: hidden;
-            overflow-y: hidden;
+            overflow-y: hidden; /* Temporarily disabled, managed by JS */
             position: relative;
         }
         
-        /* --- Layout & Typography --- */
+        /* Layout & Typography */
         header h1 { font-size: 1.5rem; font-weight: bold; margin-bottom: 0.25rem; }
         header p { color: var(--text-secondary); margin-top: 0; font-size: 0.95rem; }
         
+        /* Card Structure */
         .main-content-card {
             margin-top: 1.5rem;
             background: var(--bg-card);
@@ -76,7 +75,7 @@
         #output-wrap { margin-top: 1.5rem; }
         #output { background-color: #f3f4f6; padding: 1rem; border-radius: 0.5rem; font-size: 0.85rem; }
         
-        /* --- LOADING OVERLAY STYLES --- */
+        /* --- Loading Overlay Styles --- */
         #loading-overlay {
             position: fixed;
             inset: 0; 
@@ -173,6 +172,9 @@
 
         // --- Cross-Origin Height Communication ---
         function sendHeight() {
+            // Only send height if content is visible
+            if (loader.style.display !== 'none') return;
+
             const height = document.body.scrollHeight;
             if (window.parent) {
                 window.parent.postMessage({
@@ -184,19 +186,23 @@
         
         // --- Pyodide Status Hook and Loader Control ---
         
-        // Save original appendStatus function from script.js (if it was defined globally)
         const originalAppendStatus = window.appendStatus || function(msg) { 
-            console.log("Status Hook (Original):", msg); 
+            const statusDiv = document.getElementById('status');
+            if (statusDiv) {
+                statusDiv.textContent = msg; 
+            }
+            console.log("Pyodide Hook:", msg); 
         };
         
         window.appendStatus = function(msg) {
             // 1. Update the visual status text
-            const cleanMsg = msg.replace(/\u001b\[.*?m/g, ''); // Strip ANSI codes
-            if (statusDisplay) statusDisplay.textContent = cleanMsg;
+            const cleanMsg = msg.replace(/\u001b\[.*?m/g, ''); 
+            if (loadingText) loadingText.textContent = cleanMsg;
 
-            // 2. Control the full-screen loader state
+            // 2. Control the visual transition state and viewport lock
             if (cleanMsg.includes('Done') || cleanMsg.includes('ready') || cleanMsg.includes('Ready')) {
-                // Fade out the loader and show content
+                // Done loading: Unlock viewport, fade out loader, show content
+                document.body.classList.remove('loading-active');
                 loader.style.opacity = '0';
                 contentWrapper.style.opacity = '1';
 
@@ -206,7 +212,8 @@
                     sendHeight();
                 }, 500);
             } else {
-                // Show loader if Pyodide is actively loading
+                // Loading: Lock viewport
+                document.body.classList.add('loading-active');
                 loader.style.display = 'flex';
                 loader.style.opacity = '1';
                 contentWrapper.style.opacity = '0';
@@ -219,12 +226,13 @@
         
         // --- Initial Setup and DOM Observer ---
         document.addEventListener('DOMContentLoaded', () => {
-            // Initial state setup
+            // Initial state setup: LOCK VIEWPORT IMMEDIATELY
+            document.body.classList.add('loading-active');
             contentWrapper.style.opacity = '0';
-            document.body.style.overflow = 'hidden';
             loader.style.display = 'flex'; 
+            loadingText.textContent = "Loading Pyodide runtime...";
 
-            // 1. Send height immediately on initialization
+            // 1. Send initial minimal height
             window.addEventListener('load', sendHeight);
             
             // 2. Observe DOM changes (Crucial for when the output dynamically appears)
