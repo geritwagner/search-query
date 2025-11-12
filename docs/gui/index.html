@@ -1,78 +1,461 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <title>search-query GUI</title>
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <link rel="stylesheet" href="style.css" />
-  <style>
-    body {
-      max-width: 42rem;
-      margin: 0 auto;
-      padding: 1.5rem 1rem 3rem;
-    }
-    header h1 {
-      margin-bottom: 0.25rem;
-    }
-    header p {
-      margin-top: 0;
-      color: #4b5563;
-    }
-    .nav {
-      margin-top: 1.5rem;
-      display: grid;
-      gap: 1rem;
-    }
-    .card {
-      border: 1px solid #e5e7eb;
-      border-radius: 0.5rem;
-      padding: 1rem 1.25rem;
-      background: #fff;
-    }
-    .card h2 {
-      margin: 0 0 0.25rem;
-      font-size: 1.05rem;
-    }
-    .card p {
-      margin: 0 0 0.5rem;
-      color: #6b7280;
-      font-size: 0.9rem;
-    }
-    .card a {
-      color: #2563eb;
-      text-decoration: none;
-      font-weight: 500;
-    }
-    .card a:hover {
-      text-decoration: underline;
-    }
-  </style>
+    <meta charset="UTF-8" />
+    <title>search-query Studio</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.tailwindcss.com?plugins=forms"></script>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+
+    <style>
+        /* Base Styles (Consistent and clean) */
+        :root {
+            --primary: #4f46e5;
+            --primary-light: #818cf8;
+            --bg-base: #f9fafb;
+            --bg-card: #ffffff;
+            --border-color: #e5e7eb;
+            --text-heading: #1f2937;
+            --text-body: #6b7280;
+            --font-display: 'Space Grotesk', sans-serif;
+            --sidebar-width: 280px;
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-base);
+            color: var(--text-heading);
+            min-height: 100vh;
+            scroll-behavior: smooth;
+        }
+        h1, h2, h3, h4 { color: var(--text-heading); }
+
+        /* --- Layout & Responsiveness --- */
+        #mobile-header { position: fixed; top: 0; left: 0; width: 100%; height: 64px; background-color: var(--bg-card); border-bottom: 1px solid var(--border-color); z-index: 50; display: flex; align-items: center; padding: 0 1rem; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+        #sidebar { position: fixed; top: 0; left: 0; height: 100vh; width: var(--sidebar-width); background-color: var(--bg-card); border-right: 1px solid var(--border-color); z-index: 60; transform: translateX(-100%); transition: transform 0.3s ease-out; box-shadow: 4px 0 10px rgba(0, 0, 0, 0.1); padding: 1.5rem 1rem; overflow-y: auto; display: flex; flex-direction: column; }
+        #sidebar.open { transform: translateX(0); }
+        #backdrop { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.5); z-index: 55; display: none; }
+        #main-content { padding-top: 64px; transition: margin-left 0.3s ease-out; padding-left: 0; }
+        @media (min-width: 1024px) {
+            #mobile-header { display: none; }
+            #sidebar { transform: translateX(0); width: var(--sidebar-width); position: fixed; padding-top: 2rem; }
+            #main-content { padding-left: var(--sidebar-width); padding-top: 2rem; }
+            .tool-section-grid { display: flex; gap: 2rem; }
+            .control-panel { flex: 1 1 33%; }
+            .output-panel { flex: 1 1 67%; }
+        }
+
+        /* --- Hero Section Styling (Dominant, Center-Aligned) --- */
+        #hero-intro {
+            min-height: 80vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            padding: 4rem 1rem;
+            background: #eef2ff;
+        }
+
+        #hero-headline {
+            font-family: var(--font-display);
+            font-size: clamp(2.5rem, 5vw, 4rem); 
+            line-height: 1.1;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            background: linear-gradient(90deg, #374151, var(--primary), #6366f1);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-size: 200% auto;
+            animation: text-flow 4s linear infinite;
+        }
+        
+        @keyframes text-flow {
+            to { background-position: -200% center; }
+        }
+        
+        /* Utility classes (Simplified) */
+        .main-container { max-width: 76rem; margin: 0 auto; padding: 2.5rem 1.5rem; }
+        .control-panel, .output-panel { border: 1px solid var(--border-color); border-radius: 0.75rem; background: var(--bg-card); padding: 1.5rem; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05); }
+        .tab-button { padding: 0.75rem 1.25rem; font-weight: 600; cursor: pointer; border-bottom: 3px solid transparent; color: var(--text-body); transition: all 0.2s; margin-right: 0.5rem; }
+        .tab-button.active { color: var(--primary); border-bottom-color: var(--primary); }
+        .doc-card { padding: 1.5rem; border: 1px solid var(--border-color); border-radius: 0.75rem; background: var(--bg-card); box-shadow: 0 1px 4px rgba(0, 0, 0, 0.03); display: flex; align-items: flex-start; gap: 1rem; }
+        .doc-card-icon { color: var(--primary); font-size: 2rem; flex-shrink: 0; padding-top: 0.25rem; }
+        
+        /* Fix for Tailwind form styles */
+        .form-textarea, .form-select { border-color: var(--border-color) !important; box-shadow: 0 0 0 1px var(--border-color) !important; }
+
+        /* Output specific styles */
+        #tokens-table th { background: #f9fafb; font-weight: 700; }
+        #tokens-table th, #tokens-table td { padding: 0.9rem 1.25rem; border-bottom: 1px solid #f3f4f6; font-size: 0.875rem; color: #374151; text-align: left; vertical-align: top; }
+        pre { font-family: monospace; font-size: 0.85rem; line-height: 1.5; white-space: pre-wrap; word-wrap: break-word; overflow-x: auto; }
+        #lint-normalized, #translate-result { padding: 1rem; border-radius: 0.5rem; border: 1px solid; }
+    </style>
 </head>
 <body>
-  <header>
-    <h1>search-query GUI</h1>
-    <p>Pick a tool to work with a query in the browser.</p>
-  </header>
+    
+    <header id="mobile-header">
+        <button id="menu-toggle" class="p-2 text-gray-700 hover:text-indigo-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 rounded-md">
+            <i class="fas fa-bars text-xl"></i>
+        </button>
+        <h1 class="text-xl font-bold ml-4">search-query Studio</h1>
+    </header>
 
-  <section class="nav">
-    <article class="card">
-      <h2><a href="tokenizer.html">Tokenize</a></h2>
-      <p>Parse a query for a specific platform and inspect the tokens.</p>
-      <a href="tokenizer.html">Open tokenizer →</a>
-    </article>
+    <div id="backdrop" style="display:none;"></div>
 
-    <article class="card">
-      <h2><a href="lint.html">Lint</a></h2>
-      <p>Run the platform-specific linter and see suggestions / normalized output.</p>
-      <a href="lint.html">Open linter →</a>
-    </article>
+    <nav id="sidebar">
+        <header class="flex justify-between items-center pb-4 border-b border-gray-200">
+            <h2 class="text-2xl font-extrabold">Studio Menu</h2>
+            <button id="close-menu" class="p-2 text-gray-700 hover:text-red-500 rounded-md focus:outline-none lg:hidden">
+                <i class="fas fa-times text-xl"></i>
+            </button>
+        </header>
+        
+        <div class="flex flex-col space-y-2 mt-4 text-gray-700">
+            <a href="#hero-intro" class="py-2 px-3 rounded-md hover:bg-indigo-50 hover:text-indigo-600 font-medium sidebar-nav-link">
+                <i class="fas fa-home w-5 mr-3"></i> Home
+            </a>
+            <a href="#tool-area" class="py-2 px-3 rounded-md hover:bg-indigo-50 hover:text-indigo-600 font-medium sidebar-nav-link">
+                <i class="fas fa-tools w-5 mr-3"></i> Interactive Tool
+            </a>
+            <a href="#documentation" class="py-2 px-3 rounded-md hover:bg-indigo-50 hover:text-indigo-600 font-medium sidebar-nav-link">
+                <i class="fas fa-book-open w-5 mr-3"></i> Documentation
+            </a>
+            <div class="py-4 text-xs uppercase text-gray-400 font-bold">Tool Features</div>
+            <a href="#tool-area" data-tool-switch="tokenize" class="py-2 px-3 rounded-md hover:bg-indigo-50 hover:text-indigo-600 font-medium sidebar-tool-link">
+                Tokenize
+            </a>
+            <a href="#tool-area" data-tool-switch="lint" class="py-2 px-3 rounded-md hover:bg-indigo-50 hover:text-indigo-600 font-medium sidebar-tool-link">
+                Lint
+            </a>
+            <a href="#tool-area" data-tool-switch="translate" class="py-2 px-3 rounded-md hover:bg-indigo-50 hover:text-indigo-600 font-medium sidebar-tool-link">
+                Translate
+            </a>
+        </div>
+        
+        <footer class="mt-auto pt-4 border-t border-gray-200 text-xs text-gray-500">
+            search-query Studio © 2025
+        </footer>
+    </nav>
+    
+    <div id="main-content">
+        
+        <section id="hero-intro" class="bg-gray-50">
+            <div class="max-w-4xl px-4">
+                <h1 id="hero-headline" class="mb-4">
+                    search-query Studio
+                </h1>
+                <p class="text-xl text-gray-700 max-w-2xl mx-auto mb-8">
+                    The definitive in-browser tool for **validating, tokenizing, and translating** complex search queries for platforms like WoS, PubMed, and Scopus.
+                </p>
+                
+                <button id="launch-tool-cta" class="inline-block py-3 px-8 text-lg font-bold text-white bg-indigo-600 rounded-full shadow-lg hover:bg-indigo-700 transition duration-300 transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-indigo-500 focus:ring-opacity-50">
+                    Access the Interactive Query Tool ↓
+                </button>
+            </div>
+        </section>
 
-    <article class="card">
-      <h2><a href="translate.html">Translate</a></h2>
-      <p>Translate a query from one platform (e.g., WoS) to another (e.g., PubMed).</p>
-      <a href="translate.html">Open translator →</a>
-    </article>
+        <div id="interactive-tool-wrap" class="hidden">
+            <div class="main-container">
 
-  </section>
+                <h2 id="tool-area" class="text-3xl font-bold text-center w-full mb-8 pt-4">Interactive Query Tool</h2>
+
+                <div class="tool-section-grid w-full">
+                    
+                    <div class="control-panel flex flex-col">
+                        <h3 class="text-xl font-semibold mb-3">Controls & Status</h3>
+                        
+                        <div id="status" class="mt-2 bg-yellow-100 text-amber-800 border border-yellow-300 p-2 rounded-md text-sm font-medium">
+                            Loading Pyodide runtime...
+                        </div>
+
+                        <label for="query">Query String</label>
+                        <textarea 
+                            id="query" 
+                            rows="6" 
+                            class="form-textarea mt-1 block w-full rounded-md border-gray-300 shadow-inner focus:border-indigo-500 focus:ring focus:ring-indigo-500 focus:ring-opacity-50"
+                        >(TI=(platform* OR "digital work") AND PY=2020-2025)</textarea>
+
+                        <label for="platform">Source Platform</label>
+                        <select id="platform" class="form-select mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-500 focus:ring-opacity-50">
+                            <option value="wos">WoS (Web of Science)</option>
+                            <option value="pubmed">PubMed</option>
+                            <option value="ebscohost">EBSCOhost</option>
+                            <option value="scopus">Scopus</option>
+                        </select>
+                        
+                        <div id="platform-target-wrap" class="hidden">
+                            <label for="platform-target">Target Platform (for Translate)</label>
+                            <select id="platform-target" class="form-select mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-500 focus:ring-opacity-50">
+                                <option value="wos">WoS</option>
+                                <option value="pubmed" selected>PubMed</option>
+                                <option value="ebscohost">EBSCOhost</option>
+                                <option value="scopus">Scopus</option>
+                            </select>
+                        </div>
+                        
+                        <div class="mt-8">
+                            <button id="btn-lint" class="w-full py-3 px-4 border border-transparent rounded-lg shadow-md text-base font-semibold text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-75 disabled:shadow-none" disabled>
+                                Run Tool
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="output-panel flex flex-col">
+                        
+                        <div class="flex border-b border-gray-200 -mx-1.5 px-1.5" id="tool-tabs">
+                            <div class="tab-button active" data-tool="tokenize">
+                                <i class="fas fa-microchip mr-2"></i>Tokenize
+                            </div>
+                            <div class="tab-button" data-tool="lint">
+                                <i class="fas fa-tasks mr-2"></i>Lint
+                            </div>
+                            <div class="tab-button" data-tool="translate">
+                                <i class="fas fa-language mr-2"></i>Translate
+                            </div>
+                        </div>
+
+                        <div class="mt-4 flex-grow relative">
+                            
+                            <div id="tokenize-view" data-tool-content="tokenize" class="tool-content">
+                                <h3 class="text-lg font-bold text-gray-700 mb-3">Token Breakdown</h3>
+                                <div id="tokens-container">
+                                    <p class="text-gray-500">Run the Tokenize tool to see the query broken down by the source platform.</p>
+                                    <table id="tokens-table" style="display: none;">
+                                        <thead>
+                                            <tr><th>Index</th><th>Type</th><th>Value</th></tr>
+                                        </thead>
+                                        <tbody id="tokens-table-body"></tbody>
+                                    </table>
+                                </div>
+                                <details class="mt-6">
+                                    <summary class="text-sm font-semibold text-gray-600 cursor-pointer hover:text-gray-900">Raw JSON Output</summary>
+                                    <pre id="tokens-raw" class="p-3 bg-gray-50 text-gray-800 border border-gray-200 rounded-md text-sm mt-3 overflow-x-auto"></pre>
+                                </details>
+                                
+                                <pre id="output-tokenize" style="display:none;"></pre>
+                            </div>
+                            
+                            <div id="lint-view" data-tool-content="lint" class="tool-content hidden">
+                                <h3 class="text-lg font-bold text-gray-700 mb-3">Lint Results & Normalization</h3>
+                                <div id="lint-normalized-wrap" style="display:none;">
+                                    <h4 class="text-base font-semibold text-gray-700 mt-4">Normalized Query</h4>
+                                    <pre id="lint-normalized" class="p-4 border-2 border-green-300 bg-green-50 text-green-800 rounded-md text-base mt-2 overflow-x-auto"></pre>
+                                </div>
+                                <div id="lint-messages-wrap" style="display:none;">
+                                    <h4 id="messages-title" class="text-base font-semibold text-gray-700 mt-4">Linter Messages / Suggestions</h4>
+                                    <div id="lint-messages" class="mt-2 text-sm text-gray-600 space-y-2"></div>
+                                </div>
+                                <p id="lint-placeholder" class="text-gray-500">Run the Lint tool to check your query against the source platform rules.</p>
+                                
+                                <pre id="output" style="display:none;"></pre> 
+                            </div>
+                            
+                            <div id="translate-view" data-tool-content="translate" class="tool-content hidden">
+                                <h3 class="text-lg font-bold text-gray-700 mb-3">Translation Result</h3>
+                                <div id="translate-result-wrap" style="display:none;">
+                                    <h4 class="text-base font-semibold text-gray-700 mt-4">Translated Query</h4>
+                                    <pre id="translate-result" class="p-4 border-2 border-indigo-300 bg-indigo-50 text-indigo-800 rounded-md text-base mt-2 overflow-x-auto"></pre>
+                                </div>
+                                <div id="translate-messages-wrap" style="display:none;">
+                                    <h4 class="text-base font-semibold text-gray-700 mt-4">Translation Messages / Warnings</h4>
+                                    <div id="translate-messages" class="mt-2 text-sm text-gray-600 space-y-2"></div>
+                                </div>
+                                <p id="translate-placeholder" class="text-gray-500">Select source and target platforms and click Run to translate the query.</p>
+                                
+                                <pre id="result" style="display:none;"></pre>
+                                <div id="messages" style="display:none;"></div>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <section id="documentation" class="w-full pt-12">
+            <div class="main-container">
+                <h2 class="text-3xl font-bold text-center w-full mb-10">How the Studio Works</h2>
+                
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    
+                    <article class="doc-card">
+                        <i class="doc-card-icon fas fa-microchip"></i>
+                        <div>
+                            <h3 class="text-xl font-semibold mb-1">Tokenize</h3>
+                            <p class="text-sm text-gray-600">
+                                The tokenizer breaks down your search query into fundamental components (tokens), such as fields (TI, AB), operators (AND, OR), and search terms.
+                            </p>
+                        </div>
+                    </article>
+
+                    <article class="doc-card">
+                        <i class="doc-card-icon fas fa-tasks"></i>
+                        <div>
+                            <h3 class="text-xl font-semibold mb-1">Lint & Normalize</h3>
+                            <p class="text-sm text-gray-600">
+                                The linter checks the query structure against the rules of the selected source platform, providing suggestions and a 'normalized' version of the query.
+                            </p>
+                        </div>
+                    </article>
+
+                    <article class="doc-card">
+                        <i class="doc-card-icon fas fa-language"></i>
+                        <div>
+                            <h3 class="text-xl font-semibold mb-1">Translate</h3>
+                            <p class="text-sm text-gray-600">
+                                Select a target platform and translate your query instantly, handling platform-specific differences in field codes, operators, and syntax.
+                            </p>
+                        </div>
+                    </article>
+
+                </div>
+            </div>
+        </section>
+        
+        <footer class="text-sm text-gray-500 text-center py-6">
+            search-query Studio © 2025
+        </footer>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/pyodide/v0.26.2/full/pyodide.js"></script>
+    <script src="https://geritwagner.github.io/search-query/gui/script.js"></script> 
+    
+    <script>
+        const DOM = {
+            // UI elements for navigation and display
+            sidebar: document.getElementById('sidebar'),
+            menuToggle: document.getElementById('menu-toggle'),
+            closeMenuBtn: document.getElementById('close-menu'),
+            backdrop: document.getElementById('backdrop'),
+            toolTabs: document.getElementById('tool-tabs'),
+            toolContents: document.querySelectorAll('[data-tool-content]'),
+            platformTargetWrap: document.getElementById('platform-target-wrap'),
+            btnRun: document.getElementById('btn-lint'), // NOTE: Using 'btn-lint' to control the button is now mapped correctly
+            interactiveToolWrap: document.getElementById('interactive-tool-wrap'),
+            launchToolCta: document.getElementById('launch-tool-cta'),
+            toolAreaAnchor: document.getElementById('tool-area'),
+            
+            // Sidebar links that switch tool view (for mobile UX)
+            sidebarToolLinks: document.querySelectorAll('.sidebar-tool-link'),
+            sidebarNavLinks: document.querySelectorAll('.sidebar-nav-link')
+        };
+
+        let currentTool = 'tokenize'; 
+
+        // --- UI/VISUAL CONTROLS ---
+
+        function toggleSidebar(forceClose = false) {
+            const isOpen = DOM.sidebar.classList.contains('open');
+            const shouldOpen = forceClose ? false : !isOpen;
+
+            if (shouldOpen) {
+                DOM.sidebar.classList.add('open');
+                DOM.backdrop.style.display = 'block';
+                document.body.style.overflow = 'hidden'; 
+            } else {
+                DOM.sidebar.classList.remove('open');
+                DOM.backdrop.style.display = 'none';
+                document.body.style.overflow = '';
+            }
+        }
+
+        function setActiveTool(toolName) {
+            currentTool = toolName;
+
+            // 1. Update Tabs (Visual state in the main output panel)
+            document.querySelectorAll('.tab-button').forEach(btn => {
+                if (btn.dataset.tool === toolName) {
+                    btn.classList.add('active');
+                } else {
+                    btn.classList.remove('active');
+                }
+            });
+
+            // 2. Update Content Visibility
+            DOM.toolContents.forEach(content => {
+                if (content.dataset.toolContent === toolName) {
+                    content.classList.remove('hidden');
+                } else {
+                    content.classList.add('hidden');
+                }
+            });
+
+            // 3. Update Platform Target visibility (Translate requires it)
+            if (toolName === 'translate') {
+                DOM.platformTargetWrap.classList.remove('hidden');
+            } else {
+                DOM.platformTargetWrap.classList.add('hidden');
+            }
+
+            // 4. Update Run Button Text (Cosmetic change for user feedback)
+            // NOTE: The button ID is fixed to 'btn-lint', but we change the label for user clarity.
+            DOM.btnRun.textContent = toolName.charAt(0).toUpperCase() + toolName.slice(1);
+        }
+        
+        // --- CTA LAUNCHER ---
+        
+        function launchToolArea() {
+            // 1. Reveal the tool interface
+            DOM.interactiveToolWrap.classList.remove('hidden');
+
+            // 2. Scroll smoothly to the tool anchor
+            if (DOM.toolAreaAnchor) {
+                 DOM.toolAreaAnchor.scrollIntoView({ behavior: 'smooth' });
+            }
+        }
+        
+        // --- EVENT LISTENERS ---
+
+        document.addEventListener('DOMContentLoaded', () => {
+            // Set initial UI state
+            setActiveTool('tokenize'); 
+
+            // 1. CTA Button click: Reveal tool and scroll
+            DOM.launchToolCta.addEventListener('click', launchToolArea);
+
+            // 2. Mobile Menu Toggles
+            DOM.menuToggle.addEventListener('click', () => toggleSidebar());
+            DOM.backdrop.addEventListener('click', () => toggleSidebar(true));
+            DOM.closeMenuBtn.addEventListener('click', () => toggleSidebar(true));
+
+            // 3. Tab click handler (Switches active tool/output panel)
+            DOM.toolTabs.addEventListener('click', (e) => {
+                const tool = e.target.closest('.tab-button')?.dataset.tool;
+                if (tool) {
+                    setActiveTool(tool);
+                }
+            });
+
+            // 4. Sidebar Navigation/Tool Switch Handler
+            DOM.sidebar.addEventListener('click', (e) => {
+                const switchLink = e.target.closest('.sidebar-tool-link') || e.target.closest('.sidebar-nav-link');
+                
+                if (switchLink) {
+                    // Check if it's a tool link
+                    const tool = switchLink.dataset.toolSwitch;
+                    if (tool) {
+                        setActiveTool(tool);
+                        // Ensure the tool area is visible if a tool is selected from the sidebar
+                        DOM.interactiveToolWrap.classList.remove('hidden');
+                    }
+                }
+
+                // Close sidebar after any link click on mobile
+                if (window.innerWidth < 1024 && e.target.closest('a')) {
+                    // Small delay to allow hash scroll before closing
+                    setTimeout(() => toggleSidebar(true), 200);
+                }
+            });
+            
+            /* NOTE: The click handler for the Pyodide execution button (#btn-lint) 
+               is now fully managed by the external script.js, which is loaded below Pyodide. */
+        });
+    </script>
 </body>
 </html>
