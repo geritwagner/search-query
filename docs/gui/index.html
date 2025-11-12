@@ -5,21 +5,13 @@
     <title>search-query Studio</title>
     <meta name="viewport" content="width=device-width,initial-scale=1" />
     
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.tailwindcss.com?plugins=forms"></script>
-    
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
     
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@700&display=swap" rel="stylesheet">
-
     <style>
-        /* --- CSS Variables and Global Reset --- */
+        /* --- CSS VARIABLES --- */
         :root {
-            --primary: #4f46e5; 
-            --primary-dark: #3f35c5;
-            --primary-accent: #6366f1;
+            --primary: #4f46e5;
+            --primary-light: #818cf8;
             --bg-base: #f9fafb;
             --bg-card: #ffffff;
             --border-color: #e5e7eb;
@@ -30,16 +22,17 @@
             --sidebar-width: 280px;
         }
 
+        /* --- Global Resets & Body --- */
         * { box-sizing: border-box; margin: 0; padding: 0; line-height: 1.5; }
         body { font-family: var(--font-stack); background-color: var(--bg-base); color: var(--text-heading); min-height: 100vh; scroll-behavior: smooth; }
         h1, h2, h3, h4 { color: var(--text-heading); margin: 0; }
         a { text-decoration: none; color: var(--primary); transition: color 0.2s; }
-        a:hover { color: var(--primary-dark); text-decoration: underline; }
+        a:hover { color: var(--primary-light); text-decoration: underline; }
 
         /* --- Layout & Responsiveness --- */
         #mobile-header { position: fixed; top: 0; left: 0; width: 100%; height: 64px; background-color: var(--bg-card); border-bottom: 1px solid var(--border-color); z-index: 50; display: flex; align-items: center; padding: 0 1rem; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
         #mobile-header h1 { font-size: 1.25rem; font-weight: bold; margin-left: 1rem; }
-        #menu-toggle { border: none; background: none; color: var(--text-heading); cursor: pointer; padding: 0.5rem; }
+        #menu-toggle, #close-menu { border: none; background: none; color: var(--text-heading); cursor: pointer; padding: 0.5rem; }
 
         #sidebar { 
             position: fixed; top: 0; left: 0; height: 100vh; width: var(--sidebar-width); background-color: var(--bg-card); 
@@ -57,32 +50,28 @@
             #mobile-header { display: none; }
             #sidebar { transform: translateX(0); width: var(--sidebar-width); position: fixed; padding-top: 2rem; }
             #main-content { padding-left: var(--sidebar-width); padding-top: 2rem; }
-            .tool-section-grid { display: flex; gap: 2rem; width: 100%; }
-            .control-panel { flex: 1 1 33%; }
-            .output-panel { flex: 1 1 67%; }
-            .main-container { padding: 0 1.5rem 2.5rem; }
-            #tool-iframe { height: 600px; } /* Fixed height for desktop frame */
+            .main-container { padding: 0 1.5rem 2.5rem; } 
+            #tool-iframe { height: 600px; } /* Initial fixed height for desktop frame */
         }
         
         /* --- Hero Section & CTA --- */
         #hero-intro { background: #eef2ff; min-height: 80vh; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; padding: 4rem 1rem; }
-        #hero-headline { font-family: var(--font-display); font-size: clamp(2.5rem, 5vw, 4rem); line-height: 1.1; font-weight: 700; margin-bottom: 1rem; background: linear-gradient(90deg, #374151, var(--primary), var(--primary-accent)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-size: 200% auto; animation: text-flow 4s linear infinite; }
+        #hero-headline { font-family: var(--font-display); font-size: clamp(2.5rem, 5vw, 4rem); line-height: 1.1; font-weight: 700; margin-bottom: 1rem; }
         #launch-tool-cta { 
             padding: 0.75rem 2rem; font-weight: bold; color: white; background-color: var(--primary); 
             border: none; border-radius: 9999px; box-shadow: 0 4px 6px rgba(79, 70, 229, 0.4); 
             cursor: pointer; transition: background-color 0.2s, transform 0.2s; font-size: 1.125rem; 
         }
-        #launch-tool-cta:hover { background-color: var(--primary-dark); transform: scale(1.05); }
+        #launch-tool-cta:hover { background-color: #3f35c5; transform: scale(1.05); }
 
         /* --- Iframe Specific Styling --- */
-        #tool-area-content { padding: 1rem 0; width: 100%; }
         #tool-iframe { 
             width: 100%; 
             border: 1px solid var(--border-color); 
             border-radius: 0.5rem; 
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-            height: 600px; /* Default height */
-            transition: all 0.3s;
+            height: 600px; 
+            transition: height 0.3s ease-out;
         }
 
         /* --- Documentation --- */
@@ -123,7 +112,7 @@
                 <i class="fas fa-book-open w-5 mr-3"></i> Documentation
             </a>
             <div style="padding: 1rem 0; font-size: 0.75rem; font-weight: bold; color: var(--text-body); text-transform: uppercase;">Tool Features</div>
-            <a href="#tool-area" data-tool-url="tokenize.html" class="sidebar-tool-link" style="padding: 0.5rem 0.75rem; border-radius: 0.375rem;">
+            <a href="#tool-area" data-tool-url="tokenizer.html" class="sidebar-tool-link" style="padding: 0.5rem 0.75rem; border-radius: 0.375rem;">
                 Tokenizer
             </a>
             <a href="#tool-area" data-tool-url="lint.html" class="sidebar-tool-link" style="padding: 0.5rem 0.75rem; border-radius: 0.375rem;">
@@ -161,7 +150,7 @@
                 <h2 id="tool-area" style="font-size: 1.875rem; font-weight: bold; text-align: center; width: 100%; margin-bottom: 1.5rem; padding-top: 1rem;">Interactive Query Tool</h2>
 
                 <div id="tool-area-content">
-                    <iframe id="tool-iframe" src="about:blank" frameborder="0" scrolling="yes"></iframe>
+                    <iframe id="tool-iframe" src="about:blank" frameborder="0" scrolling="no"></iframe>
                 </div>
             </div>
         </div>
@@ -225,8 +214,8 @@
             sidebarNavLinks: document.querySelectorAll('.sidebar-nav-link')
         };
 
-        let currentToolUrl = null; 
-
+        const BASE_PATH = 'https://geritwagner.github.io/search-query/gui/'; 
+        
         // --- UI/VISUAL CONTROLS ---
 
         function toggleSidebar(forceClose = false) {
@@ -263,31 +252,47 @@
             }
         }
         
+        // --- IFRAME RESIZE LISTENER ---
+
+        function handleIframeResize(event) {
+            // Security Check: Only allow messages from the expected origin (assumed GitHub Pages path)
+            const expectedOrigin = 'https://geritwagner.github.io';
+            if (event.origin !== expectedOrigin) { 
+                return;
+            }
+            
+            if (event.data.type === 'setHeight' && event.data.height) {
+                const newHeight = event.data.height;
+                const iframe = DOM.toolIframe;
+                
+                // Apply new height + a small buffer (20px)
+                iframe.style.height = `${newHeight + 20}px`;
+            }
+        }
+        
         // --- EVENT LISTENERS ---
 
         document.addEventListener('DOMContentLoaded', () => {
             
-            // The base URL for the external files (assumed to be sibling directories)
-            const BASE_PATH = 'https://geritwagner.github.io/search-query/gui/'; 
+            // 1. Cross-Origin Resizing Setup (Listener for messages from the iframe)
+            window.addEventListener('message', handleIframeResize, false);
+            
+            // 2. Initialize: Load Tokenize by default 
             const initialToolUrl = BASE_PATH + 'tokenizer.html';
+            launchToolArea(initialToolUrl); // Load and scroll immediately on DOMContentLoaded
 
-            // 1. Initialize: Load Tokenize by default into the iframe
-            // This prevents an empty iframe on load and initiates Pyodide loading.
-            loadToolIntoIframe(initialToolUrl);
-
-            // 2. CTA Button click: Scrolls and ensures iframe content is loaded
+            // 3. CTA Button click: Ensures the tool is visible and scrolls down
             DOM.launchToolCta.addEventListener('click', (e) => {
                 e.preventDefault();
-                launchToolArea(initialToolUrl);
+                launchToolArea(initialToolUrl); 
             });
 
-            // 3. Mobile Menu Toggles
+            // 4. Mobile Menu Toggles
             DOM.menuToggle.addEventListener('click', () => toggleSidebar());
             DOM.backdrop.addEventListener('click', () => toggleSidebar(true));
-            // Ensure close button visibility toggles the sidebar
             document.getElementById('close-menu').addEventListener('click', () => toggleSidebar(true));
 
-            // 4. Sidebar Navigation/Tool Switch Handler
+            // 5. Sidebar Navigation/Tool Switch Handler (Loads new content into iframe)
             DOM.sidebar.addEventListener('click', (e) => {
                 const toolLink = e.target.closest('[data-tool-url]');
                 
@@ -295,12 +300,9 @@
                     const relativeUrl = toolLink.getAttribute('data-tool-url');
                     const fullUrl = BASE_PATH + relativeUrl;
                     
+                    // Load new tool and scroll
                     loadToolIntoIframe(fullUrl);
-
-                    // Ensure interactive section is visible and scroll to it
-                    if (relativeUrl.includes('.html')) {
-                        launchToolArea(fullUrl); 
-                    }
+                    launchToolArea(fullUrl); 
                 }
 
                 // Close sidebar after any link click on mobile
