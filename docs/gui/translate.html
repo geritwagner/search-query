@@ -5,6 +5,8 @@
     <title>search-query translator</title>
     <meta name="viewport" content="width=device-width,initial-scale=1" />
     
+    <script src="https://cdn.jsdelivr.net/pyodide/v0.26.2/full/pyodide.js"></script>
+
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
     
     <style>
@@ -18,6 +20,7 @@
             --text-secondary: #6b7280; /* Medium Gray */
         }
 
+        /* --- Global Resets & Body Styles for IFRAME --- */
         * { box-sizing: border-box; margin: 0; padding: 0; line-height: 1.5; font-family: 'Inter', sans-serif; }
         body {
             background-color: var(--bg-card);
@@ -25,10 +28,16 @@
             padding: 1.5rem; 
             min-height: 100vh;
             overflow-x: hidden;
-            overflow-y: hidden;
+            overflow-y: hidden; /* Temporarily managed by JS */
             position: relative;
         }
         
+        /* UTILITY CLASS FOR VIEWPORT LOCK */
+        body.loading-active {
+            overflow: hidden; 
+            height: 100vh;
+        }
+
         /* --- Layout & Typography --- */
         header h1 { font-size: 1.5rem; font-weight: bold; margin-bottom: 0.25rem; }
         header p { color: var(--text-secondary); margin-top: 0; font-size: 0.95rem; }
@@ -64,8 +73,7 @@
         #btn-translate:hover:not(:disabled) { background-color: var(--primary-dark); }
         #btn-translate:disabled { opacity: 0.6; cursor: not-allowed; box-shadow: none; }
 
-        /* --- Status & Loading (Customized to integrate into the page) --- */
-        /* IMPORTANT: This ID must remain for the Pyodide script to find it. */
+        /* --- Status & Output --- */
         #status { display:none; } 
         #status-display { 
             margin-top: 1rem; padding: 0.5rem 1rem; background: #fff3e0; border: 1px solid #ffcc80; 
@@ -81,23 +89,50 @@
             border-radius: 0.75rem;
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
         }
+        #result { background-color: #f3f4f6; padding: 1rem; border: 1px solid var(--border-color); border-radius: 0.5rem; font-size: 0.9rem; white-space: pre-wrap; word-wrap: break-word; margin-top: 0.5rem; }
+        #messages { background-color: #f3f4f6; padding: 1rem; border: 1px solid var(--border-color); border-radius: 0.5rem; font-size: 0.85rem; white-space: pre-wrap; word-wrap: break-word; margin-top: 0.5rem; color: var(--text-secondary); }
 
-        #result { 
-            background-color: #f3f4f6; padding: 1rem; border: 1px solid var(--border-color); 
-            border-radius: 0.5rem; font-size: 0.9rem; white-space: pre-wrap; word-wrap: break-word; 
-            margin-top: 0.5rem;
+        /* --- LOADING OVERLAY STYLES (Static Center) --- */
+        #loading-overlay {
+            position: fixed;
+            inset: 0; 
+            background-color: rgba(255, 255, 255, 0.95);
+            z-index: 1000;
+            display: flex; 
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            transition: opacity 0.5s ease;
+            opacity: 1;
         }
-        #messages {
-            background-color: #f3f4f6; padding: 1rem; border: 1px solid var(--border-color); 
-            border-radius: 0.5rem; font-size: 0.85rem; white-space: pre-wrap; word-wrap: break-word; 
-            margin-top: 0.5rem; color: var(--text-secondary);
+        .loader {
+            border: 4px solid var(--border-color);
+            border-top: 4px solid var(--primary);
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin-bottom: 1rem;
         }
+        #loading-text {
+            font-size: 1.1rem;
+            color: var(--text-main);
+            font-weight: 500;
+            text-align: center;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        /* Utility to hide the content on load */
+        #content-wrapper { transition: opacity 0.5s ease; opacity: 0; }
         
     </style>
 </head>
 <body>
 
-    <div id="loading-overlay" style="display:none;">
+    <div id="loading-overlay">
         <div class="loader"></div>
         <div id="loading-text">Initializing Pyodide...</div>
     </div>
@@ -155,10 +190,13 @@
         const loader = document.getElementById('loading-overlay');
         const loadingText = document.getElementById('loading-text');
         const contentWrapper = document.getElementById('content-wrapper');
-        const statusDisplay = document.getElementById('status-display'); // The new visible status box
+        const statusDisplay = document.getElementById('status-display');
 
         // --- Cross-Origin Height Communication ---
         function sendHeight() {
+            // Only send height if content is visible
+            if (loader.style.display !== 'none') return;
+
             const height = document.body.scrollHeight;
             if (window.parent) {
                 window.parent.postMessage({
@@ -171,16 +209,22 @@
         // --- Pyodide Status Hook and Loader Control ---
         
         const originalAppendStatus = window.appendStatus || function(msg) { 
-            console.log("Status Hook (Original):", msg); 
+            const statusDiv = document.getElementById('status');
+            if (statusDiv) {
+                statusDiv.textContent = msg; 
+            }
+            console.log("Pyodide Hook:", msg); 
         };
         
         window.appendStatus = function(msg) {
-            // 1. Update the visible status text
-            const cleanMsg = msg.replace(/\u001b\[.*?m/g, ''); // Strip ANSI codes
-            statusDisplay.textContent = cleanMsg;
+            // 1. Update the visual status text
+            const cleanMsg = msg.replace(/\u001b\[.*?m/g, ''); 
+            if (loadingText) loadingText.textContent = cleanMsg;
 
-            // 2. Control the full-screen loader state
+            // 2. Control the visual transition state and viewport lock
             if (cleanMsg.includes('Done') || cleanMsg.includes('ready') || cleanMsg.includes('Ready')) {
+                // Done loading: Unlock viewport, fade out loader, show content
+                document.body.classList.remove('loading-active');
                 loader.style.opacity = '0';
                 contentWrapper.style.opacity = '1';
 
@@ -190,7 +234,8 @@
                     sendHeight();
                 }, 500);
             } else {
-                // Show loader if Pyodide is actively loading
+                // Loading: Lock viewport
+                document.body.classList.add('loading-active');
                 loader.style.display = 'flex';
                 loader.style.opacity = '1';
                 contentWrapper.style.opacity = '0';
@@ -203,17 +248,18 @@
         
         // --- Initial Setup and DOM Observer ---
         document.addEventListener('DOMContentLoaded', () => {
-            // Initial state: hide content, show loader structure
+            // Initial state setup: LOCK VIEWPORT IMMEDIATELY
+            document.body.classList.add('loading-active');
             contentWrapper.style.opacity = '0';
-            document.body.style.overflow = 'hidden';
             loader.style.display = 'flex'; 
+            loadingText.textContent = "Initializing Pyodide...";
 
-            // 1. Observe DOM changes (Crucial for when the output dynamically appears)
+            // 1. Send initial minimal height
+            window.addEventListener('load', sendHeight);
+            
+            // 2. Observe DOM changes (Crucial for when the output dynamically appears)
             const observer = new MutationObserver(sendHeight);
             observer.observe(document.body, { attributes: true, childList: true, subtree: true });
-            
-            // 2. Send height immediately on initialization
-            window.addEventListener('load', sendHeight);
         });
     </script>
 </body>
