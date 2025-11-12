@@ -324,7 +324,7 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/pyodide/v0.26.2/full/pyodide.js"></script>
-    <script src="https://geritwagner.github.io/search-query/gui/script.js"></script> 
+    <script src="script.js"></script> 
     
     <script>
         const DOM = {
@@ -336,7 +336,7 @@
             toolTabs: document.getElementById('tool-tabs'),
             toolContents: document.querySelectorAll('[data-tool-content]'),
             platformTargetWrap: document.getElementById('platform-target-wrap'),
-            btnRun: document.getElementById('btn-lint'), // NOTE: Using 'btn-lint' to control the button is now mapped correctly
+            btnRun: document.getElementById('btn-lint'), 
             interactiveToolWrap: document.getElementById('interactive-tool-wrap'),
             launchToolCta: document.getElementById('launch-tool-cta'),
             toolAreaAnchor: document.getElementById('tool-area'),
@@ -394,7 +394,6 @@
             }
 
             // 4. Update Run Button Text (Cosmetic change for user feedback)
-            // NOTE: The button ID is fixed to 'btn-lint', but we change the label for user clarity.
             DOM.btnRun.textContent = toolName.charAt(0).toUpperCase() + toolName.slice(1);
         }
         
@@ -437,7 +436,6 @@
                 const switchLink = e.target.closest('.sidebar-tool-link') || e.target.closest('.sidebar-nav-link');
                 
                 if (switchLink) {
-                    // Check if it's a tool link
                     const tool = switchLink.dataset.toolSwitch;
                     if (tool) {
                         setActiveTool(tool);
@@ -452,9 +450,6 @@
                     setTimeout(() => toggleSidebar(true), 200);
                 }
             });
-            
-            /* NOTE: The click handler for the Pyodide execution button (#btn-lint) 
-               is now fully managed by the external script.js, which is loaded below Pyodide. */
         });
     </script>
 </body>
