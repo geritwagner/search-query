@@ -5,101 +5,148 @@
     <title>search-query Studio</title>
     <meta name="viewport" content="width=device-width,initial-scale=1" />
     
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.tailwindcss.com?plugins=forms"></script>
+    <!-- Pyodide must be loaded first if external scripts rely on it immediately -->
+    <script src="https://cdn.jsdelivr.net/pyodide/v0.26.2/full/pyodide.js"></script>
 
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+    
+    <!-- Custom Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
 
     <style>
-        /* Base Styles (Consistent and clean) */
+        /* --- CSS Variables and Global Reset --- */
         :root {
-            --primary: #4f46e5;
-            --primary-light: #818cf8;
-            --bg-base: #f9fafb;
+            --primary: #4f46e5;       /* Indigo */
+            --primary-dark: #3f35c5;
+            --primary-accent: #6366f1;
+            --bg-base: #f9fafb;       /* Light Gray background */
             --bg-card: #ffffff;
-            --border-color: #e5e7eb;
-            --text-heading: #1f2937;
-            --text-body: #6b7280;
+            --border-color: #e5e7eb;  /* Gray-200 */
+            --text-heading: #1f2937;  /* Dark Gray */
+            --text-body: #6b7280;     /* Medium Gray */
+            --font-stack: 'Inter', sans-serif;
             --font-display: 'Space Grotesk', sans-serif;
             --sidebar-width: 280px;
         }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            line-height: 1.5;
+        }
         body {
-            font-family: 'Inter', sans-serif;
+            font-family: var(--font-stack);
             background-color: var(--bg-base);
             color: var(--text-heading);
             min-height: 100vh;
             scroll-behavior: smooth;
         }
-        h1, h2, h3, h4 { color: var(--text-heading); }
+        h1, h2, h3, h4 { color: var(--text-heading); margin: 0; }
+        a { text-decoration: none; color: var(--primary); transition: color 0.2s; }
+        a:hover { color: var(--primary-dark); text-decoration: underline; }
 
         /* --- Layout & Responsiveness --- */
-        #mobile-header { position: fixed; top: 0; left: 0; width: 100%; height: 64px; background-color: var(--bg-card); border-bottom: 1px solid var(--border-color); z-index: 50; display: flex; align-items: center; padding: 0 1rem; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
-        #sidebar { position: fixed; top: 0; left: 0; height: 100vh; width: var(--sidebar-width); background-color: var(--bg-card); border-right: 1px solid var(--border-color); z-index: 60; transform: translateX(-100%); transition: transform 0.3s ease-out; box-shadow: 4px 0 10px rgba(0, 0, 0, 0.1); padding: 1.5rem 1rem; overflow-y: auto; display: flex; flex-direction: column; }
+        #mobile-header { 
+            position: fixed; top: 0; left: 0; width: 100%; height: 64px; background-color: var(--bg-card); 
+            border-bottom: 1px solid var(--border-color); z-index: 50; display: flex; align-items: center; 
+            padding: 0 1rem; box-shadow: 0 2px 4px rgba(0,0,0,0.05); 
+        }
+        #mobile-header h1 { font-size: 1.25rem; font-weight: bold; margin-left: 1rem; }
+        #menu-toggle { border: none; background: none; color: var(--text-heading); cursor: pointer; padding: 0.5rem; }
+
+        #sidebar { 
+            position: fixed; top: 0; left: 0; height: 100vh; width: var(--sidebar-width); background-color: var(--bg-card); 
+            border-right: 1px solid var(--border-color); z-index: 60; transform: translateX(-100%); 
+            transition: transform 0.3s ease-out; box-shadow: 4px 0 10px rgba(0, 0, 0, 0.1); 
+            padding: 1.5rem 1rem; overflow-y: auto; display: flex; flex-direction: column; 
+        }
         #sidebar.open { transform: translateX(0); }
         #backdrop { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.5); z-index: 55; display: none; }
+        
         #main-content { padding-top: 64px; transition: margin-left 0.3s ease-out; padding-left: 0; }
+        .main-container { max-width: 76rem; margin: 0 auto; padding: 2.5rem 1.5rem; }
+
         @media (min-width: 1024px) {
             #mobile-header { display: none; }
             #sidebar { transform: translateX(0); width: var(--sidebar-width); position: fixed; padding-top: 2rem; }
             #main-content { padding-left: var(--sidebar-width); padding-top: 2rem; }
-            .tool-section-grid { display: flex; gap: 2rem; }
+            .tool-section-grid { display: flex; gap: 2rem; width: 100%; }
             .control-panel { flex: 1 1 33%; }
             .output-panel { flex: 1 1 67%; }
-        }
-
-        /* --- Hero Section Styling (Dominant, Center-Aligned) --- */
-        #hero-intro {
-            min-height: 80vh;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            text-align: center;
-            padding: 4rem 1rem;
-            background: #eef2ff;
-        }
-
-        #hero-headline {
-            font-family: var(--font-display);
-            font-size: clamp(2.5rem, 5vw, 4rem); 
-            line-height: 1.1;
-            font-weight: 700;
-            margin-bottom: 1rem;
-            background: linear-gradient(90deg, #374151, var(--primary), #6366f1);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-size: 200% auto;
-            animation: text-flow 4s linear infinite;
+            .main-container { padding: 0 1.5rem 2.5rem; }
         }
         
-        @keyframes text-flow {
-            to { background-position: -200% center; }
+        /* --- Hero Section --- */
+        #hero-intro { background: #eef2ff; min-height: 80vh; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; padding: 4rem 1rem; }
+        #hero-headline { font-family: var(--font-display); font-size: clamp(2.5rem, 5vw, 4rem); line-height: 1.1; font-weight: 700; margin-bottom: 1rem; background: linear-gradient(90deg, #374151, var(--primary), var(--primary-accent)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-size: 200% auto; animation: text-flow 4s linear infinite; }
+        
+        /* --- Card Styles (Control/Output) --- */
+        .control-panel, .output-panel { 
+            border: 1px solid var(--border-color); border-radius: 0.75rem; background: var(--bg-card); 
+            padding: 1.5rem; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05); width: 100%; 
+        }
+
+        /* --- Form Elements --- */
+        label { display: block; margin-top: 1.25rem; margin-bottom: 0.25rem; font-weight: 600; color: var(--text-heading); font-size: 0.875rem; }
+        textarea, select { 
+            display: block; width: 100%; padding: 0.75rem; border: 1px solid var(--border-color); 
+            border-radius: 0.375rem; box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.07); 
+            transition: border-color 0.2s, box-shadow 0.2s; 
+        }
+        textarea:focus, select:focus { 
+            border-color: var(--primary); box-shadow: 0 0 0 1px var(--primary); outline: none; 
         }
         
-        /* Utility classes (Simplified) */
-        .main-container { max-width: 76rem; margin: 0 auto; padding: 2.5rem 1.5rem; }
-        .control-panel, .output-panel { border: 1px solid var(--border-color); border-radius: 0.75rem; background: var(--bg-card); padding: 1.5rem; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05); }
-        .tab-button { padding: 0.75rem 1.25rem; font-weight: 600; cursor: pointer; border-bottom: 3px solid transparent; color: var(--text-body); transition: all 0.2s; margin-right: 0.5rem; }
+        /* --- Buttons --- */
+        #launch-tool-cta { 
+            padding: 0.75rem 2rem; font-weight: bold; color: white; background-color: var(--primary); 
+            border: none; border-radius: 9999px; box-shadow: 0 4px 6px rgba(79, 70, 229, 0.4); 
+            cursor: pointer; transition: background-color 0.2s, transform 0.2s; font-size: 1.125rem;
+        }
+        #launch-tool-cta:hover { background-color: var(--primary-dark); transform: scale(1.05); }
+
+        #btn-lint, #btn-tokenize, #btn-translate {
+            width: 100%; padding: 0.75rem 1rem; border: none; border-radius: 0.5rem; 
+            font-weight: 600; color: white; background-color: var(--primary); cursor: pointer; 
+            transition: background-color 0.2s; margin-top: 0.5rem;
+        }
+        #btn-lint:disabled, #btn-tokenize:disabled, #btn-translate:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        /* --- Tabs --- */
+        #tool-tabs { border-bottom: 1px solid var(--border-color); margin-bottom: 1rem; display: flex; }
+        .tab-button { 
+            padding: 0.75rem 1.25rem; font-weight: 600; cursor: pointer; 
+            border-bottom: 3px solid transparent; color: var(--text-body); 
+            transition: all 0.2s; margin-right: 0.5rem; 
+        }
         .tab-button.active { color: var(--primary); border-bottom-color: var(--primary); }
-        .doc-card { padding: 1.5rem; border: 1px solid var(--border-color); border-radius: 0.75rem; background: var(--bg-card); box-shadow: 0 1px 4px rgba(0, 0, 0, 0.03); display: flex; align-items: flex-start; gap: 1rem; }
-        .doc-card-icon { color: var(--primary); font-size: 2rem; flex-shrink: 0; padding-top: 0.25rem; }
-        
-        /* Fix for Tailwind form styles */
-        .form-textarea, .form-select { border-color: var(--border-color) !important; box-shadow: 0 0 0 1px var(--border-color) !important; }
 
-        /* Output specific styles */
-        #tokens-table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
-        #tokens-table th { background: #f9fafb; font-weight: 700; }
-        #tokens-table th, #tokens-table td { padding: 0.9rem 1.25rem; border-bottom: 1px solid #f3f4f6; font-size: 0.875rem; color: #374151; text-align: left; vertical-align: top; }
-        pre { font-family: monospace; font-size: 0.85rem; line-height: 1.5; white-space: pre-wrap; word-wrap: break-word; overflow-x: auto; }
-        #lint-normalized, #translate-result { padding: 1rem; border-radius: 0.5rem; border: 1px solid; }
+        /* --- Output Specifics --- */
+        #status { 
+            padding: 0.5rem; background: #fff3e0; border: 1px solid #ffcc80; 
+            border-radius: 0.375rem; font-size: 0.875rem; color: #a55a00; font-weight: 500; 
+        }
+        pre { 
+            font-family: monospace; font-size: 0.85rem; line-height: 1.5; 
+            white-space: pre-wrap; word-wrap: break-word; overflow-x: auto; 
+            padding: 1rem; border: 1px solid var(--border-color); border-radius: 0.375rem; 
+            background: #fcfcfc; color: #374151;
+        }
+        .doc-card { 
+            display: flex; align-items: flex-start; gap: 1rem; 
+            padding: 1.5rem; border-radius: 0.5rem; background: var(--bg-card); 
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+        }
+        .doc-card-icon { color: var(--primary); font-size: 2rem; flex-shrink: 0; padding-top: 0.25rem; }
     </style>
 </head>
 <body>
     
+    <!-- MOBILE HEADER (Visible only on small screens) -->
     <header id="mobile-header">
         <button id="menu-toggle" class="p-2">
             <i class="fas fa-bars text-xl"></i>
@@ -107,8 +154,10 @@
         <h1 class="text-xl font-bold ml-4">search-query Studio</h1>
     </header>
 
+    <!-- MOBILE BACKDROP (Clicking closes the sidebar) -->
     <div id="backdrop" style="display:none;"></div>
 
+    <!-- SIDEBAR (Navigation and Intro) -->
     <nav id="sidebar">
         <header style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 1rem; border-bottom: 1px solid var(--border-color);">
             <h2 style="font-size: 1.5rem; font-weight: bold;">Studio Menu</h2>
@@ -117,6 +166,7 @@
             </button>
         </header>
         
+        <!-- Sidebar Navigation Links -->
         <div style="display: flex; flex-direction: column; margin-top: 1rem; color: var(--text-heading);">
             <a href="#hero-intro" class="sidebar-nav-link" style="padding: 0.5rem 0.75rem; border-radius: 0.375rem;">
                 <i class="fas fa-home w-5 mr-3"></i> Home
@@ -131,10 +181,10 @@
             <a href="#tool-area" data-tool-switch="tokenize" class="sidebar-tool-link" style="padding: 0.5rem 0.75rem; border-radius: 0.375rem;">
                 Tokenize
             </a>
-            <a href="#tool-area" data-tool-switch="lint" class="py-2 px-3 rounded-md hover:bg-indigo-50 hover:text-indigo-600 font-medium sidebar-tool-link">
+            <a href="#tool-area" data-tool-switch="lint" class="sidebar-tool-link" style="padding: 0.5rem 0.75rem; border-radius: 0.375rem;">
                 Lint
             </a>
-            <a href="#tool-area" data-tool-switch="translate" class="py-2 px-3 rounded-md hover:bg-indigo-50 hover:text-indigo-600 font-medium sidebar-tool-link">
+            <a href="#tool-area" data-tool-switch="translate" class="sidebar-tool-link" style="padding: 0.5rem 0.75rem; border-radius: 0.375rem;">
                 Translate
             </a>
         </div>
@@ -144,10 +194,12 @@
         </footer>
     </nav>
     
+    <!-- MAIN CONTENT AREA -->
     <div id="main-content">
         
+        <!-- 1. HERO SECTION (Above the fold) -->
         <section id="hero-intro">
-            <div class="max-w-4xl px-4">
+            <div style="max-width: 64rem; padding: 0 1rem;">
                 <h1 id="hero-headline" style="margin-bottom: 1rem;">
                     search-query Studio
                 </h1>
@@ -155,12 +207,14 @@
                     The definitive in-browser tool for **validating, tokenizing, and translating** complex search queries for platforms like WoS, PubMed, and Scopus.
                 </p>
                 
+                <!-- CTA BUTTON -->
                 <button id="launch-tool-cta">
                     Access the Interactive Query Tool ↓
                 </button>
             </div>
         </section>
 
+        <!-- 2. HIDDEN TOOL AREA (Revealed by CTA) -->
         <div id="interactive-tool-wrap" class="hidden">
             <div class="main-container">
 
@@ -168,21 +222,27 @@
 
                 <div class="tool-section-grid">
                     
+                    <!-- A. CONTROL PANEL (PERSISTENT INPUTS & STATUS) -->
                     <div class="control-panel" style="display: flex; flex-direction: column;">
                         <h3 style="font-size: 1.25rem; font-weight: 600; margin-bottom: 1rem;">Controls & Status</h3>
                         
+                        <!-- CRITICAL ID: 'status' -->
                         <div id="status" style="margin-top: 0.5rem;">
                             Loading Pyodide runtime...
                         </div>
 
+                        <!-- Query Input -->
                         <label for="query">Query String</label>
+                        <!-- CRITICAL ID: 'query' -->
                         <textarea 
                             id="query" 
                             rows="6" 
                             style="margin-top: 0.25rem;"
                         >(TI=(platform* OR "digital work") AND PY=2020-2025)</textarea>
 
+                        <!-- Platform Source -->
                         <label for="platform">Source Platform</label>
+                        <!-- CRITICAL ID: 'platform' -->
                         <select id="platform" style="margin-top: 0.25rem;">
                             <option value="wos">WoS (Web of Science)</option>
                             <option value="pubmed">PubMed</option>
@@ -190,8 +250,10 @@
                             <option value="scopus">Scopus</option>
                         </select>
                         
+                        <!-- Platform Target (Required for translate function) -->
                         <div id="platform-target-wrap" class="hidden">
                             <label for="platform-target">Target Platform (for Translate)</label>
+                            <!-- CRITICAL ID: 'platform-target' -->
                             <select id="platform-target" style="margin-top: 0.25rem;">
                                 <option value="wos">WoS</option>
                                 <option value="pubmed" selected>PubMed</option>
@@ -200,16 +262,21 @@
                             </select>
                         </div>
                         
+                        <!-- Action Button -->
                         <div style="margin-top: 2rem;">
+                            <!-- CRITICAL ID: btn-lint (Primary execution button for Lint/Combined logic) -->
                             <button id="btn-lint" disabled>Run Tool</button>
                             
+                            <!-- CRITICAL HIDDEN BUTTONS FOR EXTERNAL SCRIPTS (MUST EXIST) -->
                             <button id="btn-tokenize" style="display:none;"></button>
                             <button id="btn-translate" style="display:none;"></button>
                         </div>
                     </div>
                     
+                    <!-- B. OUTPUT PANEL (TABBED RESULTS) -->
                     <div class="output-panel" style="display: flex; flex-direction: column;">
                         
+                        <!-- Tab Navigation -->
                         <div id="tool-tabs" style="display: flex; border-bottom: 1px solid var(--border-color); padding-bottom: 0;">
                             <div class="tab-button active" data-tool="tokenize">
                                 <i class="fas fa-microchip mr-2"></i>Tokenize
@@ -222,8 +289,10 @@
                             </div>
                         </div>
 
+                        <!-- Tab Content / Output View -->
                         <div style="margin-top: 1rem; flex-grow: 1; position: relative;">
                             
+                            <!-- 1. TOKENIZER VIEW -->
                             <div id="tokenize-view" data-tool-content="tokenize">
                                 <h3 style="font-size: 1.125rem; font-weight: bold; margin-bottom: 0.75rem;">Token Breakdown</h3>
                                 <div id="tokens-container">
@@ -240,10 +309,12 @@
                                     <pre id="tokens-raw" style="margin-top: 0.75rem;"></pre>
                                 </details>
                                 
+                                <!-- CRITICAL ID: 'output' (Used by tokenizer.js/lint.js) -->
                                 <pre id="output" style="display:none;"></pre>
                                 <h2 id="tokens-title" style="display:none;">Tokens</h2>
                             </div>
                             
+                            <!-- 2. LINTER VIEW -->
                             <div id="lint-view" data-tool-content="lint" class="hidden">
                                 <h3 style="font-size: 1.125rem; font-weight: bold; margin-bottom: 0.75rem;">Lint Results & Normalization</h3>
                                 <div id="lint-normalized-wrap" style="display:none;">
@@ -256,9 +327,11 @@
                                 </div>
                                 <p id="lint-placeholder" style="color: var(--text-body);">Run the Lint tool to check your query against the source platform rules.</p>
                                 
+                                <!-- CRITICAL ID: 'output' (The main raw output buffer used by runLint) -->
                                 <pre id="output" style="display:none;"></pre>
                             </div>
                             
+                            <!-- 3. TRANSLATE VIEW -->
                             <div id="translate-view" data-tool-content="translate" class="hidden">
                                 <h3 style="font-size: 1.125rem; font-weight: bold; margin-bottom: 0.75rem;">Translation Result</h3>
                                 <div id="translate-result-wrap" style="display:none;">
@@ -271,6 +344,7 @@
                                 </div>
                                 <p id="translate-placeholder" style="color: var(--text-body);">Select source and target platforms and click Run to translate the query.</p>
                                 
+                                <!-- CRITICAL IDs: 'result' and 'messages' (Used by original translate.js) -->
                                 <pre id="result" style="display:none;"></pre>
                                 <div id="messages" style="display:none;"></div>
                                 <h2 id="messages-title" style="display:none;">Messages</h2> 
@@ -283,6 +357,7 @@
             </div>
         </div>
 
+        <!-- 3. DOCUMENTATION SECTION (Remains visible) -->
         <section id="documentation" style="width: 100%; padding-top: 3rem;">
             <div class="main-container">
                 <h2 style="font-size: 1.875rem; font-weight: bold; text-align: center; width: 100%; margin-bottom: 2.5rem;">How the Studio Works</h2>
@@ -328,11 +403,13 @@
         </footer>
     </div>
 
+    <!-- Pyodide and GitHub Logic (External Scripts) -->
     <script src="https://cdn.jsdelivr.net/pyodide/v0.26.2/full/pyodide.js"></script>
     <script src="script.js"></script> 
     <script src="tokenize.js"></script>
     <script src="translate.js"></script>
     
+    <!-- OUR DEDICATED UI SCRIPT (Controlling Sidebar, Tabs, and Visibility) -->
     <script>
         const DOM = {
             // UI elements for navigation and display
@@ -404,8 +481,7 @@
             DOM.btnRun.textContent = toolName.charAt(0).toUpperCase() + toolName.slice(1);
             
             /* 5. VITAL: Notify the Pyodide/Run script about the active tool. 
-               The external scripts MUST read this attribute now.
-               Since we cannot change them, if they don't read this, only 'lint' will work reliably.
+               This relies on the external script reading this attribute.
             */
             DOM.btnRun.setAttribute('data-active-tool', toolName);
         }
