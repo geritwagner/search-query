@@ -20,6 +20,7 @@
 
         /* --- Global Resets & Body Styles for IFRAME --- */
         * { box-sizing: border-box; margin: 0; padding: 0; line-height: 1.5; font-family: 'Inter', sans-serif; }
+        
         body {
             background-color: var(--bg-card);
             color: var(--text-main);
@@ -28,6 +29,12 @@
             overflow-x: hidden;
             overflow-y: hidden;
             position: relative;
+        }
+
+        /* UTILITY CLASS FOR VIEWPORT LOCK */
+        body.loading-active {
+            overflow: hidden; /* Prevents scrolling */
+            height: 100vh;    /* Locks height */
         }
         
         /* --- Layout & Typography --- */
@@ -65,7 +72,7 @@
         #btn-tokenize:hover:not(:disabled) { background-color: var(--primary-dark); }
         #btn-tokenize:disabled { opacity: 0.6; cursor: not-allowed; box-shadow: none; }
 
-        /* --- Status & Loading (Customized to integrate into the page) --- */
+        /* --- Status & Loading --- */
         #status { display:none; } 
         #status-display { 
             margin-top: 1rem; padding: 0.5rem 1rem; background: #fff3e0; border: 1px solid #ffcc80; 
@@ -89,13 +96,16 @@
             margin-top: 0.5rem;
         }
         
-        /* --- LOADING OVERLAY STYLES --- */
+        /* --- LOADING OVERLAY STYLES (Fixed and Centered) --- */
         #loading-overlay {
             position: fixed;
-            inset: 0; 
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
             background-color: rgba(255, 255, 255, 0.95);
             z-index: 1000;
-            display: none; 
+            display: flex; 
             flex-direction: column;
             justify-content: center;
             align-items: center;
@@ -137,7 +147,7 @@
     <div id="content-wrapper">
         <header>
             <h1>search-query tokenizer</h1>
-            <p>Paste a query, select a platform, and see the raw tokens from the <code>tokenize()</code>.</p>
+            <p>Paste a query, select a platform, and see the raw tokens from <code>tokenize()</code>.</p>
         </header>
 
         <div id="status">Loading Pyodide…</div> 
@@ -193,6 +203,9 @@
 
         // --- Cross-Origin Height Communication ---
         function sendHeight() {
+            // Only send height if the loader is not active (i.e., content is visible)
+            if (loader.style.display !== 'none') return;
+
             const height = document.body.scrollHeight;
             if (window.parent) {
                 window.parent.postMessage({
@@ -205,51 +218,51 @@
         // --- Pyodide Status Hook and Loader Control ---
         
         const originalAppendStatus = window.appendStatus || function(msg) { 
-            // This is the original function from the Pyodide example setup, 
-            // which usually just writes to a hidden #status div.
             const statusDiv = document.getElementById('status');
             if (statusDiv) {
-                // If Pyodide outputs complex status (which includes ANSI codes), append it for debug if needed, 
-                // but we primarily use it to trigger our visual updates.
+                // If Pyodide outputs complex status (which includes ANSI codes), write to hidden div
                 statusDiv.textContent = msg; 
             }
             console.log("Pyodide Hook:", msg); 
         };
         
         window.appendStatus = function(msg) {
-            // 1. Update the visible status text inside the loading overlay
-            const cleanMsg = msg.replace(/\u001b\[.*?m/g, ''); // Strip ANSI codes
+            // 1. Update the visual status text
+            const cleanMsg = msg.replace(/\u001b\[.*?m/g, ''); 
             if (loadingText) loadingText.textContent = cleanMsg;
 
-            // 2. Control the visual transition state
+            // 2. Control the visual transition state and viewport lock
             if (cleanMsg.includes('Done') || cleanMsg.includes('ready') || cleanMsg.includes('Ready')) {
-                // Fade out the loader and show content
+                // Done loading: Unlock viewport, fade out loader, show content
+                document.body.classList.remove('loading-active');
                 loader.style.opacity = '0';
                 contentWrapper.style.opacity = '1';
 
                 setTimeout(() => {
                     loader.style.display = 'none';
-                    document.body.style.overflow = '';
-                    sendHeight(); // Final resize after content is fully visible
+                    document.body.style.overflow = 'hidden'; 
+                    sendHeight(); // Final resize
                 }, 500);
             } else {
-                // Keep loader visible during loading steps
+                // Loading: Lock viewport
+                document.body.classList.add('loading-active');
                 loader.style.display = 'flex';
                 loader.style.opacity = '1';
                 contentWrapper.style.opacity = '0';
             }
 
-            // 3. Call the original function to ensure Pyodide's internal status tracking is correct
+            // 3. Call the original function and re-trigger height update 
             originalAppendStatus(msg);
             setTimeout(sendHeight, 50); 
         };
         
         // --- Initial Setup and DOM Observer ---
         document.addEventListener('DOMContentLoaded', () => {
-            // Initial state setup
+            // Initial state setup: LOCK VIEWPORT IMMEDIATELY
+            document.body.classList.add('loading-active');
             contentWrapper.style.opacity = '0';
-            document.body.style.overflow = 'hidden';
             loader.style.display = 'flex'; 
+            loadingText.textContent = "Loading Pyodide runtime...";
 
             // 1. Send initial minimal height
             window.addEventListener('load', sendHeight);
