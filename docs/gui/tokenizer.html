@@ -141,18 +141,18 @@
 
     <div id="loading-overlay">
         <div class="loader"></div>
-        <div id="loading-text">Initializing Pyodide...</div>
+        <div id="loading-text">Initializing Search Query...</div>
     </div>
     
     <div id="content-wrapper">
-        <header style="display:grid; place-content:center; place-item:center;">
+        <header>
             <h1>Search-Query Tokenizer</h1>
             <p>Paste a query, select a platform, and see the raw tokens from <code>tokenize()</code>.</p>
         </header>
 
-        <div id="status">Loading Pyodide…</div> 
+        <div id="status">Loading Search Query…</div> 
         
-        <div id="status-display">Loading Pyodide…</div>
+        <div id="status-display">Loading Search Query…</div>
 
         <div class="main-content-card">
             <label for="query">Query</label>
@@ -235,7 +235,7 @@
             if (cleanMsg.includes('Done') || cleanMsg.includes('ready') || cleanMsg.includes('Ready')) {
                 // Done loading: Unlock viewport, fade out loader, show content
                 document.body.classList.remove('loading-active');
-                statusDisplay.innerText = 'Pyodide Loaded…'
+                statusDisplay.innerText = 'Search Query loaded…'
                 loader.style.opacity = '0';
                 contentWrapper.style.opacity = '1';
 
