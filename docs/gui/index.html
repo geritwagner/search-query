@@ -2,11 +2,15 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8" />
-    <title>search-query Studio</title>
+    <title>Search-Query Studio</title>
     <meta name="viewport" content="width=device-width,initial-scale=1" />
     
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
     
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@700&display=swap" rel="stylesheet">
+
     <style>
         /* --- CSS VARIABLES --- */
         :root {
@@ -24,12 +28,16 @@
             --sidebar-width: 280px;
         }
 
+
         /* --- Global Resets & Body --- */
         * { box-sizing: border-box; margin: 0; padding: 0; line-height: 1.5; }
-        body { font-family: var(--font-stack); background-color: var(--bg-base); color: var(--text-heading); min-height: 100vh; scroll-behavior: smooth; }
+        body { 
+            font-family: var(--font-stack); background-color: var(--bg-base); color: var(--text-heading); 
+            min-height: 100vh; scroll-behavior: smooth;
+        }
         h1, h2, h3, h4 { color: var(--text-heading); margin: 0; }
         a { text-decoration: none; color: var(--primary); transition: color 0.2s; }
-        a:hover { color: var(--primary-dark); text-decoration: underline; }
+        a:hover { color: var(--primary-light); text-decoration: underline; }
 
         /* --- Custom Scrollbar for better UX --- */
         body::-webkit-scrollbar { width: 8px; }
@@ -38,13 +46,11 @@
         /* --- Layout & Responsiveness --- */
         #mobile-header { 
             position: fixed; top: 0; left: 0; width: 100%; height: 64px; 
-            background-color: var(--bg-card); 
-            background-image: linear-gradient(90deg, var(--bg-card), #f5f5ff); /* Subtle header gradient */
-            border-bottom: 1px solid var(--border-color); z-index: 50; display: flex; align-items: center; 
-            padding: 0 1rem; box-shadow: 0 2px 8px rgba(0,0,0,0.1); 
+            background-color: var(--bg-card); border-bottom: 1px solid var(--border-color); 
+            z-index: 50; display: flex; align-items: center; padding: 0 1rem; box-shadow: 0 2px 8px rgba(0,0,0,0.1); 
         }
         #mobile-header h1 { font-size: 1.25rem; font-weight: bold; margin-left: 1rem; }
-        #menu-toggle, #close-menu { border: none; background: none; color: var(--text-heading); cursor: pointer; padding: 0.5rem; }
+        #menu-toggle { border: none; background: none; color: var(--text-heading); cursor: pointer; padding: 0.5rem; }
 
         #sidebar { 
             position: fixed; top: 0; left: 0; height: 100vh; width: var(--sidebar-width); background-color: var(--bg-card); 
@@ -64,32 +70,19 @@
             #main-content { padding-left: var(--sidebar-width); padding-top: 2rem; }
             .main-container { padding: 0 1.5rem 2.5rem; } 
             #tool-iframe { height: 600px; }
-            #quick-access-ctas { display: none !important; } /* Hide mobile CTAs on desktop */
+            #quick-access-ctas { display: none !important; }
         }
         
-        /* --- Hero Section --- */
-        #hero-intro { 
-            background: var(--bg-base-lighter); 
-            min-height: 80vh; display: flex; flex-direction: column; justify-content: center; align-items: center; 
-            text-align: center; padding: 4rem 1rem;
-            border-bottom: 3px solid var(--primary-accent); /* Visual break */
-        }
-        #hero-headline { 
-            font-family: var(--font-display); 
-            font-size: clamp(2.5rem, 5vw, 4rem); line-height: 1.1; font-weight: 700; margin-bottom: 1rem; 
-            background: linear-gradient(90deg, #374151, var(--primary), var(--primary-accent));
-            -webkit-background-clip: text; -webkit-text-fill-color: transparent; 
-            background-size: 200% auto; animation: text-flow 4s linear infinite; 
-            letter-spacing: -1px;
-        }
+        /* --- Hero Section & CTAs --- */
         #launch-tool-cta { 
             padding: 0.75rem 2rem; font-weight: bold; color: white; background-color: var(--primary); 
             border: none; border-radius: 9999px; box-shadow: 0 4px 10px rgba(79, 70, 229, 0.5); 
             cursor: pointer; transition: background-color 0.2s, transform 0.2s; font-size: 1.125rem; 
+            margin-top: 2rem;
         }
         #launch-tool-cta:hover { background-color: var(--primary-dark); transform: scale(1.05); }
 
-        /* New Quick Access Buttons container (Mobile only) */
+        /* Quick Access Buttons container (Mobile only) */
         #quick-access-ctas {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
@@ -119,7 +112,6 @@
             transform: translateY(-2px);
         }
 
-
         /* --- Iframe Specific Styling --- */
         #tool-iframe { 
             width: 100%; 
@@ -134,15 +126,20 @@
         #documentation h2 { margin-bottom: 1.5rem; }
         .doc-card { 
             display: flex; align-items: flex-start; gap: 1rem; padding: 1.5rem; border-radius: 0.5rem; background: var(--bg-card); box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
-            border-left: 4px solid var(--primary-accent); /* Feature marker */
+            border-left: 4px solid var(--primary-accent); 
         }
         .doc-card-icon { color: var(--primary); font-size: 2rem; flex-shrink: 0; padding-top: 0.25rem; }
-
-        @keyframes text-flow {
-            0% { background-position: 0% 50%; }
-            100% { background-position: 100% 50%; }
+          #hero-headline { 
+            font-family: var(--font-display); 
+            font-size: clamp(2.5rem, 5vw, 4rem); line-height: 1.1; font-weight: 700; margin-bottom: 1rem; 
+            background: linear-gradient(90deg, #374151, var(--primary), var(--primary-accent));
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent; 
+            background-size: 200% auto; animation: text-flow 4s linear infinite; 
+            letter-spacing: -1px;
+            display:grid;
+            place-content: center;
+            margin-top: 50px;
         }
-
     </style>
 </head>
 <body>
@@ -159,30 +156,20 @@
     <nav id="sidebar">
         <header style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 1rem; border-bottom: 1px solid var(--border-color);">
             <h2 style="font-size: 1.5rem; font-weight: bold;">Studio Menu</h2>
-            <button id="close-menu" style="border: none; background: none; color: var(--text-heading); cursor: pointer; padding: 0.5rem;" class="lg:hidden">
-                <i class="fas fa-times text-xl"></i>
-            </button>
-        </header>
+            </header>
         
         <div style="display: flex; flex-direction: column; margin-top: 1rem; color: var(--text-heading);">
-            <a href="#hero-intro" class="sidebar-nav-link" style="padding: 0.5rem 0.75rem; border-radius: 0.375rem;">
-                <i class="fas fa-home w-5 mr-3"></i> Home
-            </a>
-            <a href="#tool-area" class="sidebar-nav-link" style="padding: 0.5rem 0.75rem; border-radius: 0.375rem;">
-                <i class="fas fa-tools w-5 mr-3"></i> Interactive Tool
-            </a>
-            <a href="#documentation" class="sidebar-nav-link" style="padding: 0.5rem 0.75rem; border-radius: 0.375rem;">
-                <i class="fas fa-book-open w-5 mr-3"></i> Documentation
-            </a>
+            
             <div style="padding: 1rem 0; font-size: 0.75rem; font-weight: bold; color: var(--text-body); text-transform: uppercase;">Tool Features</div>
-            <a href="#tool-area" data-tool-url="tokenizer.html" class="sidebar-tool-link" style="padding: 0.5rem 0.75rem; border-radius: 0.375rem;">
-                Tokenizer
+            
+            <a href="#tool-area" data-tool-url="tokenize.html" class="sidebar-tool-link" style="padding: 0.5rem 0.75rem; border-radius: 0.375rem;">
+                <i class="fas fa-microchip w-5 mr-3"></i> Tokenize (Debug)
             </a>
             <a href="#tool-area" data-tool-url="lint.html" class="sidebar-tool-link" style="padding: 0.5rem 0.75rem; border-radius: 0.375rem;">
-                Lint
+                <i class="fas fa-tasks w-5 mr-3"></i> Lint
             </a>
             <a href="#tool-area" data-tool-url="translate.html" class="sidebar-tool-link" style="padding: 0.5rem 0.75rem; border-radius: 0.375rem;">
-                Translate
+                <i class="fas fa-language w-5 mr-3"></i> Translate
             </a>
         </div>
         
@@ -193,36 +180,73 @@
     
     <div id="main-content">
         
-        <section id="hero-intro">
-            <div style="max-width: 64rem; padding: 0 1rem;">
-                <h1 id="hero-headline" style="margin-bottom: 1rem;">
-                    Search-Query Studio
-                </h1>
-                <p style="font-size: 1.25rem; color: var(--text-body); max-width: 42rem; margin: 0 auto 2rem;">
-                    The definitive in-browser tool for validating, tokenizing, and translating complex search queries for platforms like WoS, PubMed, and Scopus.
-                </p>
-                
-                <button id="launch-tool-cta">
-                    Access the Interactive Query Tool ↓
-                </button>
-            </div>
-        </section>
-
-        <div id="quick-access-ctas" style="display: none;">
-            <button data-tool-url="tokenizer.html" class="quick-cta-btn">
-                <i class="fas fa-microchip mr-1"></i> Tokenize
-            </button>
-            <button data-tool-url="lint.html" class="quick-cta-btn">
-                <i class="fas fa-tasks mr-1"></i> Lint
-            </button>
-            <button data-tool-url="translate.html" class="quick-cta-btn">
-                <i class="fas fa-language mr-1"></i> Translate
-            </button>
-        </div>
-
-
         <div id="interactive-tool-wrap">
             <div class="main-container">
+                
+                <section id="documentation" style="width: 100%; padding-top: 0; margin-top: 150px;">
+                    <h1 id="hero-headline" style="margin-bottom: 1rem;">
+                    Search-Query Studio
+                </h1>
+                    <p style="font-size: 1.25rem; color: var(--text-body); text-align: center; max-width: 42rem; margin: 0 auto 2rem;">
+                        The definitive in-browser tool for complex search query handling.
+                    </p>
+                    
+                    <h2 style="font-size: 1.5rem; font-weight: bold; text-align: center; width: 100%; margin-bottom: 1.5rem;">How the Studio Works</h2>
+                    
+                    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem;">
+                        
+                        <article class="doc-card">
+                            <i class="doc-card-icon fas fa-microchip"></i>
+                            <div>
+                                <h3 style="font-size: 1.25rem; font-weight: 600; margin-bottom: 0.25rem;">Tokenize (Debug)</h3>
+                                <p style="font-size: 0.875rem; color: var(--text-body);">
+                                    Breaks down your search query into fundamental tokens (fields, operators, terms) for inspection.
+                                </p>
+                            </div>
+                        </article>
+
+                        <article class="doc-card">
+                            <i class="doc-card-icon fas fa-tasks"></i>
+                            <div>
+                                <h3 style="font-size: 1.25rem; font-weight: 600; margin-bottom: 0.25rem;">Lint & Normalize</h3>
+                                <p style="font-size: 0.875rem; color: var(--text-body);">
+                                    Checks query structure against platform rules and provides a standardized output.
+                                </p>
+                            </div>
+                        </article>
+
+                        <article class="doc-card">
+                            <i class="doc-card-icon fas fa-language"></i>
+                            <div>
+                                <h3 style="font-size: 1.25rem; font-weight: 600; margin-bottom: 0.25rem;">Translate</h3>
+                                <p style="font-size: 0.875rem; color: var(--text-body);">
+                                    Translates the query between platforms (e.g., WoS to PubMed), handling syntax differences.
+                                </p>
+                            </div>
+                        </article>
+
+                    </div>
+                </section>
+
+                <div style="text-align: center; padding: 2rem 0;">
+                    <button id="launch-tool-cta">
+                        Start Interactive Session ↓
+                    </button>
+                </div>
+                
+                <div id="quick-access-ctas" style="display: grid; margin: 2rem auto; max-width: 42rem;">
+                    <button data-tool-url="tokenizer.html" class="quick-cta-btn">
+                        <i class="fas fa-microchip mr-1"></i> Tokenize
+                    </button>
+                    <button data-tool-url="lint.html" class="quick-cta-btn">
+                        <i class="fas fa-tasks mr-1"></i> Lint
+                    </button>
+                    <button data-tool-url="translate.html" class="quick-cta-btn">
+                        <i class="fas fa-language mr-1"></i> Translate
+                    </button>
+                </div>
+
+
                 <h2 id="tool-area" style="font-size: 1.875rem; font-weight: bold; text-align: center; width: 100%; margin-bottom: 1.5rem; padding-top: 1rem;">Interactive Query Tool</h2>
 
                 <div id="tool-area-content">
@@ -231,51 +255,16 @@
             </div>
         </div>
 
-        <section id="documentation" style="width: 100%; padding-top: 3rem;">
-            <div class="main-container">
-                <h2 style="font-size: 1.875rem; font-weight: bold; text-align: center; width: 100%; margin-bottom: 2.5rem;">How the Studio Works</h2>
-                
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem;">
-                    
-                    <article class="doc-card">
-                        <i class="doc-card-icon fas fa-microchip"></i>
-                        <div>
-                            <h3 style="font-size: 1.25rem; font-weight: 600; margin-bottom: 0.25rem;">Tokenize</h3>
-                            <p style="font-size: 0.875rem; color: var(--text-body);">
-                                The tokenizer breaks down your search query into fundamental components (tokens), such as fields (TI, AB), operators (AND, OR), and search terms.
-                            </p>
-                        </div>
-                    </article>
-
-                    <article class="doc-card">
-                        <i class="doc-card-icon fas fa-tasks"></i>
-                        <div>
-                            <h3 style="font-size: 1.25rem; font-weight: 600; margin-bottom: 0.25rem;">Lint & Normalize</h3>
-                            <p style="font-size: 0.875rem; color: var(--text-body);">
-                                The linter checks the query structure against the rules of the selected source platform, providing suggestions and a 'normalized' version of the query.
-                            </p>
-                        </div>
-                    </article>
-
-                    <article class="doc-card">
-                        <i class="doc-card-icon fas fa-language"></i>
-                        <div>
-                            <h3 style="font-size: 1.25rem; font-weight: 600; margin-bottom: 0.25rem;">Translate</h3>
-                            <p style="font-size: 0.875rem; color: var(--text-body);">
-                                Select a target platform and translate your query instantly, handling platform-specific differences in field codes, operators, and syntax.
-                            </p>
-                        </div>
-                    </article>
-
-                </div>
-            </div>
-        </section>
-        
         <footer style="font-size: 0.875rem; color: var(--text-body); text-align: center; padding: 1.5rem 0;">
-            search-query Studio © 2025
+            Search-Query Studio © 2025
         </footer>
     </div>
 
+    <script src="https://cdn.jsdelivr.net/pyodide/v0.26.2/full/pyodide.js"></script>
+    <script src="script.js"></script> 
+    <script src="tokenize.js"></script>
+    <script src="translate.js"></script>
+    
     <script>
         const DOM = {
             sidebar: document.getElementById('sidebar'),
@@ -287,7 +276,6 @@
             toolAreaAnchor: document.getElementById('tool-area'),
             toolIframe: document.getElementById('tool-iframe'),
             sidebarToolLinks: document.querySelectorAll('.sidebar-tool-link'),
-            sidebarNavLinks: document.querySelectorAll('.sidebar-nav-link'),
             quickCtaBtns: document.querySelectorAll('#quick-access-ctas button[data-tool-url]'),
         };
 
@@ -311,35 +299,41 @@
         }
 
         function loadToolIntoIframe(toolUrl) {
-            if (DOM.toolIframe.src !== toolUrl) {
-                DOM.toolIframe.src = toolUrl;
+            // NOTE: This ensures the iframe reloads even if the URL is the same (to reset Pyodide state)
+            const currentSrc = DOM.toolIframe.src.split('?')[0];
+            const newSrc = toolUrl + (toolUrl.includes('?') ? '&' : '?') + 't=' + new Date().getTime(); // Cache busting
+
+            if (currentSrc !== toolUrl) {
+                DOM.toolIframe.src = newSrc;
+            } else if (!currentSrc.includes('about:blank')) {
+                 // Force a reload to reset the Pyodide runtime if switching to the same tab
+                 DOM.toolIframe.contentWindow.location.reload(true);
             }
         }
         
         /* --- CTA LAUNCHER --- */
         
         function launchToolArea(initialToolUrl) {
+            // 1. Ensure the tool is visible
+            DOM.interactiveToolWrap.classList.remove('hidden');
+
+            // 2. Load the sp/ecified tool into the iframe
             loadToolIntoIframe(initialToolUrl);
 
+            // 3. Scroll smoothly to the tool anchor
             if (DOM.toolAreaAnchor) {
-                 DOM.toolAreaAnchor.scrollIntoView({ behavior: 'smooth' });
+                 DOM.toolAreaAnchor.scrollIntoView({ behavior: 'smooth', block: 'start' });
             }
         }
         
         /* --- IFRAME RESIZE LISTENER --- */
-
         function handleIframeResize(event) {
-            // Security Check: Only allow messages from the expected origin
             const expectedOrigin = 'https://geritwagner.github.io';
-            if (event.origin !== expectedOrigin) { 
-                return;
-            }
+            if (event.origin !== expectedOrigin) { return; }
             
             if (event.data.type === 'setHeight' && event.data.height) {
                 const newHeight = event.data.height;
                 const iframe = DOM.toolIframe;
-                
-                // Apply new height + a small buffer (20px)
                 iframe.style.height = `${newHeight + 20}px`;
             }
         }
@@ -351,9 +345,12 @@
             window.addEventListener('message', handleIframeResize, false);
             
             const initialToolUrl = BASE_PATH + 'tokenizer.html';
-            launchToolArea(initialToolUrl); 
+            
+            // --- Mobile Display Fix ---
+            // Hide the tool area initially on the host page.
+            DOM.interactiveToolWrap.classList.add('hidden');
 
-            // 1. Primary CTA click (Hero Section)
+            // 1. Primary CTA click (Hero Section): Launches the tool
             DOM.launchToolCta.addEventListener('click', (e) => {
                 e.preventDefault();
                 launchToolArea(initialToolUrl); 
@@ -362,7 +359,7 @@
             // 2. Mobile Menu Toggles
             DOM.menuToggle.addEventListener('click', () => toggleSidebar());
             DOM.backdrop.addEventListener('click', () => toggleSidebar(true));
-            document.getElementById('close-menu').addEventListener('click', () => toggleSidebar(true));
+            // Removed #close-menu listener as the button was removed from the HTML header.
 
             // 3. Sidebar and Quick CTA Navigation Handler
             const handleToolSwitch = (e) => {
@@ -371,8 +368,7 @@
                     const relativeUrl = link.getAttribute('data-tool-url');
                     const fullUrl = BASE_PATH + relativeUrl;
                     
-                    // Load new tool and scroll
-                    loadToolIntoIframe(fullUrl);
+                    // Launch new tool (handles loading and scrolling)
                     launchToolArea(fullUrl); 
                     
                     // Close sidebar if on mobile
@@ -382,7 +378,7 @@
                 }
             };
             
-            // Attach handler to both sets of links/buttons
+            // Attach handler to buttons/links
             DOM.sidebar.addEventListener('click', handleToolSwitch);
             DOM.quickCtaBtns.forEach(btn => btn.addEventListener('click', handleToolSwitch));
         });
