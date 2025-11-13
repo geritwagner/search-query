@@ -145,8 +145,8 @@
     </div>
     
     <div id="content-wrapper">
-        <header>
-            <h1>search-query tokenizer</h1>
+        <header style="display:grid; place-content:center; place-item:center;">
+            <h1>Search-Query Tokenizer</h1>
             <p>Paste a query, select a platform, and see the raw tokens from <code>tokenize()</code>.</p>
         </header>
 
@@ -235,6 +235,7 @@
             if (cleanMsg.includes('Done') || cleanMsg.includes('ready') || cleanMsg.includes('Ready')) {
                 // Done loading: Unlock viewport, fade out loader, show content
                 document.body.classList.remove('loading-active');
+                statusDisplay.innerText = 'Pyodide Loaded…'
                 loader.style.opacity = '0';
                 contentWrapper.style.opacity = '1';
 
