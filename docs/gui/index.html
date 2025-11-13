@@ -5,29 +5,33 @@
     <title>Search-Query Studio</title>
     <meta name="viewport" content="width=device-width,initial-scale=1" />
     
-    <script src="https://cdn.jsdelivr.net/pyodide/v0.26.2/full/pyodide.js"></script>
-
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
     
     <style>
         /* --- CSS VARIABLES --- */
         :root {
-    --primary: #4f46e5;         /* Indigo */
-            --primary-dark: #3f35c5;    /* Darker Indigo */
-            --primary-accent: #6366f1;  /* Lighter Accent Indigo */
-            --bg-base: #f9fafb;         /* Light Gray background */
-            --bg-base-lighter: #eef2ff; /* Very Light Indigo for Hero */
+            --primary: #4f46e5;
+            --primary-dark: #3f35c5;
+            --primary-accent: #6366f1;
+            --bg-base: #f9fafb;
+            --bg-base-lighter: #eef2ff;
             --bg-card: #ffffff;
-            --border-color: #e5e7eb;    /* Gray-200 */
-            --text-heading: #1f2937;    /* Dark Gray */
-            --text-body: #6b7280;       /* Medium Gray */
+            --border-color: #e5e7eb;
+            --text-heading: #1f2937;
+            --text-body: #6b7280;
             --font-stack: 'Inter', sans-serif;
             --font-display: 'Space Grotesk', sans-serif;
-            --sidebar-width: 280px;        }
+            --sidebar-width: 280px;
+        }
 
         /* --- Global Resets & Body --- */
         * { box-sizing: border-box; margin: 0; padding: 0; line-height: 1.5; }
-        body { font-family: var(--font-stack); background-color: var(--bg-base); color: var(--text-heading); min-height: 100vh; scroll-behavior: smooth; }
+        body { 
+            font-family: var(--font-stack); background-color: var(--bg-base); color: var(--text-heading); 
+            min-height: 100vh; scroll-behavior: smooth;
+            /* CRITICAL FIX: Ensure no unwanted horizontal scrolling */
+            overflow-x: hidden; 
+        }
         h1, h2, h3, h4 { color: var(--text-heading); margin: 0; }
         a { text-decoration: none; color: var(--primary); transition: color 0.2s; }
         a:hover { color: var(--primary-light); text-decoration: underline; }
@@ -60,15 +64,31 @@
             .main-container { padding: 0 1.5rem 2.5rem; } 
             #tool-iframe { height: 600px; }
             #quick-access-ctas { display: none !important; }
+
+            /* Show close button only on mobile (overridden for desktop here) */
+            #close-menu { display: none !important; }
         }
         
-        /* --- Hero Section --- */
-        #hero-intro { 
-            background: var(--bg-base-lighter); 
-            min-height: 80vh; display: flex; flex-direction: column; justify-content: center; align-items: center; 
-            text-align: center; padding: 4rem 1rem;
-            border-bottom: 3px solid var(--primary-accent);
+        /* --- Mobile Specific Styles --- */
+        #close-menu { /* Mobile X button */
+            display: block !important; 
         }
+        @media (min-width: 1024px) {
+            #close-menu { display: none !important; }
+        }
+
+
+        /* --- Hero Section (Now Documentation Header) --- */
+        #hero-headline { 
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 2.5rem; line-height: 1.1; font-weight: 700; margin-bottom: 0.5rem; 
+            background: linear-gradient(90deg, var(--text-heading), var(--primary), var(--primary-accent)); 
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent; 
+            background-size: 200% auto; animation: text-flow 4s linear infinite; 
+            letter-spacing: -1px; margin-top: 0; /* Resetting the extra margin from the previous step */
+        }
+        
+        /* --- CTA Buttons --- */
         #launch-tool-cta { 
             padding: 0.75rem 2rem; font-weight: bold; color: white; background-color: var(--primary); 
             border: none; border-radius: 9999px; box-shadow: 0 4px 10px rgba(79, 70, 229, 0.5); 
@@ -77,36 +97,18 @@
         }
         #launch-tool-cta:hover { background-color: var(--primary-dark); transform: scale(1.05); }
 
-        /* New Quick Access Buttons container (Mobile only) */
-        #quick-access-ctas {
+        /* --- Documentation Grid Fix (CRITICAL CHANGE) --- */
+        #documentation-grid {
             display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 10px;
-            padding: 1.5rem 1.5rem 0.5rem;
-            background: var(--bg-base);
-            width: 100%;
-            position: sticky;
-            top: 64px; 
-            z-index: 40;
-            border-bottom: 1px solid var(--border-color);
+            /* Enforce single column layout for all screens */
+            grid-template-columns: 1fr;
+            gap: 1.5rem;
         }
-        .quick-cta-btn {
-            background-color: var(--bg-card);
-            color: var(--primary);
-            border: 1px solid var(--primary);
-            padding: 8px 5px;
-            font-size: 0.75rem;
-            font-weight: 600;
-            border-radius: 0.5rem;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-            transition: all 0.2s;
+        @media (min-width: 1024px) {
+            /* If you want the old 3-column look on desktop, override here: */
+            /* #documentation-grid { grid-template-columns: repeat(3, 1fr); } */
+            #interactive-tool-wrap { margin-top: 0; }
         }
-        .quick-cta-btn:hover {
-            background-color: var(--primary);
-            color: white;
-            transform: translateY(-2px);
-        }
-
 
         /* --- Iframe Specific Styling --- */
         #tool-iframe { 
@@ -118,8 +120,7 @@
             transition: height 0.3s ease-out;
         }
 
-        /* --- Documentation --- */
-        #documentation h2 { margin-bottom: 1.5rem; }
+        /* --- Documentation Card Base --- */
         .doc-card { 
             display: flex; align-items: flex-start; gap: 1rem; padding: 1.5rem; border-radius: 0.5rem; background: var(--bg-card); box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
             border-left: 4px solid var(--primary-accent); 
@@ -129,17 +130,6 @@
         @keyframes text-flow {
             0% { background-position: 0% 50%; }
             100% { background-position: 100% 50%; }
-        }
-                  #hero-headline1 { 
-            font-family: var(--font-display); 
-            font-size: clamp(2.5rem, 5vw, 4rem); line-height: 1.1; font-weight: 700; margin-bottom: 1rem; 
-            background: linear-gradient(90deg, #374151, var(--primary), var(--primary-accent));
-            -webkit-background-clip: text; -webkit-text-fill-color: transparent; 
-            background-size: 200% auto; animation: text-flow 4s linear infinite; 
-            letter-spacing: -1px;
-            display:grid;
-            place-content: center;
-            margin-top: 50px;
         }
 
     </style>
@@ -189,15 +179,18 @@
             <div class="main-container">
                 
                 <section id="documentation" style="width: 100%; padding-top: 0;">
-                    <h1 id="hero-headline1" style="margin-bottom: 1rem;">
-                        Search-Query Studio
-                </h1>                    <p style="font-size: 1.25rem; color: var(--text-body); text-align: center; max-width: 42rem; margin: 0 auto 2rem;">
+                    
+                    <h1 id="hero-headline" style="margin-bottom: 0.5rem; color: var(--text-heading); text-align: center;">
+                        Search Query System Overview
+                    </h1>
+                    
+                    <p style="font-size: 1.25rem; color: var(--text-body); text-align: center; max-width: 42rem; margin: 0 auto 2rem;">
                         The definitive in-browser tool for complex search query handling.
                     </p>
                     
                     <h2 style="font-size: 1.5rem; font-weight: bold; text-align: center; width: 100%; margin-bottom: 1.5rem;">How the Studio Works</h2>
                     
-                    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem;">
+                    <div id="documentation-grid">
                         
                         <article class="doc-card">
                             <i class="doc-card-icon fas fa-microchip"></i>
@@ -238,18 +231,7 @@
                     </button>
                 </div>
                 
-                <div id="quick-access-ctas" style="display: grid; margin: 2rem auto; max-width: 42rem;">
-                    <button data-tool-url="tokenizer.html" class="quick-cta-btn">
-                        <i class="fas fa-microchip mr-1"></i> Tokenize
-                    </button>
-                    <button data-tool-url="lint.html" class="quick-cta-btn">
-                        <i class="fas fa-tasks mr-1"></i> Lint
-                    </button>
-                    <button data-tool-url="translate.html" class="quick-cta-btn">
-                        <i class="fas fa-language mr-1"></i> Translate
-                    </button>
-                </div>
-
+           
 
                 <h2 id="tool-area" style="font-size: 1.875rem; font-weight: bold; text-align: center; width: 100%; margin-bottom: 1.5rem; padding-top: 1rem;">Interactive Query Tool</h2>
 
@@ -303,7 +285,6 @@
         }
 
         function loadToolIntoIframe(toolUrl) {
-            // NOTE: We assume the external tool URL is correctly defined in the anchor tags.
             if (DOM.toolIframe.src !== toolUrl) {
                 DOM.toolIframe.src = toolUrl;
             }
@@ -343,34 +324,33 @@
             
             window.addEventListener('message', handleIframeResize, false);
             
+            const initialToolUrl = BASE_PATH + 'tokenizer.html';
+            
             // --- LocalStorage Check and Initial Launch ---
             const storedUrl = localStorage.getItem('toolToLaunch');
-            const initialToolUrl = storedUrl || (BASE_PATH + 'tokenizer.html');
             
-            // Clear storage immediately after retrieval
-            localStorage.removeItem('toolToLaunch');
-
-            // If a URL was stored (meaning user clicked a sidebar link), launch the tool area
+            // 1. If a URL was stored (meaning user clicked a sidebar link), launch the tool area
             if (storedUrl) {
-                 // Launch the tool corresponding to the stored URL
-                 launchToolArea(initialToolUrl);
+                 // Clear storage immediately after retrieval
+                 localStorage.removeItem('toolToLaunch');
+                 launchToolArea(storedUrl);
             } else {
                  // Load default tokenizer into iframe, but keep the tool area hidden
                  loadToolIntoIframe(initialToolUrl);
             }
             
-            // 1. Primary CTA click (Hero Section): Launches the default tool
+            // 2. Primary CTA click (Hero Section): Launches the default tool
             DOM.launchToolCta.addEventListener('click', (e) => {
                 e.preventDefault();
-                launchToolArea(BASE_PATH + 'tokenizer.html'); 
+                launchToolArea(initialToolUrl); 
             });
 
-            // 2. Mobile Menu Toggles
+            // 3. Mobile Menu Toggles
             DOM.menuToggle.addEventListener('click', () => toggleSidebar());
             DOM.backdrop.addEventListener('click', () => toggleSidebar(true));
             document.getElementById('close-menu').addEventListener('click', () => toggleSidebar(true));
 
-            // 3. Sidebar and Quick CTA Navigation Handler
+            // 4. Sidebar and Quick CTA Navigation Handler
             const handleToolSwitch = (e) => {
                 const link = e.target.closest('[data-tool-url]');
                 if (link) {
