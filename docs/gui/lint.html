@@ -121,7 +121,7 @@
     </div>
     
     <div id="content-wrapper">
-        <header>
+        <header style="display:grid; place-content:center; place-item:center;">
             <h1>search-query linter</h1>
             <p>Paste a query, select a platform, and run the linter in your browser.</p>
         </header>
@@ -204,6 +204,7 @@
                 // Done loading: Unlock viewport, fade out loader, show content
                 document.body.classList.remove('loading-active');
                 loader.style.opacity = '0';
+                statusDisplay.innerText = 'Pyodide Loaded…'
                 contentWrapper.style.opacity = '1';
 
                 setTimeout(() => {
