@@ -5,16 +5,14 @@
     <title>Search-Query Studio</title>
     <meta name="viewport" content="width=device-width,initial-scale=1" />
     
+    <script src="https://cdn.jsdelivr.net/pyodide/v0.26.2/full/pyodide.js"></script>
+
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
     
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@700&display=swap" rel="stylesheet">
-
     <style>
         /* --- CSS VARIABLES --- */
         :root {
-            --primary: #4f46e5;         /* Indigo */
+    --primary: #4f46e5;         /* Indigo */
             --primary-dark: #3f35c5;    /* Darker Indigo */
             --primary-accent: #6366f1;  /* Lighter Accent Indigo */
             --bg-base: #f9fafb;         /* Light Gray background */
@@ -25,16 +23,11 @@
             --text-body: #6b7280;       /* Medium Gray */
             --font-stack: 'Inter', sans-serif;
             --font-display: 'Space Grotesk', sans-serif;
-            --sidebar-width: 280px;
-        }
-
+            --sidebar-width: 280px;        }
 
         /* --- Global Resets & Body --- */
         * { box-sizing: border-box; margin: 0; padding: 0; line-height: 1.5; }
-        body { 
-            font-family: var(--font-stack); background-color: var(--bg-base); color: var(--text-heading); 
-            min-height: 100vh; scroll-behavior: smooth;
-        }
+        body { font-family: var(--font-stack); background-color: var(--bg-base); color: var(--text-heading); min-height: 100vh; scroll-behavior: smooth; }
         h1, h2, h3, h4 { color: var(--text-heading); margin: 0; }
         a { text-decoration: none; color: var(--primary); transition: color 0.2s; }
         a:hover { color: var(--primary-light); text-decoration: underline; }
@@ -44,11 +37,7 @@
         body::-webkit-scrollbar-thumb { background-color: var(--primary-accent); border-radius: 10px; }
 
         /* --- Layout & Responsiveness --- */
-        #mobile-header { 
-            position: fixed; top: 0; left: 0; width: 100%; height: 64px; 
-            background-color: var(--bg-card); border-bottom: 1px solid var(--border-color); 
-            z-index: 50; display: flex; align-items: center; padding: 0 1rem; box-shadow: 0 2px 8px rgba(0,0,0,0.1); 
-        }
+        #mobile-header { position: fixed; top: 0; left: 0; width: 100%; height: 64px; background-color: var(--bg-card); border-bottom: 1px solid var(--border-color); z-index: 50; display: flex; align-items: center; padding: 0 1rem; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
         #mobile-header h1 { font-size: 1.25rem; font-weight: bold; margin-left: 1rem; }
         #menu-toggle { border: none; background: none; color: var(--text-heading); cursor: pointer; padding: 0.5rem; }
 
@@ -73,7 +62,13 @@
             #quick-access-ctas { display: none !important; }
         }
         
-        /* --- Hero Section & CTAs --- */
+        /* --- Hero Section --- */
+        #hero-intro { 
+            background: var(--bg-base-lighter); 
+            min-height: 80vh; display: flex; flex-direction: column; justify-content: center; align-items: center; 
+            text-align: center; padding: 4rem 1rem;
+            border-bottom: 3px solid var(--primary-accent);
+        }
         #launch-tool-cta { 
             padding: 0.75rem 2rem; font-weight: bold; color: white; background-color: var(--primary); 
             border: none; border-radius: 9999px; box-shadow: 0 4px 10px rgba(79, 70, 229, 0.5); 
@@ -82,7 +77,7 @@
         }
         #launch-tool-cta:hover { background-color: var(--primary-dark); transform: scale(1.05); }
 
-        /* Quick Access Buttons container (Mobile only) */
+        /* New Quick Access Buttons container (Mobile only) */
         #quick-access-ctas {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
@@ -112,6 +107,7 @@
             transform: translateY(-2px);
         }
 
+
         /* --- Iframe Specific Styling --- */
         #tool-iframe { 
             width: 100%; 
@@ -129,7 +125,12 @@
             border-left: 4px solid var(--primary-accent); 
         }
         .doc-card-icon { color: var(--primary); font-size: 2rem; flex-shrink: 0; padding-top: 0.25rem; }
-          #hero-headline { 
+
+        @keyframes text-flow {
+            0% { background-position: 0% 50%; }
+            100% { background-position: 100% 50%; }
+        }
+                  #hero-headline1 { 
             font-family: var(--font-display); 
             font-size: clamp(2.5rem, 5vw, 4rem); line-height: 1.1; font-weight: 700; margin-bottom: 1rem; 
             background: linear-gradient(90deg, #374151, var(--primary), var(--primary-accent));
@@ -140,6 +141,7 @@
             place-content: center;
             margin-top: 50px;
         }
+
     </style>
 </head>
 <body>
@@ -156,7 +158,10 @@
     <nav id="sidebar">
         <header style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 1rem; border-bottom: 1px solid var(--border-color);">
             <h2 style="font-size: 1.5rem; font-weight: bold;">Studio Menu</h2>
-            </header>
+            <button id="close-menu" style="border: none; background: none; color: var(--text-heading); cursor: pointer; padding: 0.5rem;" class="lg:hidden">
+                <i class="fas fa-times text-xl"></i>
+            </button>
+        </header>
         
         <div style="display: flex; flex-direction: column; margin-top: 1rem; color: var(--text-heading);">
             
@@ -183,11 +188,10 @@
         <div id="interactive-tool-wrap">
             <div class="main-container">
                 
-                <section id="documentation" style="width: 100%; padding-top: 0; margin-top: 150px;">
-                    <h1 id="hero-headline" style="margin-bottom: 1rem;">
-                    Search-Query Studio
-                </h1>
-                    <p style="font-size: 1.25rem; color: var(--text-body); text-align: center; max-width: 42rem; margin: 0 auto 2rem;">
+                <section id="documentation" style="width: 100%; padding-top: 0;">
+                    <h1 id="hero-headline1" style="margin-bottom: 1rem;">
+                        Search-Query Studio
+                </h1>                    <p style="font-size: 1.25rem; color: var(--text-body); text-align: center; max-width: 42rem; margin: 0 auto 2rem;">
                         The definitive in-browser tool for complex search query handling.
                     </p>
                     
@@ -263,7 +267,9 @@
     <script src="https://cdn.jsdelivr.net/pyodide/v0.26.2/full/pyodide.js"></script>
     <script src="script.js"></script> 
     <script src="tokenize.js"></script>
-    <script src="translate.js"></script>    <script>
+    <script src="translate.js"></script>
+    
+    <script>
         const DOM = {
             sidebar: document.getElementById('sidebar'),
             menuToggle: document.getElementById('menu-toggle'),
