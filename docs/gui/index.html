@@ -264,8 +264,7 @@
     <script src="script.js"></script> 
     <script src="tokenize.js"></script>
     <script src="translate.js"></script>
-    
-    <script>
+        <script>
         const DOM = {
             sidebar: document.getElementById('sidebar'),
             menuToggle: document.getElementById('menu-toggle'),
@@ -297,16 +296,18 @@
                 document.body.style.overflow = '';
             }
         }
-
+        DOM.toolIframe.style.display = 'none';
         function loadToolIntoIframe(toolUrl) {
             // NOTE: This ensures the iframe reloads even if the URL is the same (to reset Pyodide state)
             const currentSrc = DOM.toolIframe.src.split('?')[0];
             const newSrc = toolUrl + (toolUrl.includes('?') ? '&' : '?') + 't=' + new Date().getTime(); // Cache busting
 
             if (currentSrc !== toolUrl) {
+                DOM.toolIframe.style.visibility = 'visible';
                 DOM.toolIframe.src = newSrc;
             } else if (!currentSrc.includes('about:blank')) {
-                 // Force a reload to reset the Pyodide runtime if switching to the same tab
+                 
+                // Force a reload to reset the Pyodide runtime if switching to the same tab
                  DOM.toolIframe.contentWindow.location.reload(true);
             }
         }
@@ -353,6 +354,7 @@
             // 1. Primary CTA click (Hero Section): Launches the tool
             DOM.launchToolCta.addEventListener('click', (e) => {
                 e.preventDefault();
+                DOM.toolIframe.style.display = 'block';
                 launchToolArea(initialToolUrl); 
             });
 
