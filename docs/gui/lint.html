@@ -126,9 +126,9 @@
             <p>Paste a query, select a platform, and run the linter in your browser.</p>
         </header>
 
-        <div id="status">Loading Pyodide…</div> 
+        <div id="status">Loading Search Query…</div> 
         
-        <div id="status-display">Loading Pyodide…</div>
+        <div id="status-display">Loading Search Query…</div>
 
         <div class="main-content-card">
             <label for="query">Query</label>
@@ -204,7 +204,7 @@
                 // Done loading: Unlock viewport, fade out loader, show content
                 document.body.classList.remove('loading-active');
                 loader.style.opacity = '0';
-                statusDisplay.innerText = 'Pyodide Loaded…'
+                statusDisplay.innerText = 'Search Query loaded…'
                 contentWrapper.style.opacity = '1';
 
                 setTimeout(() => {
