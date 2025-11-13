@@ -10,13 +10,15 @@
     <style>
         /* --- CSS VARIABLES --- */
         :root {
-            --primary: #4f46e5;
-            --primary-light: #818cf8;
-            --bg-base: #f9fafb;
+            --primary: #4f46e5;         /* Indigo */
+            --primary-dark: #3f35c5;    /* Darker Indigo */
+            --primary-accent: #6366f1;  /* Lighter Accent Indigo */
+            --bg-base: #f9fafb;         /* Light Gray background */
+            --bg-base-lighter: #eef2ff; /* Very Light Indigo for Hero */
             --bg-card: #ffffff;
-            --border-color: #e5e7eb;
-            --text-heading: #1f2937;
-            --text-body: #6b7280;
+            --border-color: #e5e7eb;    /* Gray-200 */
+            --text-heading: #1f2937;    /* Dark Gray */
+            --text-body: #6b7280;       /* Medium Gray */
             --font-stack: 'Inter', sans-serif;
             --font-display: 'Space Grotesk', sans-serif;
             --sidebar-width: 280px;
@@ -27,17 +29,27 @@
         body { font-family: var(--font-stack); background-color: var(--bg-base); color: var(--text-heading); min-height: 100vh; scroll-behavior: smooth; }
         h1, h2, h3, h4 { color: var(--text-heading); margin: 0; }
         a { text-decoration: none; color: var(--primary); transition: color 0.2s; }
-        a:hover { color: var(--primary-light); text-decoration: underline; }
+        a:hover { color: var(--primary-dark); text-decoration: underline; }
+
+        /* --- Custom Scrollbar for better UX --- */
+        body::-webkit-scrollbar { width: 8px; }
+        body::-webkit-scrollbar-thumb { background-color: var(--primary-accent); border-radius: 10px; }
 
         /* --- Layout & Responsiveness --- */
-        #mobile-header { position: fixed; top: 0; left: 0; width: 100%; height: 64px; background-color: var(--bg-card); border-bottom: 1px solid var(--border-color); z-index: 50; display: flex; align-items: center; padding: 0 1rem; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+        #mobile-header { 
+            position: fixed; top: 0; left: 0; width: 100%; height: 64px; 
+            background-color: var(--bg-card); 
+            background-image: linear-gradient(90deg, var(--bg-card), #f5f5ff); /* Subtle header gradient */
+            border-bottom: 1px solid var(--border-color); z-index: 50; display: flex; align-items: center; 
+            padding: 0 1rem; box-shadow: 0 2px 8px rgba(0,0,0,0.1); 
+        }
         #mobile-header h1 { font-size: 1.25rem; font-weight: bold; margin-left: 1rem; }
         #menu-toggle, #close-menu { border: none; background: none; color: var(--text-heading); cursor: pointer; padding: 0.5rem; }
 
         #sidebar { 
             position: fixed; top: 0; left: 0; height: 100vh; width: var(--sidebar-width); background-color: var(--bg-card); 
             border-right: 1px solid var(--border-color); z-index: 60; transform: translateX(-100%); 
-            transition: transform 0.3s ease-out; box-shadow: 4px 0 10px rgba(0, 0, 0, 0.1); 
+            transition: transform 0.3s ease-out; box-shadow: 4px 0 15px rgba(0, 0, 0, 0.2); 
             padding: 1.5rem 1rem; overflow-y: auto; display: flex; flex-direction: column; 
         }
         #sidebar.open { transform: translateX(0); }
@@ -51,18 +63,62 @@
             #sidebar { transform: translateX(0); width: var(--sidebar-width); position: fixed; padding-top: 2rem; }
             #main-content { padding-left: var(--sidebar-width); padding-top: 2rem; }
             .main-container { padding: 0 1.5rem 2.5rem; } 
-            #tool-iframe { height: 600px; } /* Initial fixed height for desktop frame */
+            #tool-iframe { height: 600px; }
+            #quick-access-ctas { display: none !important; } /* Hide mobile CTAs on desktop */
         }
         
-        /* --- Hero Section & CTA --- */
-        #hero-intro { background: #eef2ff; min-height: 80vh; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; padding: 4rem 1rem; }
-        #hero-headline { font-family: var(--font-display); font-size: clamp(2.5rem, 5vw, 4rem); line-height: 1.1; font-weight: 700; margin-bottom: 1rem; }
+        /* --- Hero Section --- */
+        #hero-intro { 
+            background: var(--bg-base-lighter); 
+            min-height: 80vh; display: flex; flex-direction: column; justify-content: center; align-items: center; 
+            text-align: center; padding: 4rem 1rem;
+            border-bottom: 3px solid var(--primary-accent); /* Visual break */
+        }
+        #hero-headline { 
+            font-family: var(--font-display); 
+            font-size: clamp(2.5rem, 5vw, 4rem); line-height: 1.1; font-weight: 700; margin-bottom: 1rem; 
+            background: linear-gradient(90deg, #374151, var(--primary), var(--primary-accent));
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent; 
+            background-size: 200% auto; animation: text-flow 4s linear infinite; 
+            letter-spacing: -1px;
+        }
         #launch-tool-cta { 
             padding: 0.75rem 2rem; font-weight: bold; color: white; background-color: var(--primary); 
-            border: none; border-radius: 9999px; box-shadow: 0 4px 6px rgba(79, 70, 229, 0.4); 
+            border: none; border-radius: 9999px; box-shadow: 0 4px 10px rgba(79, 70, 229, 0.5); 
             cursor: pointer; transition: background-color 0.2s, transform 0.2s; font-size: 1.125rem; 
         }
-        #launch-tool-cta:hover { background-color: #3f35c5; transform: scale(1.05); }
+        #launch-tool-cta:hover { background-color: var(--primary-dark); transform: scale(1.05); }
+
+        /* New Quick Access Buttons container (Mobile only) */
+        #quick-access-ctas {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            padding: 1.5rem 1.5rem 0.5rem;
+            background: var(--bg-base);
+            width: 100%;
+            position: sticky;
+            top: 64px; 
+            z-index: 40;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .quick-cta-btn {
+            background-color: var(--bg-card);
+            color: var(--primary);
+            border: 1px solid var(--primary);
+            padding: 8px 5px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            border-radius: 0.5rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            transition: all 0.2s;
+        }
+        .quick-cta-btn:hover {
+            background-color: var(--primary);
+            color: white;
+            transform: translateY(-2px);
+        }
+
 
         /* --- Iframe Specific Styling --- */
         #tool-iframe { 
@@ -75,10 +131,17 @@
         }
 
         /* --- Documentation --- */
+        #documentation h2 { margin-bottom: 1.5rem; }
         .doc-card { 
-            display: flex; align-items: flex-start; gap: 1rem; padding: 1.5rem; border-radius: 0.5rem; background: var(--bg-card); box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+            display: flex; align-items: flex-start; gap: 1rem; padding: 1.5rem; border-radius: 0.5rem; background: var(--bg-card); box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+            border-left: 4px solid var(--primary-accent); /* Feature marker */
         }
         .doc-card-icon { color: var(--primary); font-size: 2rem; flex-shrink: 0; padding-top: 0.25rem; }
+
+        @keyframes text-flow {
+            0% { background-position: 0% 50%; }
+            100% { background-position: 100% 50%; }
+        }
 
     </style>
 </head>
@@ -96,7 +159,7 @@
     <nav id="sidebar">
         <header style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 1rem; border-bottom: 1px solid var(--border-color);">
             <h2 style="font-size: 1.5rem; font-weight: bold;">Studio Menu</h2>
-            <button id="close-menu" style="display: none;" class="lg:hidden">
+            <button id="close-menu" style="border: none; background: none; color: var(--text-heading); cursor: pointer; padding: 0.5rem;" class="lg:hidden">
                 <i class="fas fa-times text-xl"></i>
             </button>
         </header>
@@ -144,6 +207,19 @@
                 </button>
             </div>
         </section>
+
+        <div id="quick-access-ctas" style="display: none;">
+            <button data-tool-url="tokenizer.html" class="quick-cta-btn">
+                <i class="fas fa-microchip mr-1"></i> Tokenize
+            </button>
+            <button data-tool-url="lint.html" class="quick-cta-btn">
+                <i class="fas fa-tasks mr-1"></i> Lint
+            </button>
+            <button data-tool-url="translate.html" class="quick-cta-btn">
+                <i class="fas fa-language mr-1"></i> Translate
+            </button>
+        </div>
+
 
         <div id="interactive-tool-wrap">
             <div class="main-container">
@@ -211,12 +287,13 @@
             toolAreaAnchor: document.getElementById('tool-area'),
             toolIframe: document.getElementById('tool-iframe'),
             sidebarToolLinks: document.querySelectorAll('.sidebar-tool-link'),
-            sidebarNavLinks: document.querySelectorAll('.sidebar-nav-link')
+            sidebarNavLinks: document.querySelectorAll('.sidebar-nav-link'),
+            quickCtaBtns: document.querySelectorAll('#quick-access-ctas button[data-tool-url]'),
         };
 
         const BASE_PATH = 'https://geritwagner.github.io/search-query/gui/'; 
         
-        // --- UI/VISUAL CONTROLS ---
+        /* --- UI/VISUAL CONTROLS --- */
 
         function toggleSidebar(forceClose = false) {
             const isOpen = DOM.sidebar.classList.contains('open');
@@ -234,28 +311,25 @@
         }
 
         function loadToolIntoIframe(toolUrl) {
-            // NOTE: We assume the external tool URL is correctly defined in the anchor tags.
             if (DOM.toolIframe.src !== toolUrl) {
                 DOM.toolIframe.src = toolUrl;
             }
         }
         
-        // --- CTA LAUNCHER ---
+        /* --- CTA LAUNCHER --- */
         
         function launchToolArea(initialToolUrl) {
-            // 1. Load the initial tool (e.g., tokenize.html)
             loadToolIntoIframe(initialToolUrl);
 
-            // 2. Scroll smoothly to the tool anchor
             if (DOM.toolAreaAnchor) {
                  DOM.toolAreaAnchor.scrollIntoView({ behavior: 'smooth' });
             }
         }
         
-        // --- IFRAME RESIZE LISTENER ---
+        /* --- IFRAME RESIZE LISTENER --- */
 
         function handleIframeResize(event) {
-            // Security Check: Only allow messages from the expected origin (assumed GitHub Pages path)
+            // Security Check: Only allow messages from the expected origin
             const expectedOrigin = 'https://geritwagner.github.io';
             if (event.origin !== expectedOrigin) { 
                 return;
@@ -270,46 +344,47 @@
             }
         }
         
-        // --- EVENT LISTENERS ---
+        /* --- EVENT LISTENERS --- */
 
         document.addEventListener('DOMContentLoaded', () => {
             
-            // 1. Cross-Origin Resizing Setup (Listener for messages from the iframe)
             window.addEventListener('message', handleIframeResize, false);
             
-            // 2. Initialize: Load Tokenize by default 
             const initialToolUrl = BASE_PATH + 'tokenizer.html';
-            launchToolArea(initialToolUrl); // Load and scroll immediately on DOMContentLoaded
+            launchToolArea(initialToolUrl); 
 
-            // 3. CTA Button click: Ensures the tool is visible and scrolls down
+            // 1. Primary CTA click (Hero Section)
             DOM.launchToolCta.addEventListener('click', (e) => {
                 e.preventDefault();
                 launchToolArea(initialToolUrl); 
             });
 
-            // 4. Mobile Menu Toggles
+            // 2. Mobile Menu Toggles
             DOM.menuToggle.addEventListener('click', () => toggleSidebar());
             DOM.backdrop.addEventListener('click', () => toggleSidebar(true));
             document.getElementById('close-menu').addEventListener('click', () => toggleSidebar(true));
 
-            // 5. Sidebar Navigation/Tool Switch Handler (Loads new content into iframe)
-            DOM.sidebar.addEventListener('click', (e) => {
-                const toolLink = e.target.closest('[data-tool-url]');
-                
-                if (toolLink) {
-                    const relativeUrl = toolLink.getAttribute('data-tool-url');
+            // 3. Sidebar and Quick CTA Navigation Handler
+            const handleToolSwitch = (e) => {
+                const link = e.target.closest('[data-tool-url]');
+                if (link) {
+                    const relativeUrl = link.getAttribute('data-tool-url');
                     const fullUrl = BASE_PATH + relativeUrl;
                     
                     // Load new tool and scroll
                     loadToolIntoIframe(fullUrl);
                     launchToolArea(fullUrl); 
+                    
+                    // Close sidebar if on mobile
+                    if (window.innerWidth < 1024) {
+                        setTimeout(() => toggleSidebar(true), 200);
+                    }
                 }
-
-                // Close sidebar after any link click on mobile
-                if (window.innerWidth < 1024 && e.target.closest('a')) {
-                    setTimeout(() => toggleSidebar(true), 200);
-                }
-            });
+            };
+            
+            // Attach handler to both sets of links/buttons
+            DOM.sidebar.addEventListener('click', handleToolSwitch);
+            DOM.quickCtaBtns.forEach(btn => btn.addEventListener('click', handleToolSwitch));
         });
     </script>
 </body>
