@@ -263,8 +263,7 @@
     <script src="https://cdn.jsdelivr.net/pyodide/v0.26.2/full/pyodide.js"></script>
     <script src="script.js"></script> 
     <script src="tokenize.js"></script>
-    <script src="translate.js"></script>
-        <script>
+    <script src="translate.js"></script>    <script>
         const DOM = {
             sidebar: document.getElementById('sidebar'),
             menuToggle: document.getElementById('menu-toggle'),
@@ -296,19 +295,11 @@
                 document.body.style.overflow = '';
             }
         }
-        DOM.toolIframe.style.display = 'none';
-        function loadToolIntoIframe(toolUrl) {
-            // NOTE: This ensures the iframe reloads even if the URL is the same (to reset Pyodide state)
-            const currentSrc = DOM.toolIframe.src.split('?')[0];
-            const newSrc = toolUrl + (toolUrl.includes('?') ? '&' : '?') + 't=' + new Date().getTime(); // Cache busting
 
-            if (currentSrc !== toolUrl) {
-                DOM.toolIframe.style.visibility = 'visible';
-                DOM.toolIframe.src = newSrc;
-            } else if (!currentSrc.includes('about:blank')) {
-                 
-                // Force a reload to reset the Pyodide runtime if switching to the same tab
-                 DOM.toolIframe.contentWindow.location.reload(true);
+        function loadToolIntoIframe(toolUrl) {
+            // NOTE: We assume the external tool URL is correctly defined in the anchor tags.
+            if (DOM.toolIframe.src !== toolUrl) {
+                DOM.toolIframe.src = toolUrl;
             }
         }
         
@@ -318,7 +309,7 @@
             // 1. Ensure the tool is visible
             DOM.interactiveToolWrap.classList.remove('hidden');
 
-            // 2. Load the sp/ecified tool into the iframe
+            // 2. Load the specified tool into the iframe
             loadToolIntoIframe(initialToolUrl);
 
             // 3. Scroll smoothly to the tool anchor
@@ -328,6 +319,7 @@
         }
         
         /* --- IFRAME RESIZE LISTENER --- */
+
         function handleIframeResize(event) {
             const expectedOrigin = 'https://geritwagner.github.io';
             if (event.origin !== expectedOrigin) { return; }
@@ -345,38 +337,46 @@
             
             window.addEventListener('message', handleIframeResize, false);
             
-            const initialToolUrl = BASE_PATH + 'tokenizer.html';
+            // --- LocalStorage Check and Initial Launch ---
+            const storedUrl = localStorage.getItem('toolToLaunch');
+            const initialToolUrl = storedUrl || (BASE_PATH + 'tokenizer.html');
             
-            // --- Mobile Display Fix ---
-            // Hide the tool area initially on the host page.
-            DOM.interactiveToolWrap.classList.add('hidden');
+            // Clear storage immediately after retrieval
+            localStorage.removeItem('toolToLaunch');
 
-            // 1. Primary CTA click (Hero Section): Launches the tool
+            // If a URL was stored (meaning user clicked a sidebar link), launch the tool area
+            if (storedUrl) {
+                 // Launch the tool corresponding to the stored URL
+                 launchToolArea(initialToolUrl);
+            } else {
+                 // Load default tokenizer into iframe, but keep the tool area hidden
+                 loadToolIntoIframe(initialToolUrl);
+            }
+            
+            // 1. Primary CTA click (Hero Section): Launches the default tool
             DOM.launchToolCta.addEventListener('click', (e) => {
                 e.preventDefault();
-                DOM.toolIframe.style.display = 'block';
-                launchToolArea(initialToolUrl); 
+                launchToolArea(BASE_PATH + 'tokenizer.html'); 
             });
 
             // 2. Mobile Menu Toggles
             DOM.menuToggle.addEventListener('click', () => toggleSidebar());
             DOM.backdrop.addEventListener('click', () => toggleSidebar(true));
-            // Removed #close-menu listener as the button was removed from the HTML header.
+            document.getElementById('close-menu').addEventListener('click', () => toggleSidebar(true));
 
             // 3. Sidebar and Quick CTA Navigation Handler
             const handleToolSwitch = (e) => {
                 const link = e.target.closest('[data-tool-url]');
                 if (link) {
+                    e.preventDefault(); // Prevent immediate hash scroll until reload occurs
                     const relativeUrl = link.getAttribute('data-tool-url');
                     const fullUrl = BASE_PATH + relativeUrl;
                     
-                    // Launch new tool (handles loading and scrolling)
-                    launchToolArea(fullUrl); 
+                    // 1. Save target URL to localStorage
+                    localStorage.setItem('toolToLaunch', fullUrl);
                     
-                    // Close sidebar if on mobile
-                    if (window.innerWidth < 1024) {
-                        setTimeout(() => toggleSidebar(true), 200);
-                    }
+                    // 2. Force page reload to ensure Pyodide restarts cleanly
+                    window.location.reload(); 
                 }
             };
             
