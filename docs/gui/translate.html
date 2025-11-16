@@ -201,6 +201,15 @@
         const contentWrapper = document.getElementById('content-wrapper');
         const statusDisplay = document.getElementById('status-display');
 
+
+        function appendModule(){
+            const statusText = document.getElementById('status');
+            loadingText.innerText = statusText.innerText;
+            if(statusText.innerText.includes("Pyodide ready.")){
+                loder.style.display = 'none';
+            }
+        }
+        setInterval(appendModule,100);
         // --- Cross-Origin Height Communication ---
         function sendHeight() {
             // Only send height if the loader is not active (i.e., content is visible)
