@@ -192,6 +192,10 @@
     border-radius: 4px;
     margin-top: 4px;
 }
+.lint-separator {
+    border-top: 1px solid #e5e7eb;
+    margin: 8px 0;
+}
 
 
     </style>
@@ -355,10 +359,8 @@ function renderLintMessages(messages) {
         return;
     }
     messages.forEach((msg, index) => {
-    // Container for one message
         const container = document.createElement("div");
         container.className = "lint-item";
-        container.dataset.index = index + 1; // optional numbering
     
         // Title
         const titleEl = document.createElement("div");
@@ -366,7 +368,7 @@ function renderLintMessages(messages) {
         titleEl.textContent = `${index + 1}. ${msg.icon || "⚠️"} ${msg.rule_id}`;
         container.appendChild(titleEl);
     
-        // Message/detail
+        // Message / detail
         const messageEl = document.createElement("div");
         messageEl.className = "lint-message";
         messageEl.innerHTML = convertAnsiToHtml(escapeHtml(msg.message));
@@ -378,6 +380,11 @@ function renderLintMessages(messages) {
             queryBlock.className = "lint-query";
             queryBlock.textContent = msg.query;
             container.appendChild(queryBlock);
+    
+            // Add a separator line after query
+            const separator = document.createElement("div");
+            separator.className = "lint-separator";
+            container.appendChild(separator);
         }
     
         lintView.appendChild(container);
