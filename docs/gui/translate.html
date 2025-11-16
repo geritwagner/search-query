@@ -222,6 +222,7 @@
             if (statusDiv) {
                 // If Pyodide outputs complex status (which includes ANSI codes), write to hidden div
                 statusDiv.textContent = msg; 
+                alert(msg)
             }
             console.log("Pyodide Hook:", msg); 
         };
@@ -229,6 +230,7 @@
         window.appendStatus = function(msg) {
             // 1. Update the visual status text
             const cleanMsg = msg.replace(/\u001b\[.*?m/g, ''); 
+            loadingText.innerText = document.getElementById('status')
             if (loadingText) loadingText.textContent = cleanMsg;
 
             // 2. Control the visual transition state and viewport lock
