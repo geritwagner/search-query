@@ -289,6 +289,128 @@
             const observer = new MutationObserver(sendHeight);
             observer.observe(document.body, { attributes: true, childList: true, subtree: true });
         });
+        (async () => {
+    // --- Load Pyodide ---
+    const pyodide = await loadPyodide({
+        stdout: msg => console.log(msg),
+        stderr: msg => console.error(msg)
+    });
+
+    await pyodide.loadPackage("micropip");
+    const micropip = pyodide.pyimport("micropip");
+
+    // install the linter wheel
+    await micropip.install("https://files.pythonhosted.org/packages/50/43/5f6b2e8d83aa1e8324f47b24bf7d44dd7c60dd07fe6b5c72e3568ea6e0b0/search_query_linter-0.1.1-py3-none-any.whl");
+
+    const lintBtn = document.getElementById("btn-lint");
+    const queryInput = document.getElementById("query");
+    const platformInput = document.getElementById("platform");
+    const output = document.getElementById("output");
+    const lintView = document.getElementById("lint-view");
+    const messagesTitle = document.getElementById("messages-title");
+
+    lintBtn.disabled = false;
+
+    function escapeHtml(str) {
+        return str
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;");
+    }
+
+    function convertAnsiToHtml(text) {
+        return text
+            .replace(/\x1b\[31m/g, '<span class="ansi-red">')
+            .replace(/\x1b\[33m/g, '<span class="ansi-yellow">')
+            .replace(/\x1b\[0m/g, '</span>');
+    }
+
+    function renderLintMessages(messages) {
+        lintView.innerHTML = "";
+
+        messages.forEach(msg => {
+            const card = document.createElement("div");
+            card.className = "lint-card";
+
+            const titleEl = document.createElement("div");
+            titleEl.className = "lint-title";
+            titleEl.innerHTML = `${msg.icon} ${msg.rule_id}`;
+
+            const messageEl = document.createElement("div");
+            messageEl.innerHTML = convertAnsiToHtml(escapeHtml(msg.message));
+
+            card.appendChild(titleEl);
+            card.appendChild(messageEl);
+
+            if (msg.query) {
+                const queryBlock = document.createElement("pre");
+                queryBlock.className = "lint-query";
+                queryBlock.textContent = msg.query;
+                card.appendChild(queryBlock);
+            }
+
+            lintView.appendChild(card);
+        });
+
+        if (messages.length > 0) {
+            messagesTitle.style.display = "block";
+            lintView.style.display = "block";
+        }
+
+        setTimeout(() => {
+            if (window.parent) {
+                window.parent.postMessage({
+                    type: 'setHeight',
+                    height: document.body.scrollHeight
+                }, "*");
+            }
+        }, 80);
+    }
+
+    lintBtn.addEventListener("click", async () => {
+        const query = queryInput.value;
+        const platform = platformInput.value;
+
+        const lintCode = `
+from search_query_linter import lint
+import json
+result = lint(${JSON.stringify(query)}, platform="${platform}")
+json.dumps([m.to_dict() for m in result])
+        `;
+
+        let resultJson;
+
+        try {
+            resultJson = await pyodide.runPythonAsync(lintCode);
+        } catch (e) {
+            console.error(e);
+            alert("Linter error occurred.");
+            return;
+        }
+
+        output.textContent = resultJson;
+
+        const rawMessages = JSON.parse(resultJson);
+
+        // --- new splitting behavior (IMPORTANT) ---
+        const splitMessages = [];
+        rawMessages.forEach(m => {
+            const parts = m.message.split("\n").filter(x => x.trim() !== "");
+
+            parts.forEach(segment => {
+                splitMessages.push({
+                    icon: m.icon ?? "⚠️",
+                    rule_id: m.rule_id,
+                    message: segment,
+                    query: m.query
+                });
+            });
+        });
+
+        renderLintMessages(splitMessages);
+    });
+})();
+
     </script>
 </body>
 </html>
