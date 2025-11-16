@@ -1,52 +1,298 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <title>search-query translator</title>
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <!-- reuse your existing styles -->
-  <link rel="stylesheet" href="style.css" />
+    <meta charset="UTF-8" />
+    <title>search-query translator</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    
+    <script src="https://cdn.jsdelivr.net/pyodide/v0.26.2/full/pyodide.js"></script>
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+    
+    <style>
+        /* --- CSS Variables (Ensure consistency with Host) --- */
+        :root {
+            --primary: #4f46e5;       /* Indigo */
+            --primary-dark: #3f35c5;
+            --bg-card: #ffffff;
+            --border-color: #e5e7eb;  /* Gray-200 */
+            --text-main: #1f2937;     /* Dark Gray */
+            --text-secondary: #6b7280; /* Medium Gray */
+        }
+
+        /* --- Global Resets & Body Styles for IFRAME --- */
+        * { box-sizing: border-box; margin: 0; padding: 0; line-height: 1.5; font-family: 'Inter', sans-serif; }
+        body {
+            background-color: var(--bg-card);
+            color: var(--text-main);
+            padding: 1.5rem; 
+            min-height: 100vh;
+            overflow-x: hidden;
+            overflow-y: hidden;
+            position: relative;
+        }
+        
+        /* UTILITY CLASS FOR VIEWPORT LOCK */
+        body.loading-active {
+            overflow: hidden; 
+            height: 100vh;
+        }
+
+        /* --- Layout & Typography --- */
+        header h1 { font-size: 1.5rem; font-weight: bold; margin-bottom: 0.25rem; }
+        header p { color: var(--text-secondary); margin-top: 0; font-size: 0.95rem; }
+        
+        .main-content-card {
+            margin-top: 1.5rem;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        }
+
+        /* --- Form Elements --- */
+        label { display: block; margin-top: 1.25rem; margin-bottom: 0.25rem; font-weight: 600; font-size: 0.875rem; }
+        textarea, select { 
+            display: block; width: 100%; padding: 0.75rem; border: 1px solid var(--border-color); 
+            border-radius: 0.5rem; box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.07); 
+            transition: border-color 0.2s, box-shadow 0.2s; color: var(--text-main);
+        }
+        textarea:focus, select:focus { 
+            border-color: var(--primary); box-shadow: 0 0 0 1px var(--primary); outline: none; 
+        }
+
+        /* --- Button --- */
+        #btn-translate {
+            width: 100%; padding: 0.75rem 1rem; border: none; border-radius: 0.5rem; 
+            font-weight: 600; color: white; background-color: var(--primary); 
+            cursor: pointer; transition: background-color 0.2s; 
+            box-shadow: 0 2px 4px rgba(79, 70, 229, 0.4);
+            margin-top: 1.5rem;
+        }
+        #btn-translate:hover:not(:disabled) { background-color: var(--primary-dark); }
+        #btn-translate:disabled { opacity: 0.6; cursor: not-allowed; box-shadow: none; }
+
+        /* --- Status & Output --- */
+        #status { display:none; } 
+        #status-display { 
+            margin-top: 1rem; padding: 0.5rem 1rem; background: #fff3e0; border: 1px solid #ffcc80; 
+            border-radius: 0.375rem; font-size: 0.875rem; color: #a55a00; font-weight: 500; 
+        }
+
+        /* --- Translation Output Styling --- */
+        .output-section {
+            margin-top: 1.5rem;
+            padding: 1rem;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 0.75rem;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        }
+        #result { background-color: #f3f4f6; padding: 1rem; border: 1px solid var(--border-color); border-radius: 0.5rem; font-size: 0.9rem; white-space: pre-wrap; word-wrap: break-word; margin-top: 0.5rem; }
+        #messages { background-color: #f3f4f6; padding: 1rem; border: 1px solid var(--border-color); border-radius: 0.5rem; font-size: 0.85rem; white-space: pre-wrap; word-wrap: break-word; margin-top: 0.5rem; color: var(--text-secondary); }
+
+        /* --- LOADING OVERLAY STYLES (Static Center) --- */
+        #loading-overlay {
+            position: fixed;
+            inset: 0; 
+            background-color: rgba(255, 255, 255, 0.95);
+            z-index: 1000;
+            display: flex; 
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            transition: opacity 0.5s ease;
+            opacity: 1;
+        }
+        .loader {
+            border: 4px solid var(--border-color);
+            border-top: 4px solid var(--primary);
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin-bottom: 1rem;
+        }
+        /* --- Sequential Log Container --- */
+        #loading-log-container {
+            width: 80%;
+            max-height: 100px;
+            overflow-y: scroll;
+            border: 1px solid var(--border-color);
+            padding: 0.5rem;
+            background: #f3f4f6;
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            text-align: left;
+            white-space: pre;
+            margin-top: 1rem;
+        }
+        #loading-text {
+            font-size: 1.1rem;
+            color: var(--text-main);
+            font-weight: 500;
+            text-align: center;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        /* Utility to hide the content on load */
+        #content-wrapper { transition: opacity 0.5s ease; opacity: 0; }
+        
+    </style>
 </head>
 <body>
-  <header>
-    <h1>search-query translator</h1>
-    <p>Translate a database/search-platform query into another platform using the <code>search-query</code> package (running in Pyodide).</p>
-  </header>
 
-  <div id="status">Loading Pyodide…</div>
+    <div id="loading-overlay">
+        <div class="loader"></div>
+        <div id="loading-text">Initializing Pyodide...</div>
+        <pre id="loading-log-container"></pre>
+    </div>
+    
+    <div id="content-wrapper">
+        <header>
+            <h1>search-query translator</h1>
+            <p>Translate a database/search-platform query into another platform using the <code>search-query</code> package (running in Pyodide).</p>
+        </header>
 
-  <label for="query">Query</label>
-  <textarea id="query" rows="6">(TI=(platform* OR "digital work") AND PY=2020-2025)</textarea>
+        <div id="status">Loading Pyodide…</div> 
+        
+        <div id="status-display">Loading Pyodide…</div>
 
-  <label for="platform-source">Source platform</label>
-  <select id="platform-source">
-    <option value="wos">wos</option>
-    <option value="pubmed">pubmed</option>
-    <option value="ebscohost">ebscohost</option>
-    <option value="scopus">scopus</option>
-  </select>
+        <div class="main-content-card">
+            <label for="query">Query</label>
+            <textarea id="query">(TI=(platform* OR "digital work") AND PY=2020-2025)</textarea>
 
-  <label for="platform-target">Target platform</label>
-  <select id="platform-target">
-    <option value="wos">wos</option>
-    <option value="pubmed" selected>pubmed</option>
-    <option value="ebscohost">ebscohost</option>
-    <option value="scopus">scopus</option>
-  </select>
+            <label for="platform-source">Source platform</label>
+            <select id="platform-source">
+                <option value="wos">wos</option>
+                <option value="pubmed">pubmed</option>
+                <option value="ebscohost">ebscohost</option>
+                <option value="scopus">scopus</option>
+            </select>
 
-  <div class="row" style="margin-top:1rem;">
-    <button id="btn-translate" disabled>Translate</button>
-  </div>
+            <label for="platform-target">Target platform</label>
+            <select id="platform-target">
+                <option value="wos">wos</option>
+                <option value="pubmed" selected>pubmed</option>
+                <option value="ebscohost">ebscohost</option>
+                <option value="scopus">scopus</option>
+            </select>
 
-  <h2 id="result-title" style="display:none; margin-top:1.5rem;">Translated query</h2>
-  <pre id="result" style="display:none;"></pre>
+            <div class="row">
+                <button id="btn-translate" disabled>Translate</button>
+            </div>
+        </div>
 
-  <h2 id="messages-title" style="display:none; margin-top:1.5rem;">Messages</h2>
-  <div id="messages" style="display:none;"></div>
+        <div class="output-section">
+            <h2 id="result-title" style="display:none;">Translated query</h2>
+            <pre id="result" style="display:none;"></pre>
 
-  <!-- Pyodide runtime -->
-  <script src="https://cdn.jsdelivr.net/pyodide/v0.26.2/full/pyodide.js"></script>
-  <!-- your logic (the file I gave you) -->
-  <script src="translate.js"></script>
+            <h2 id="messages-title" style="display:none;">Messages</h2>
+            <div id="messages" style="display:none;"></div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/pyodide/v0.26.2/full/pyodide.js"></script>
+    <script src="translate.js"></script>
+    
+    <script>
+        const PARENT_ORIGIN = window.location.origin; 
+        
+        const loader = document.getElementById('loading-overlay');
+        const loadingText = document.getElementById('loading-text');
+        const contentWrapper = document.getElementById('content-wrapper');
+        const statusDisplay = document.getElementById('status-display');
+        const loadingLog = document.getElementById('loading-log-container');
+
+        // --- Cross-Origin Height Communication ---
+        function sendHeight() {
+            // Only send height if content is visible
+            if (document.body.classList.contains('loading-active')) return;
+
+            const height = document.body.scrollHeight;
+            if (window.parent) {
+                window.parent.postMessage({
+                    type: 'setHeight',
+                    height: height
+                }, PARENT_ORIGIN);
+            }
+        }
+        
+        // --- Pyodide Status Hook and Loader Control ---
+        
+        const originalAppendStatus = window.appendStatus || function(msg) { 
+            const statusDiv = document.getElementById('status');
+            if (statusDiv) {
+                statusDiv.textContent = msg; 
+            }
+        };
+        
+        window.appendStatus = function(msg) {
+            const cleanMsg = msg.replace(/\u001b\[.*?m/g, '').trim(); 
+            
+            // 1. Append sequential message to the visible log area
+            if (cleanMsg) {
+                loadingLog.textContent += cleanMsg + '\n';
+                loadingLog.scrollTop = loadingLog.scrollHeight; 
+            }
+
+            // 2. Control the single-line main loading text
+            if (loadingText && cleanMsg) {
+                if (cleanMsg.includes('Done') || cleanMsg.includes('ready') || cleanMsg.includes('Ready')) {
+                    loadingText.textContent = cleanMsg;
+                } else if (cleanMsg.startsWith('Loaded') || cleanMsg.startsWith('Fetching')) {
+                    loadingText.textContent = cleanMsg;
+                } else if (cleanMsg.includes('installing')) {
+                    loadingText.textContent = 'Installing packages...'; // Heuristic for long install
+                }
+            }
+
+
+            // 3. Control the visual transition state and viewport lock
+            if (cleanMsg.includes('Done') || cleanMsg.includes('ready') || cleanMsg.includes('Ready')) {
+                // Done loading: Unlock viewport, fade out loader, show content
+                document.body.classList.remove('loading-active');
+                loader.style.opacity = '0';
+                contentWrapper.style.opacity = '1';
+                statusDisplay.textContent = 'Search Query loaded…';
+
+                setTimeout(() => {
+                    loader.style.display = 'none';
+                    document.body.style.overflow = '';
+                    sendHeight();
+                }, 500);
+            } else {
+                // Loading: Lock viewport
+                document.body.classList.add('loading-active');
+                loader.style.display = 'flex';
+                loader.style.opacity = '1';
+                contentWrapper.style.opacity = '0';
+            }
+
+            // 4. Call the original function and re-trigger height update 
+            originalAppendStatus(msg);
+            setTimeout(sendHeight, 50); 
+        };
+        
+        // --- Initial Setup and DOM Observer ---
+        document.addEventListener('DOMContentLoaded', () => {
+            // Initial state setup: LOCK VIEWPORT IMMEDIATELY
+            document.body.classList.add('loading-active');
+            contentWrapper.style.opacity = '0';
+            loader.style.display = 'flex'; 
+            loadingText.textContent = "Initializing Pyodide...";
+
+            // 1. Send initial minimal height
+            window.addEventListener('load', sendHeight);
+            
+            // 2. Observe DOM changes (Crucial for when the output dynamically appears)
+            const observer = new MutationObserver(sendHeight);
+            observer.observe(document.body, { attributes: true, childList: true, subtree: true });
+        });
+    </script>
 </body>
 </html>
