@@ -207,6 +207,10 @@
             contentWrapper.style.opacity = '1';
             statusText.innerText = 'Search Query Ready'
         }
+        if(statusText.innerText == 'Loading Search Query…'){
+            statusText.innerText == 'Search Query Ready…';
+            statusText.textContent = 'Search Query Ready…';
+        }
     }
 // Keep the interval as requested
     setInterval(appendModule, 100);
