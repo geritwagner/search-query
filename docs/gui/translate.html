@@ -192,28 +192,27 @@
     const btnTranslate = document.getElementById('btn-translate'); // Added
 
     // This function is kept, as requested, but handles the interface transition
-    function appendModule() {
-        const statusText = document.getElementById('status');
+    // --- Append module with interval stopped after ready ---
+const appendInterval = setInterval(() => {
+    const statusText = document.getElementById('status');
+    const lines = statusText.innerText.split("\n");
+    const lastLine = lines[lines.length - 1].trim();
+
+    loadingText.innerText = lastLine || "Loading…";
+
+    if (lastLine.includes("Pyodide ready.")) {
+        loader.style.display = 'none';
+        contentWrapper.style.display = 'block';
+        contentWrapper.style.opacity = '1';
+        statusText.innerText = 'Search Query Ready';
         
-        // Get last line only
-        const lines = statusText.innerText.split("\n");
-        const lastLine = lines[lines.length - 1].trim();
-    
-        loadingText.innerText = lastLine || "Loading…";
-    
-        if (lastLine.includes("Pyodide ready.")) {
-            loader.style.display = 'none';
-            contentWrapper.style.display = 'block';
-            contentWrapper.style.opacity = '1';
-            statusText.innerText = 'Search Query Ready'
-        }
-        if(statusText.innerText == 'Loading Search Query…'){
-            statusText.innerText == 'Search Query Ready…';
-            statusText.textContent = 'Search Query Ready…';
-        }
+        // Stop the interval to prevent unnecessary height updates
+        clearInterval(appendInterval);
+
+        // Send final height once
+        sendHeight();
     }
-// Keep the interval as requested
-    setInterval(appendModule, 100);
+}, 100);
 
   let lastSentHeight = 0;
 
