@@ -192,39 +192,22 @@
     const btnTranslate = document.getElementById('btn-translate'); // Added
 
     // This function is kept, as requested, but handles the interface transition
-    function appendModule(){
+    function appendModule() {
         const statusText = document.getElementById('status');
-        const cleanStatus = statusText.innerText.replace(/\u001b\[.*?m/g, ''); // Clean ANSI codes
         
-        // 1. Always update loading text with the last known status
-        loadingText.innerText = cleanStatus;
-        
-        // 2. Check for readiness and open the interface
-        if(cleanStatus.includes("Pyodide ready.") || cleanStatus.includes('Done') || cleanStatus.includes('Ready')){
-            // Readiness logic
-            document.body.classList.remove('loading-active');
-            statusDisplay.innerText = 'Search Query loaded…';
-            btnTranslate.disabled = false; // Enable the button
-
-            loader.style.opacity = '0';
+        // Get last line only
+        const lines = statusText.innerText.split("\n");
+        const lastLine = lines[lines.length - 1].trim();
+    
+        loadingText.innerText = lastLine || "Loading…";
+    
+        if (lastLine.includes("Pyodide ready.")) {
+            loader.style.display = 'none';
+            contentWrapper.style.display = 'block';
             contentWrapper.style.opacity = '1';
-            contentWrapper.style.display = 'block'; // Show content
-
-            setTimeout(() => {
-                loader.style.display = 'none';
-                document.body.style.overflowY = 'auto'; // Restore scrolling
-                sendHeight(); // Final resize
-            }, 500);
-        } else {
-            // Loading state - ensure content is hidden
-            document.body.classList.add('loading-active');
-            loader.style.display = 'flex';
-            loader.style.opacity = '1';
-            contentWrapper.style.opacity = '0';
-            contentWrapper.style.display = 'none';
         }
     }
-    // Keep the interval as requested
+// Keep the interval as requested
     setInterval(appendModule, 100);
 
     // --- Cross-Origin Height Communication ---
