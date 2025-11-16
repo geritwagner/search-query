@@ -114,6 +114,21 @@
             animation: spin 1s linear infinite;
             margin-bottom: 1rem;
         }
+        /* --- Sequential Log Container --- */
+        #loading-log-container {
+            width: 80%;
+            max-height: 100px; /* Constrain height */
+            overflow-y: scroll;
+            border: 1px solid var(--border-color);
+            padding: 0.5rem;
+            background: #f3f4f6;
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            text-align: left;
+            white-space: pre;
+            margin-top: 1rem;
+        }
+
         #loading-text {
             font-size: 1.1rem;
             color: var(--text-main);
@@ -135,6 +150,7 @@
     <div id="loading-overlay">
         <div class="loader"></div>
         <div id="loading-text">Initializing Pyodide...</div>
+        <pre id="loading-log-container"></pre> 
     </div>
     
     <div id="content-wrapper">
@@ -149,7 +165,7 @@
 
         <div class="main-content-card">
             <label for="query">Query</label>
-            <textarea id="query" rows="6">(TI=(platform* OR "digital work") AND PY=2020-2025)</textarea>
+            <textarea id="query">(TI=(platform* OR "digital work") AND PY=2020-2025)</textarea>
 
             <label for="platform-source">Source platform</label>
             <select id="platform-source">
@@ -191,10 +207,10 @@
         const loadingText = document.getElementById('loading-text');
         const contentWrapper = document.getElementById('content-wrapper');
         const statusDisplay = document.getElementById('status-display');
+        const loadingLog = document.getElementById('loading-log-container'); // NEW log element
 
         // --- Cross-Origin Height Communication ---
         function sendHeight() {
-            // Only send height if content is visible
             if (document.body.classList.contains('loading-active')) return;
 
             const height = document.body.scrollHeight;
@@ -213,20 +229,38 @@
             if (statusDiv) {
                 statusDiv.textContent = msg; 
             }
-            console.log("Pyodide Hook:", msg); 
+            // console.log("Pyodide Hook:", msg); // Outputting to console is good for debugging
         };
         
         window.appendStatus = function(msg) {
-            // 1. Update the visual status text
             const cleanMsg = msg.replace(/\u001b\[.*?m/g, '').trim(); 
-            if (loadingText) loadingText.textContent = cleanMsg;
+            
+            // 1. Append sequential message to the visible log area
+            if (cleanMsg) {
+                // We use innerText/textContent here to prevent HTML injection and ensure pre formatting
+                loadingLog.textContent += cleanMsg + '\n';
+                // Scroll the log to the bottom to show the latest message
+                loadingLog.scrollTop = loadingLog.scrollHeight; 
+            }
 
-            // 2. Control the visual transition state and viewport lock
+            // 2. Control the single-line main loading text
+            if (loadingText && cleanMsg) {
+                // Heuristic: If the message looks like a summary or final step, show it prominently.
+                if (cleanMsg.startsWith('Loaded') || cleanMsg.startsWith('Fetching') || cleanMsg.includes('Done') || cleanMsg.includes('ready')) {
+                    loadingText.textContent = cleanMsg;
+                } else if (cleanMsg.includes('installing')) {
+                    loadingText.textContent = 'Installing packages...'; // Generic status for long install
+                }
+            }
+
+
+            // 3. Control the visual transition state and viewport lock
             if (cleanMsg.includes('Done') || cleanMsg.includes('ready') || cleanMsg.includes('Ready')) {
                 // Done loading: Unlock viewport, fade out loader, show content
                 document.body.classList.remove('loading-active');
                 loader.style.opacity = '0';
                 contentWrapper.style.opacity = '1';
+                statusDisplay.textContent = 'Search Query loaded…';
 
                 setTimeout(() => {
                     loader.style.display = 'none';
@@ -241,7 +275,7 @@
                 contentWrapper.style.opacity = '0';
             }
 
-            // 3. Call the original function and re-trigger height update 
+            // 4. Call the original function and re-trigger height update 
             originalAppendStatus(msg);
             setTimeout(sendHeight, 50); 
         };
