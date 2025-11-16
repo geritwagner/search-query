@@ -18,6 +18,8 @@
             --border-color: #e5e7eb;  /* Gray-200 */
             --text-main: #1f2937;     /* Dark Gray */
             --text-secondary: #6b7280; /* Medium Gray */
+            --error-red: #dc2626;     /* Tailwind red-600 */
+            --warning-yellow: #d97706; /* Tailwind amber-600 */
         }
 
         /* --- Global Resets & Body Styles for IFRAME --- */
@@ -84,23 +86,35 @@
         
         /* --- LINTER MESSAGE SEPARATION (CRITICAL FIX) --- */
         #lint-view { 
-            margin-top: 0.5rem; /* Reduced top margin to place it close to title */
+            margin-top: 0.5rem; 
         }
-        /* Target the dynamic 'lint-card' divs created by renderLintMessages() */
+        
+        /* Styles the individual message containers (lint-card divs injected by the external script) */
         #lint-view .lint-card {
             border: 1px solid var(--border-color);
             padding: 1rem;
-            margin-bottom: 10px; /* Space between message boxes */
+            margin-bottom: 10px; /* Separates the boxes visually */
             border-radius: 0.5rem;
             box-shadow: 0 1px 3px rgba(0,0,0,0.05);
             background-color: var(--bg-card);
+            transition: all 0.2s;
+            border-left: 4px solid var(--warning-yellow); /* Default border color (Warning/Info) */
         }
+        
+        /* The original script inserts spans with ANSI color classes, which we now define */
+        /* NOTE: The logic is slightly complex as the original script uses ANSI codes */
+        #lint-view .ansi-red { color: var(--error-red); font-weight: 600; }
+        #lint-view .ansi-yellow { color: var(--warning-yellow); font-weight: 600; }
+        
+        /* Style for message title (e.g., 🚨 invalid-syntax) */
         #lint-view .lint-title {
             font-weight: 700;
             font-size: 1rem;
             margin-bottom: 0.5rem;
             color: var(--text-main);
         }
+        
+        /* Style for query excerpt (the code snippet showing the error) */
         #lint-view pre.lint-query {
             background-color: #f3f4f6;
             padding: 0.5rem;
@@ -209,7 +223,6 @@
 
         // --- Cross-Origin Height Communication ---
         function sendHeight() {
-            // Only send height if content is visible
             if (document.body.classList.contains('loading-active')) return;
 
             const height = document.body.scrollHeight;
@@ -233,7 +246,7 @@
         
         window.appendStatus = function(msg) {
             // 1. Update the visual status text
-            const cleanMsg = msg.replace(/\u001b\[.*?m/g, ''); 
+            const cleanMsg = msg.replace(/\u001b\[.*?m/g, '').trim(); 
             if (loadingText) loadingText.textContent = cleanMsg;
 
             // 2. Control the visual transition state and viewport lock
