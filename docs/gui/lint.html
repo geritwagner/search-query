@@ -91,14 +91,11 @@
         
         /* Styles the individual message containers (lint-card divs injected by the external script) */
         #lint-view {
-            border: 1px solid var(--border-color);
             padding: 1rem;
             margin-bottom: 10px; /* Separates the boxes visually */
-            border-radius: 0.5rem;
             box-shadow: 0 1px 3px rgba(0,0,0,0.05);
             background-color: var(--bg-card);
             transition: all 0.2s;
-            border-left: 4px solid var(--warning-yellow); /* Default border color (Warning/Info) */
         }
         
         /* The original script inserts spans with ANSI color classes, which we now define */
@@ -373,29 +370,34 @@ function renderLintMessages(messages) {
         return;
     }
     messages.forEach(msg => {
-        // Create individual card for each lint-title -> lint-query
+        // Create a card for each message
         const card = document.createElement("div");
         card.className = "lint-card";
-
+    
+        // Title
         const titleEl = document.createElement("div");
         titleEl.className = "lint-title";
-        titleEl.innerHTML = `${msg.icon || "⚠️"} ${msg.rule_id}`;
-
+        titleEl.textContent = `${msg.icon || "⚠️"} ${msg.rule_id}`;
+        card.appendChild(titleEl);
+    
+        // Message / detail
         const messageEl = document.createElement("div");
         messageEl.className = "lint-message";
         messageEl.innerHTML = convertAnsiToHtml(escapeHtml(msg.message));
-
-        card.appendChild(titleEl);
         card.appendChild(messageEl);
-
+    
+        // Query block (only if exists)
         if (msg.query) {
             const queryBlock = document.createElement("pre");
             queryBlock.className = "lint-query";
             queryBlock.textContent = msg.query;
             card.appendChild(queryBlock);
         }
+    
+        // Append this single card to the main container
         lintView.appendChild(card);
     });
+
 
     // Show title and container
     messagesTitle.style.display = "block";
