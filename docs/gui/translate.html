@@ -117,6 +117,7 @@
         /* --- Sequential Log Container --- */
         #loading-log-container {
             width: 80%;
+            max-width: 400px;
             max-height: 100px;
             overflow-y: scroll;
             border: 1px solid var(--border-color);
@@ -196,7 +197,6 @@
         </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/pyodide/v0.26.2/full/pyodide.js"></script>
     <script src="translate.js"></script>
     
     <script>
@@ -242,12 +242,13 @@
 
             // 2. Control the single-line main loading text
             if (loadingText && cleanMsg) {
+                // Prioritize showing final status or module-loading info
                 if (cleanMsg.includes('Done') || cleanMsg.includes('ready') || cleanMsg.includes('Ready')) {
                     loadingText.textContent = cleanMsg;
                 } else if (cleanMsg.startsWith('Loaded') || cleanMsg.startsWith('Fetching')) {
                     loadingText.textContent = cleanMsg;
                 } else if (cleanMsg.includes('installing')) {
-                    loadingText.textContent = 'Installing packages...'; // Heuristic for long install
+                    loadingText.textContent = 'Installing packages...'; 
                 }
             }
 
@@ -258,7 +259,7 @@
                 document.body.classList.remove('loading-active');
                 loader.style.opacity = '0';
                 contentWrapper.style.opacity = '1';
-                statusDisplay.textContent = 'Search Query loaded…';
+                statusDisplay.textContent = 'Search Query loaded…'; // Final visible status
 
                 setTimeout(() => {
                     loader.style.display = 'none';
