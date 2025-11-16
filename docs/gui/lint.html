@@ -161,7 +161,42 @@
         
         /* Utility to hide the content on load */
         #content-wrapper { transition: opacity 0.5s ease; opacity: 0; }
+        /* === LINT CARD TYPE-BASED STYLING (RULE-SPECIFIC) === */
+
+        /* ERROR — invalid-syntax */
+        #lint-view .lint-card:has(.lint-title:contains("invalid-syntax")) {
+            border-left-color: var(--error-red);
+        }
         
+        /* WARNING — boolean-operator */
+        #lint-view .lint-card:has(.lint-title:contains("boolean-operator")) {
+            border-left-color: var(--warning-yellow);
+        }
+        
+        /* INFO — parentheses */
+        #lint-view .lint-card:has(.lint-title:contains("parentheses")) {
+            border-left-color: var(--primary);
+        }
+        
+        /* OPTIONAL EXAMPLES — you can expand this list */
+        #lint-view .lint-card:has(.lint-title:contains("field-mismatch")) {
+            border-left-color: #0ea5e9; /* sky-blue 500 */
+        }
+        
+        #lint-view .lint-card:has(.lint-title:contains("truncation")) {
+            border-left-color: #7c3aed; /* violet 600 */
+        }
+        
+        /* If you want a slight highlight background for errors */
+        #lint-view .lint-card:has(.lint-title:contains("invalid-syntax")) {
+            background-color: #fef2f2;
+        }
+        
+        /* Slight tint for warnings */
+        #lint-view .lint-card:has(.lint-title:contains("boolean-operator")) {
+            background-color: #fffbeb;
+        }
+
     </style>
 </head>
 <body>
