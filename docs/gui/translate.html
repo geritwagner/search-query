@@ -9,26 +9,34 @@
 
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
     
-    <style>
+       <style>
         /* --- CSS Variables (Ensure consistency with Host) --- */
         :root {
-            --primary: #4f46e5;       
+            --primary: #4f46e5;       /* Indigo */
             --primary-dark: #3f35c5;
             --bg-card: #ffffff;
-            --border-color: #e5e7eb;
-            --text-main: #1f2937;
-            --text-secondary: #6b7280;
+            --border-color: #e5e7eb;  /* Gray-200 */
+            --text-main: #1f2937;     /* Dark Gray */
+            --text-secondary: #6b7280; /* Medium Gray */
         }
 
         /* --- Global Resets & Body Styles for IFRAME --- */
         * { box-sizing: border-box; margin: 0; padding: 0; line-height: 1.5; font-family: 'Inter', sans-serif; }
+        
         body {
             background-color: var(--bg-card);
             color: var(--text-main);
             padding: 1.5rem; 
             min-height: 100vh;
             overflow-x: hidden;
+            overflow-y: hidden;
             position: relative;
+        }
+
+        /* UTILITY CLASS FOR VIEWPORT LOCK */
+        body.loading-active {
+            overflow: hidden; /* Prevents scrolling */
+            height: 100vh;    /* Locks height */
         }
         
         /* --- Layout & Typography --- */
@@ -56,69 +64,66 @@
         }
 
         /* --- Button --- */
-        #btn-translate {
+        #btn-tokenize {
             width: 100%; padding: 0.75rem 1rem; border: none; border-radius: 0.5rem; 
             font-weight: 600; color: white; background-color: var(--primary); 
             cursor: pointer; transition: background-color 0.2s; 
             box-shadow: 0 2px 4px rgba(79, 70, 229, 0.4);
             margin-top: 1.5rem;
         }
-        #btn-translate:hover:not(:disabled) { background-color: var(--primary-dark); }
-        #btn-translate:disabled { opacity: 0.6; cursor: not-allowed; box-shadow: none; }
+        #btn-tokenize:hover:not(:disabled) { background-color: var(--primary-dark); }
+        #btn-tokenize:disabled { opacity: 0.6; cursor: not-allowed; box-shadow: none; }
 
-        /* --- Status & Output --- */
+        /* --- Status & Loading --- */
         #status { display:none; } 
         #status-display { 
             margin-top: 1rem; padding: 0.5rem 1rem; background: #fff3e0; border: 1px solid #ffcc80; 
             border-radius: 0.375rem; font-size: 0.875rem; color: #a55a00; font-weight: 500; 
         }
 
-        /* --- Translation Output Styling --- */
-        .output-section {
-            margin-top: 1.5rem;
-            padding: 1rem;
-            background: var(--bg-card);
-            border: 1px solid var(--border-color);
-            border-radius: 0.75rem;
+        /* --- Output Table Styles --- */
+        #tokens-table {
+            width: 100%; border-collapse: collapse; margin-top: 1rem; background: var(--bg-card); 
+            border: 1px solid var(--border-color); border-radius: 0.5rem; overflow: hidden; 
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
         }
-        #result { background-color: #f3f4f6; padding: 1rem; border: 1px solid var(--border-color); border-radius: 0.5rem; font-size: 0.9rem; white-space: pre-wrap; word-wrap: break-word; margin-top: 0.5rem; }
-        #messages { background-color: #f3f4f6; padding: 1rem; border: 1px solid var(--border-color); border-radius: 0.5rem; font-size: 0.85rem; white-space: pre-wrap; word-wrap: break-word; margin-top: 0.5rem; color: var(--text-secondary); }
+        #tokens-table th, #tokens-table td { padding: 0.75rem; border-bottom: 1px solid #f3f4f6; font-size: 0.9rem; }
+        #tokens-table th { text-align: left; background: #f3f4f6; font-weight: 700; color: #374151; }
+        #tokens-table tr:last-child td { border-bottom: none; }
 
-        /* --- Sequential Log Container --- */
-        #loading-log-container {
-            width: 90%;
-            max-width: 400px;
-            max-height: 500px; /* Allow vertical growth initially */
-            overflow-y: auto;
-            border: 1px solid var(--border-color);
-            padding: 0.5rem;
-            background: #f3f4f6;
-            font-size: 0.85rem;
-            color: var(--text-secondary);
-            text-align: left;
-            white-space: pre-wrap;
-            margin: 1rem auto;
+        /* Raw JSON Output */
+        #output { 
+            background-color: #f3f4f6; padding: 1rem; border-radius: 0.5rem; font-size: 0.85rem; 
+            white-space: pre-wrap; word-wrap: break-word; overflow-x: auto; 
+            margin-top: 0.5rem;
         }
-
-        /* Base Loader Display (Initially visible, hides application content) */
-        #app-loader-display {
-            display: flex;
+        
+        /* --- LOADING OVERLAY STYLES (Fixed and Centered) --- */
+        #loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(255, 255, 255, 0.95);
+            z-index: 1000;
+            display: flex; 
             flex-direction: column;
-            align-items: center;
             justify-content: center;
-            min-height: 300px; /* Gives the loading area some height */
+            align-items: center;
+            transition: opacity 0.5s ease;
+            opacity: 1;
         }
         .loader {
             border: 4px solid var(--border-color);
             border-top: 4px solid var(--primary);
             border-radius: 50%;
-            width: 30px;
-            height: 30px;
+            width: 50px;
+            height: 50px;
             animation: spin 1s linear infinite;
-            margin-bottom: 0.5rem;
+            margin-bottom: 1rem;
         }
-        #loading-text-main {
+        #loading-text {
             font-size: 1.1rem;
             color: var(--text-main);
             font-weight: 500;
@@ -129,15 +134,18 @@
             100% { transform: rotate(360deg); }
         }
         
+        /* Utility to hide the content on load */
+        #content-wrapper { transition: opacity 0.5s ease; opacity: 0; }
+        
     </style>
 </head>
 <body>
 
-    <div id="app-loader-display">
+       <div id="loading-overlay">
         <div class="loader"></div>
-        <div id="loading-text-main">Initializing Pyodide...</div>
-        <pre id="loading-log-container"></pre>
+        <div id="loading-text">Initializing Search Query...</div>
     </div>
+    
 
     <div id="content-wrapper" style="display: none;">
         <header>
@@ -174,7 +182,7 @@
             </div>
         </div>
 
-        <div class="output-section">
+        <div class="output-section" style="margin-top: 1.5rem; padding: 1rem; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 0.75rem; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);">
             <h2 id="result-title" style="display:none;">Translated query</h2>
             <pre id="result" style="display:none;"></pre>
 
@@ -185,19 +193,18 @@
 
     <script src="https://cdn.jsdelivr.net/pyodide/v0.26.2/full/pyodide.js"></script>
     <script src="translate.js"></script>
-    
-    <script>
+        <script>
         const PARENT_ORIGIN = window.location.origin; 
         
-        const loaderDisplay = document.getElementById('app-loader-display');
-        const loadingTextMain = document.getElementById('loading-text-main');
-        const loadingLog = document.getElementById('loading-log-container');
+        const loader = document.getElementById('loading-overlay');
+        const loadingText = document.getElementById('loading-text');
         const contentWrapper = document.getElementById('content-wrapper');
+        const statusDisplay = document.getElementById('status-display');
 
         // --- Cross-Origin Height Communication ---
         function sendHeight() {
-            // Only send height if content is fully visible (i.e., not loading)
-            if (contentWrapper.style.display === 'none') return;
+            // Only send height if the loader is not active (i.e., content is visible)
+            if (loader.style.display !== 'none') return;
 
             const height = document.body.scrollHeight;
             if (window.parent) {
@@ -213,58 +220,55 @@
         const originalAppendStatus = window.appendStatus || function(msg) { 
             const statusDiv = document.getElementById('status');
             if (statusDiv) {
+                // If Pyodide outputs complex status (which includes ANSI codes), write to hidden div
                 statusDiv.textContent = msg; 
             }
+            console.log("Pyodide Hook:", msg); 
         };
         
         window.appendStatus = function(msg) {
-            const cleanMsg = msg.replace(/\u001b\[.*?m/g, '').trim(); 
-            
-            // 1. Append sequential message to the visible log area
-            if (cleanMsg) {
-                loadingLog.textContent += cleanMsg + '\n';
-                loadingLog.scrollTop = loadingLog.scrollHeight; 
-            }
+            // 1. Update the visual status text
+            const cleanMsg = msg.replace(/\u001b\[.*?m/g, ''); 
+            if (loadingText) loadingText.textContent = cleanMsg;
 
-            // 2. Control the single-line main loading text
-            if (loadingTextMain && cleanMsg) {
-                if (cleanMsg.includes('Done') || cleanMsg.includes('ready') || cleanMsg.includes('Ready')) {
-                    loadingTextMain.textContent = 'Search Query loaded.';
-                } else if (cleanMsg.startsWith('Loaded') || cleanMsg.startsWith('Fetching') || cleanMsg.startsWith('Loading')) {
-                    loadingTextMain.textContent = cleanMsg;
-                }
-            }
+            // 2. Control the visual transition state and viewport lock
+            if (cleanMsg.includes('Done') || cleanMsg.includes('ready') || cleanMsg.includes('Ready')) {
+                // Done loading: Unlock viewport, fade out loader, show content
+                document.body.classList.remove('loading-active');
+                statusDisplay.innerText = 'Search Query loaded…'
+                loader.style.opacity = '0';
+                contentWrapper.style.opacity = '1';
 
-
-            // 3. Control the visual transition state
-            if (cleanMsg.includes('Done.') || cleanMsg.includes('ready') || cleanMsg.includes('Ready')) {
-                // Done loading: Hide loader, show content
-                loaderDisplay.style.display = 'none';
-                contentWrapper.style.display = 'block';
-                
-                // Final resize after content is visible
-                setTimeout(sendHeight, 50); 
+                setTimeout(() => {
+                    loader.style.display = 'none';
+                    document.body.style.overflow = 'hidden'; 
+                    sendHeight(); // Final resize
+                }, 500);
             } else {
-                // Loading: Ensure loader is visible and content is hidden
-                loaderDisplay.style.display = 'flex';
-                contentWrapper.style.display = 'none';
+                // Loading: Lock viewport
+                document.body.classList.add('loading-active');
+                loader.style.display = 'flex';
+                loader.style.opacity = '1';
+                contentWrapper.style.opacity = '0';
             }
 
-            // 4. Call the original function and re-trigger height update 
+            // 3. Call the original function and re-trigger height update 
             originalAppendStatus(msg);
             setTimeout(sendHeight, 50); 
         };
         
         // --- Initial Setup and DOM Observer ---
         document.addEventListener('DOMContentLoaded', () => {
-            // Initial state setup: Ensure loader is visible
-            contentWrapper.style.display = 'none';
-            loaderDisplay.style.display = 'flex';
+            // Initial state setup: LOCK VIEWPORT IMMEDIATELY
+            document.body.classList.add('loading-active');
+            contentWrapper.style.opacity = '0';
+            loader.style.display = 'flex'; 
+            loadingText.textContent = "Loading Pyodide runtime...";
 
             // 1. Send initial minimal height
             window.addEventListener('load', sendHeight);
             
-            // 2. Observe DOM changes (Crucial for when the output dynamically appears)
+            // 2. Observe DOM changes (Crucial for when the output table appears/disappears)
             const observer = new MutationObserver(sendHeight);
             observer.observe(document.body, { attributes: true, childList: true, subtree: true });
         });
