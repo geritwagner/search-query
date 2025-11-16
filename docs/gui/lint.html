@@ -207,7 +207,7 @@
 
     <div id="loading-overlay">
         <div class="loader"></div>
-        <div id="loading-text">Initializing Pyodide...</div>
+        <div id="loading-text">Initializing Search Query...</div>
     </div>
     
     <div id="content-wrapper">
@@ -216,9 +216,9 @@
             <p>Paste a query, select a platform, and run the linter in your browser.</p>
         </header>
 
-        <div id="status">Loading Pyodide…</div> 
+        <div id="status">Loading Search Query…</div> 
         
-        <div id="status-display">Loading Pyodide…</div>
+        <div id="status-display">Loading Search Query…</div>
 
         <div class="main-content-card">
             <label for="query">Query</label>
@@ -319,7 +319,7 @@
             document.body.classList.add('loading-active');
             contentWrapper.style.opacity = '0';
             loader.style.display = 'flex'; 
-            loadingText.textContent = "Initializing Pyodide...";
+            loadingText.textContent = "Initializing Search Query...";
 
             // 1. Send initial minimal height
             window.addEventListener('load', sendHeight);
