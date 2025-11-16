@@ -215,20 +215,28 @@
 // Keep the interval as requested
     setInterval(appendModule, 100);
 
-    // --- Cross-Origin Height Communication ---
-    function sendHeight() {
-        // Only send height if the loader is fully inactive
-        if (loader.style.display !== 'none') return;
+  let lastSentHeight = 0;
 
-        const height = document.body.scrollHeight;
-        if (window.parent) {
-            window.parent.postMessage({
-                type: 'setHeight',
-                height: height
-            }, PARENT_ORIGIN);
+    // --- Cross-Origin Height Communication (FIXED) ---
+    function sendHeight() {
+        // Only proceed if the loading overlay is hidden.
+        if (loader.style.display !== 'none') return; 
+
+        // Get the total scrollable height of the body content
+        const currentHeight = document.body.scrollHeight; 
+
+        // Check if the height has changed significantly before sending the message
+        // This prevents unnecessary resizing during minor reflows or idle states.
+        if (currentHeight !== lastSentHeight) {
+            if (window.parent) {
+                window.parent.postMessage({
+                    type: 'setHeight',
+                    height: currentHeight
+                }, PARENT_ORIGIN);
+                lastSentHeight = currentHeight; // Update tracking variable
+            }
         }
-    }
-    
+    }  
     // --- Pyodide Status Hook (Modified to primarily update the hidden #status) ---
     
     const originalAppendStatus = window.appendStatus || function(msg) { 
