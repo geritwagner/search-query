@@ -162,55 +162,68 @@
         /* Utility to hide the content on load */
         #content-wrapper { transition: opacity 0.5s ease; opacity: 0; }
         /* === LINT CARD TYPE-BASED STYLING (RULE-SPECIFIC) === */
+        /* Container wrapping all lint cards */
+.lint-container {
+    display: flex;
+    flex-direction: column;
+    gap: 16px; /* space between cards */
+    margin-top: 16px;
+}
 
-        /* ERROR — invalid-syntax */
-        #lint-view .lint-card:has(.lint-title:contains("invalid-syntax")) {
-            border-left-color: var(--error-red);
-        }
-        
-        /* WARNING — boolean-operator */
-        #lint-view .lint-card:has(.lint-title:contains("boolean-operator")) {
-            border-left-color: var(--warning-yellow);
-        }
-        
-        /* INFO — parentheses */
-        #lint-view .lint-card:has(.lint-title:contains("parentheses")) {
-            border-left-color: var(--primary);
-        }
-        
-        /* OPTIONAL EXAMPLES — you can expand this list */
-        #lint-view .lint-card:has(.lint-title:contains("field-mismatch")) {
-            border-left-color: #0ea5e9; /* sky-blue 500 */
-        }
-        
-        #lint-view .lint-card:has(.lint-title:contains("truncation")) {
-            border-left-color: #7c3aed; /* violet 600 */
-        }
-        
-        /* If you want a slight highlight background for errors */
-        #lint-view .lint-card:has(.lint-title:contains("invalid-syntax")) {
-            background-color: #fef2f2;
-        }
-        
-        /* Slight tint for warnings */
-        #lint-view .lint-card:has(.lint-title:contains("boolean-operator")) {
-            background-color: #fffbeb;
-        }
+/* Individual card */
+.lint-card {
+    background-color: #ffffff; /* white background */
+    border-radius: 12px;        /* rounded corners */
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1); /* soft shadow */
+    padding: 16px;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
 
-        #lint-view .lint-card {
-            background: var(--bg-card);
-            border: 1px solid var(--border-color);
-            border-left: 4px solid var(--warning-yellow); /* default */
-            
-            padding: 1rem;
-            margin-top: 1rem;         /* <<< spacing ABOVE each card */
-            margin-bottom: 1rem;      /* <<< spacing BELOW each card */
-            
-            border-radius: 0.65rem;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.06);
-        
-            transition: all 0.2s;
-        }
+/* Hover effect to lift the card */
+.lint-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(0,0,0,0.15);
+}
+
+/* Title section of the card */
+.lint-title {
+    font-weight: bold;
+    font-size: 1.1rem;
+    margin-bottom: 8px;
+    color: #333333;
+}
+
+/* Message section */
+.lint-message {
+    font-size: 0.95rem;
+    color: #555555;
+    margin-bottom: 8px;
+    white-space: pre-wrap; /* preserves line breaks */
+}
+
+/* Query block */
+.lint-query {
+    background-color: #f8f8f8;
+    border-left: 4px solid #4CAF50; /* green accent */
+    padding: 10px 12px;
+    border-radius: 8px;
+    font-family: monospace;
+    font-size: 0.9rem;
+    overflow-x: auto;
+}
+
+/* ANSI color styles (optional, matches your JS conversion) */
+.ansi-red { color: #d32f2f; font-weight: bold; }
+.ansi-yellow { color: #fbc02d; font-weight: bold; }
+
+/* Optional: show title only if messages exist */
+#messages-title {
+    font-size: 1.2rem;
+    font-weight: bold;
+    margin-bottom: 12px;
+    color: #222222;
+}
+
 
     </style>
 </head>
@@ -339,33 +352,23 @@
             const observer = new MutationObserver(sendHeight);
             observer.observe(document.body, { attributes: true, childList: true, subtree: true });
         });
-        (async () => {
-    // --- Load Pyodide ---
-    const pyodide = await loadPyodide({
-        stdout: msg => console.log(msg),
-        stderr: msg => console.error(msg)
-    });
-
+(async () => {
+    const pyodide = await loadPyodide({ stdout: msg => console.log(msg), stderr: msg => console.error(msg) });
     await pyodide.loadPackage("micropip");
     const micropip = pyodide.pyimport("micropip");
 
-    // install the linter wheel
     await micropip.install("https://files.pythonhosted.org/packages/50/43/5f6b2e8d83aa1e8324f47b24bf7d44dd7c60dd07fe6b5c72e3568ea6e0b0/search_query_linter-0.1.1-py3-none-any.whl");
 
     const lintBtn = document.getElementById("btn-lint");
     const queryInput = document.getElementById("query");
     const platformInput = document.getElementById("platform");
-    const output = document.getElementById("output");
     const lintView = document.getElementById("lint-view");
     const messagesTitle = document.getElementById("messages-title");
 
     lintBtn.disabled = false;
 
     function escapeHtml(str) {
-        return str
-            .replace(/&/g, "&amp;")
-            .replace(/</g, "&lt;")
-            .replace(/>/g, "&gt;");
+        return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
     }
 
     function convertAnsiToHtml(text) {
@@ -378,15 +381,21 @@
     function renderLintMessages(messages) {
         lintView.innerHTML = "";
 
+        // Wrap all messages in a container div
+        const container = document.createElement("div");
+        container.className = "lint-container";
+
         messages.forEach(msg => {
+            // Create individual card for each lint-title -> lint-query
             const card = document.createElement("div");
             card.className = "lint-card";
 
             const titleEl = document.createElement("div");
             titleEl.className = "lint-title";
-            titleEl.innerHTML = `${msg.icon} ${msg.rule_id}`;
+            titleEl.innerHTML = `${msg.icon || "⚠️"} ${msg.rule_id}`;
 
             const messageEl = document.createElement("div");
+            messageEl.className = "lint-message";
             messageEl.innerHTML = convertAnsiToHtml(escapeHtml(msg.message));
 
             card.appendChild(titleEl);
@@ -399,14 +408,17 @@
                 card.appendChild(queryBlock);
             }
 
-            lintView.appendChild(card);
+            container.appendChild(card);
         });
+
+        lintView.appendChild(container);
 
         if (messages.length > 0) {
             messagesTitle.style.display = "block";
             lintView.style.display = "block";
         }
 
+        // Adjust iframe/parent height
         setTimeout(() => {
             if (window.parent) {
                 window.parent.postMessage({
@@ -438,15 +450,12 @@ json.dumps([m.to_dict() for m in result])
             return;
         }
 
-        output.textContent = resultJson;
-
         const rawMessages = JSON.parse(resultJson);
 
-        // --- new splitting behavior (IMPORTANT) ---
+        // Split multiline messages into separate entries
         const splitMessages = [];
         rawMessages.forEach(m => {
             const parts = m.message.split("\n").filter(x => x.trim() !== "");
-
             parts.forEach(segment => {
                 splitMessages.push({
                     icon: m.icon ?? "⚠️",
@@ -460,7 +469,7 @@ json.dumps([m.to_dict() for m in result])
         renderLintMessages(splitMessages);
     });
 })();
+</script>
 
-    </script>
 </body>
 </html>
