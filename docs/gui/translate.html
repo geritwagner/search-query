@@ -233,6 +233,10 @@
             // Write to the hidden status div for appendModule to read
             statusDiv.textContent = msg; 
         }
+        if(statusDiv.innerText == 'Loading Search Query…'){
+            statusDiv.innerText == 'Search Query Ready…';
+            statusDiv.textContent = 'Search Query Ready…';
+        }
         console.log("Pyodide Hook:", msg); 
     };
     
