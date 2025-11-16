@@ -90,7 +90,7 @@
         }
         
         /* Styles the individual message containers (lint-card divs injected by the external script) */
-        #lint-view .lint-card {
+        #lint-view {
             border: 1px solid var(--border-color);
             padding: 1rem;
             margin-bottom: 10px; /* Separates the boxes visually */
@@ -166,45 +166,41 @@
 .lint-container {
     display: flex;
     flex-direction: column;
-    gap: 16px; /* space between cards */
+    gap: 16px;
     margin-top: 16px;
 }
 
-/* Individual card */
 .lint-card {
-    background-color: #ffffff; /* white background */
-    border-radius: 12px;        /* rounded corners */
-    box-shadow: 0 4px 12px rgba(0,0,0,0.1); /* soft shadow */
+    background-color: #ffffff;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
     padding: 16px;
+    border-left: 4px solid #f59e0b; /* default warning accent */
     transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
-/* Hover effect to lift the card */
 .lint-card:hover {
     transform: translateY(-2px);
     box-shadow: 0 6px 16px rgba(0,0,0,0.15);
 }
 
-/* Title section of the card */
 .lint-title {
     font-weight: bold;
     font-size: 1.1rem;
     margin-bottom: 8px;
-    color: #333333;
+    color: #111827;
 }
 
-/* Message section */
 .lint-message {
     font-size: 0.95rem;
-    color: #555555;
+    color: #374151;
     margin-bottom: 8px;
-    white-space: pre-wrap; /* preserves line breaks */
+    white-space: pre-wrap;
 }
 
-/* Query block */
 .lint-query {
-    background-color: #f8f8f8;
-    border-left: 4px solid #4CAF50; /* green accent */
+    background-color: #f3f4f6;
+    border-left: 4px solid #4CAF50;
     padding: 10px 12px;
     border-radius: 8px;
     font-family: monospace;
@@ -212,17 +208,8 @@
     overflow-x: auto;
 }
 
-/* ANSI color styles (optional, matches your JS conversion) */
-.ansi-red { color: #d32f2f; font-weight: bold; }
-.ansi-yellow { color: #fbc02d; font-weight: bold; }
-
-/* Optional: show title only if messages exist */
-#messages-title {
-    font-size: 1.2rem;
-    font-weight: bold;
-    margin-bottom: 12px;
-    color: #222222;
-}
+.ansi-red { color: #dc2626; font-weight: bold; }
+.ansi-yellow { color: #d97706; font-weight: bold; }
 
 
     </style>
@@ -377,48 +364,48 @@
             .replace(/\x1b\[33m/g, '<span class="ansi-yellow">')
             .replace(/\x1b\[0m/g, '</span>');
     }
-
     function renderLintMessages(messages) {
-        lintView.innerHTML = "";
-
-        // Wrap all messages in a container div
+        lintView.innerHTML = ""; // clear previous messages
+    
+        if (messages.length === 0) {
+            messagesTitle.style.display = "none";
+            lintView.style.display = "none";
+            return;
+        }
+    
         const container = document.createElement("div");
         container.className = "lint-container";
-
+    
         messages.forEach(msg => {
-            // Create individual card for each lint-title -> lint-query
             const card = document.createElement("div");
             card.className = "lint-card";
-
+    
             const titleEl = document.createElement("div");
             titleEl.className = "lint-title";
-            titleEl.innerHTML = `${msg.icon || "⚠️"} ${msg.rule_id}`;
-
+            titleEl.textContent = `${msg.icon || "⚠️"} ${msg.rule_id}`;
+    
             const messageEl = document.createElement("div");
             messageEl.className = "lint-message";
             messageEl.innerHTML = convertAnsiToHtml(escapeHtml(msg.message));
-
+    
             card.appendChild(titleEl);
             card.appendChild(messageEl);
-
+    
             if (msg.query) {
                 const queryBlock = document.createElement("pre");
                 queryBlock.className = "lint-query";
                 queryBlock.textContent = msg.query;
                 card.appendChild(queryBlock);
             }
-
+    
             container.appendChild(card);
         });
-
+    
         lintView.appendChild(container);
-
-        if (messages.length > 0) {
-            messagesTitle.style.display = "block";
-            lintView.style.display = "block";
-        }
-
-        // Adjust iframe/parent height
+    
+        messagesTitle.style.display = "block";
+        lintView.style.display = "block";
+    
         setTimeout(() => {
             if (window.parent) {
                 window.parent.postMessage({
@@ -426,7 +413,7 @@
                     height: document.body.scrollHeight
                 }, "*");
             }
-        }, 80);
+        }, 50);
     }
 
     lintBtn.addEventListener("click", async () => {
