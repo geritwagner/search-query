@@ -182,93 +182,104 @@
     </div>
 
     <script src="translate.js"></script>
-    
     <script>
-        const PARENT_ORIGIN = window.location.origin; 
+    const PARENT_ORIGIN = window.location.origin; 
+    
+    const loader = document.getElementById('loading-overlay');
+    const loadingText = document.getElementById('loading-text');
+    const contentWrapper = document.getElementById('content-wrapper');
+    const statusDisplay = document.getElementById('status-display');
+    const btnTranslate = document.getElementById('btn-translate'); // Added
+
+    // This function is kept, as requested, but handles the interface transition
+    function appendModule(){
+        const statusText = document.getElementById('status');
+        const cleanStatus = statusText.innerText.replace(/\u001b\[.*?m/g, ''); // Clean ANSI codes
         
-        const loader = document.getElementById('loading-overlay');
-        const loadingText = document.getElementById('loading-text');
-        const contentWrapper = document.getElementById('content-wrapper');
-        const statusDisplay = document.getElementById('status-display');
-
-        // --- Cross-Origin Height Communication ---
-        function sendHeight() {
-            if (document.body.classList.contains('loading-active')) return;
-
-            const height = document.body.scrollHeight;
-            if (window.parent) {
-                window.parent.postMessage({
-                    type: 'setHeight',
-                    height: height
-                }, PARENT_ORIGIN);
-            }
-        }
+        // 1. Always update loading text with the last known status
+        loadingText.innerText = cleanStatus;
         
-        // --- Pyodide Status Hook and Loader Control ---
-        
-        const originalAppendStatus = window.appendStatus || function(msg) { 
-            const statusDiv = document.getElementById('status');
-            if (statusDiv) {
-                statusDiv.textContent = msg; 
-            }
-            console.log("Pyodide Hook:", msg); 
-        };
-        
-        window.appendStatus = function(msg) {
-            // 1. Update the visual status text (SINGLE LINE/STRING)
-            const cleanMsg = msg.replace(/\u001b\[.*?m/g, '').trim(); 
-            
-            // NOTE: We only update the single loading text string (loadingText)
-            if (loadingText) {
-                // Prioritize showing final status or module-loading info. 
-                // We show the last received clean message.
-                if (cleanMsg) {
-                    loadingText.textContent = cleanMsg;
-                }
-            }
+        // 2. Check for readiness and open the interface
+        if(cleanStatus.includes("Pyodide ready.") || cleanStatus.includes('Done') || cleanStatus.includes('Ready')){
+            // Readiness logic
+            document.body.classList.remove('loading-active');
+            statusDisplay.innerText = 'Search Query loaded…';
+            btnTranslate.disabled = false; // Enable the button
 
+            loader.style.opacity = '0';
+            contentWrapper.style.opacity = '1';
+            contentWrapper.style.display = 'block'; // Show content
 
-            // 2. Control the visual transition state and viewport lock
-            if (cleanMsg.includes('Done') || cleanMsg.includes('ready') || cleanMsg.includes('Ready')) {
-                // Done loading: Unlock viewport, fade out loader, show content
-                document.body.classList.remove('loading-active');
-                loader.style.opacity = '0';
-                contentWrapper.style.opacity = '1';
-                statusDisplay.textContent = 'Search Query loaded…';
-
-                setTimeout(() => {
-                    loader.style.display = 'none';
-                    document.body.style.overflow = '';
-                    sendHeight();
-                }, 500);
-            } else {
-                // Loading: Lock viewport
-                document.body.classList.add('loading-active');
-                loader.style.display = 'flex';
-                loader.style.opacity = '1';
-                contentWrapper.style.opacity = '0';
-            }
-
-            // 3. Call the original function and re-trigger height update 
-            originalAppendStatus(msg);
-            setTimeout(sendHeight, 50); 
-        };
-        
-        // --- Initial Setup and DOM Observer ---
-        document.addEventListener('DOMContentLoaded', () => {
-            // Initial state setup: LOCK VIEWPORT IMMEDIATELY
+            setTimeout(() => {
+                loader.style.display = 'none';
+                document.body.style.overflowY = 'auto'; // Restore scrolling
+                sendHeight(); // Final resize
+            }, 500);
+        } else {
+            // Loading state - ensure content is hidden
             document.body.classList.add('loading-active');
+            loader.style.display = 'flex';
+            loader.style.opacity = '1';
             contentWrapper.style.opacity = '0';
-            loader.style.display = 'flex'; 
-            loadingText.textContent = "Initializing Pyodide...";
+            contentWrapper.style.display = 'none';
+        }
+    }
+    // Keep the interval as requested
+    setInterval(appendModule, 100);
 
-            // 1. Send initial minimal height
-            window.addEventListener('load', sendHeight);
-            
-            // 2. Observe DOM changes (Crucial for when the output dynamically appears)
-            const observer = new MutationObserver(sendHeight);
-            observer.observe(document.body, { attributes: true, childList: true, subtree: true });
-        });
-    </script>
+    // --- Cross-Origin Height Communication ---
+    function sendHeight() {
+        // Only send height if the loader is fully inactive
+        if (loader.style.display !== 'none') return;
+
+        const height = document.body.scrollHeight;
+        if (window.parent) {
+            window.parent.postMessage({
+                type: 'setHeight',
+                height: height
+            }, PARENT_ORIGIN);
+        }
+    }
+    
+    // --- Pyodide Status Hook (Modified to primarily update the hidden #status) ---
+    
+    const originalAppendStatus = window.appendStatus || function(msg) { 
+        const statusDiv = document.getElementById('status');
+        if (statusDiv) {
+            // Write to the hidden status div for appendModule to read
+            statusDiv.textContent = msg; 
+        }
+        console.log("Pyodide Hook:", msg); 
+    };
+    
+    window.appendStatus = function(msg) {
+        // 1. Call the original function which writes to the hidden #status div
+        originalAppendStatus(msg);
+
+        // 2. Re-trigger height update immediately if loading is active
+        // The display logic is now primarily handled by appendModule's interval
+        if (loader.style.display === 'none') {
+             setTimeout(sendHeight, 50); 
+        }
+    };
+    
+    // --- Initial Setup and DOM Observer ---
+    document.addEventListener('DOMContentLoaded', () => {
+        // Initial state setup: LOCK VIEWPORT IMMEDIATELY
+        document.body.classList.add('loading-active');
+        contentWrapper.style.opacity = '0';
+        contentWrapper.style.display = 'none'; // Ensure content is hidden
+        loader.style.display = 'flex'; 
+        loadingText.textContent = "Loading Pyodide runtime...";
+        btnTranslate.disabled = true; // Disable button initially
+
+        // 1. Send initial minimal height
+        window.addEventListener('load', sendHeight);
+        
+        // 2. Observe DOM changes 
+        const observer = new MutationObserver(sendHeight);
+        observer.observe(document.body, { attributes: true, childList: true, subtree: true });
+    });
+</script>
 </body>
 </html>
