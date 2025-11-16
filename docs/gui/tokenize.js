@@ -90,7 +90,6 @@ const allowedPlatforms = new Set([
   "wos",
   "pubmed",
   "ebscohost",
-  "scopus" // keep here, adjust if not present
 ]);
 
 function appendStatus(msg) {
@@ -226,9 +225,6 @@ def get_parser(platform, query_str):
         return Parser(query_str=query_str)
     elif platform == "ebscohost":
         from search_query.ebscohost.parser import EBSCOHostParser as Parser
-        return Parser(query_str=query_str)
-    elif platform == "scopus":
-        from search_query.scopus.parser import ScopusParser as Parser
         return Parser(query_str=query_str)
     else:
         raise ValueError(f"Unsupported platform: {platform}")
