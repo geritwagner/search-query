@@ -160,53 +160,38 @@
         #content-wrapper { transition: opacity 0.5s ease; opacity: 0; }
         /* === LINT CARD TYPE-BASED STYLING (RULE-SPECIFIC) === */
         /* Container wrapping all lint cards */
-.lint-container {
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
+/* Each lint item separated by border-top and margin */
+.lint-item {
+    border-top: 1px solid #e5e7eb; /* light gray line */
     margin-top: 16px;
-}
-.lint-card {
-    background-color: #ffffff;
-    border-radius: 10px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-    padding: 16px;
-    margin-bottom: 16px; /* separate cards */
-    border-left: 4px solid #f59e0b; /* default warning color */
-    transition: transform 0.2s, box-shadow 0.2s;
-}
-
-.lint-card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 16px rgba(0,0,0,0.15);
+    padding-top: 8px;
+    background-color: inherit; /* match page background */
 }
 
 .lint-title {
-    font-weight: 700;
-    font-size: 1.1rem;
-    margin-bottom: 8px;
+    font-weight: 600;
+    font-size: 1rem;
     color: #111827;
+    margin-bottom: 4px;
 }
 
 .lint-message {
     font-size: 0.95rem;
     color: #374151;
-    margin-bottom: 8px;
     white-space: pre-wrap;
+    margin-bottom: 4px;
 }
 
 .lint-query {
-    background-color: #f3f4f6;
-    border-left: 4px solid #4CAF50;
-    padding: 10px 12px;
-    border-radius: 6px;
+    background-color: #f9fafb; /* subtle gray to differentiate */
+    border-left: 3px solid #4CAF50; /* green accent */
+    padding: 6px 10px;
     font-family: monospace;
     font-size: 0.9rem;
     overflow-x: auto;
+    border-radius: 4px;
+    margin-top: 4px;
 }
-
-.ansi-red { color: #dc2626; font-weight: bold; }
-.ansi-yellow { color: #d97706; font-weight: bold; }
 
 
     </style>
@@ -369,50 +354,55 @@ function renderLintMessages(messages) {
         lintView.style.display = "none";
         return;
     }
-    messages.forEach(msg => {
-        // Create a card for each message
-        const card = document.createElement("div");
-        card.className = "lint-card";
+    messages.forEach((msg, index) => {
+    // Container for one message
+        const container = document.createElement("div");
+        container.className = "lint-item";
+        container.dataset.index = index + 1; // optional numbering
     
         // Title
         const titleEl = document.createElement("div");
         titleEl.className = "lint-title";
-        titleEl.textContent = `${msg.icon || "⚠️"} ${msg.rule_id}`;
-        card.appendChild(titleEl);
+        titleEl.textContent = `${index + 1}. ${msg.icon || "⚠️"} ${msg.rule_id}`;
+        container.appendChild(titleEl);
     
-        // Message / detail
+        // Message/detail
         const messageEl = document.createElement("div");
         messageEl.className = "lint-message";
         messageEl.innerHTML = convertAnsiToHtml(escapeHtml(msg.message));
-        card.appendChild(messageEl);
+        container.appendChild(messageEl);
     
-        // Query block (only if exists)
+        // Query block (if exists)
         if (msg.query) {
             const queryBlock = document.createElement("pre");
             queryBlock.className = "lint-query";
             queryBlock.textContent = msg.query;
-            card.appendChild(queryBlock);
+            container.appendChild(queryBlock);
         }
     
-        // Append this single card to the main container
-        lintView.appendChild(card);
+        lintView.appendChild(container);
     });
 
 
-    // Show title and container
-    messagesTitle.style.display = "block";
-    lintView.style.display = "block";
-
-    // Adjust parent height
-    setTimeout(() => {
-        if (window.parent) {
-            window.parent.postMessage({
-                type: 'setHeight',
-                height: document.body.scrollHeight
-            }, "*");
+   if (messages.length > 0) {
+            messagesTitle.style.display = "block";
+            lintView.style.display = "block";
+        } else {
+             // Hide if no messages
+            messagesTitle.style.display = "none";
+            lintView.style.display = "none";
         }
-    }, 50);
-}
+
+        // Adjust iframe/parent height
+        setTimeout(() => {
+            if (window.parent) {
+                window.parent.postMessage({
+                    type: 'setHeight',
+                    height: document.body.scrollHeight
+                }, "*");
+            }
+        }, 80);
+    }
     lintBtn.addEventListener("click", async () => {
         const query = queryInput.value;
         const platform = platformInput.value;
