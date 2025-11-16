@@ -2,9 +2,11 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8" />
-    <title>search-query Linter</title>
+    <title>Search-Query Linter</title>
     <meta name="viewport" content="width=device-width,initial-scale=1" />
     
+    <script src="https://cdn.jsdelivr.net/pyodide/v0.26.2/full/pyodide.js"></script>
+
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
     
     <style>
@@ -26,15 +28,20 @@
             padding: 1.5rem; 
             min-height: 100vh;
             overflow-x: hidden;
-            overflow-y: hidden; /* Temporarily disabled, managed by JS */
+            overflow-y: hidden;
             position: relative;
         }
         
-        /* Layout & Typography */
+        /* UTILITY CLASS FOR VIEWPORT LOCK */
+        body.loading-active {
+            overflow: hidden; 
+            height: 100vh;
+        }
+
+        /* --- Layout & Typography --- */
         header h1 { font-size: 1.5rem; font-weight: bold; margin-bottom: 0.25rem; }
         header p { color: var(--text-secondary); margin-top: 0; font-size: 0.95rem; }
         
-        /* Card Structure */
         .main-content-card {
             margin-top: 1.5rem;
             background: var(--bg-card);
@@ -67,7 +74,7 @@
         #btn-lint:disabled { opacity: 0.6; cursor: not-allowed; box-shadow: none; }
 
         /* --- Status & Output --- */
-        #status { display:none; } /* Pyodide's default output area */
+        #status { display:none; } 
         #status-display { 
             margin-top: 1rem; padding: 0.5rem 1rem; background: #fff3e0; border: 1px solid #ffcc80; 
             border-radius: 0.375rem; font-size: 0.875rem; color: #a55a00; font-weight: 500; 
@@ -75,6 +82,36 @@
         #output-wrap { margin-top: 1.5rem; }
         #output { background-color: #f3f4f6; padding: 1rem; border-radius: 0.5rem; font-size: 0.85rem; }
         
+        /* --- LINTER MESSAGE SEPARATION (CRITICAL FIX) --- */
+        #lint-view { 
+            margin-top: 0.5rem; /* Reduced top margin to place it close to title */
+        }
+        /* Target the dynamic 'lint-card' divs created by renderLintMessages() */
+        #lint-view .lint-card {
+            border: 1px solid var(--border-color);
+            padding: 1rem;
+            margin-bottom: 10px; /* Space between message boxes */
+            border-radius: 0.5rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            background-color: var(--bg-card);
+        }
+        #lint-view .lint-title {
+            font-weight: 700;
+            font-size: 1rem;
+            margin-bottom: 0.5rem;
+            color: var(--text-main);
+        }
+        #lint-view pre.lint-query {
+            background-color: #f3f4f6;
+            padding: 0.5rem;
+            margin-top: 0.75rem;
+            border: none;
+            border-radius: 0.375rem;
+            font-size: 0.8rem;
+            color: #374151;
+        }
+
+
         /* --- Loading Overlay Styles --- */
         #loading-overlay {
             position: fixed;
@@ -126,9 +163,9 @@
             <p>Paste a query, select a platform, and run the linter in your browser.</p>
         </header>
 
-        <div id="status">Loading Search Query…</div> 
+        <div id="status">Loading Pyodide…</div> 
         
-        <div id="status-display">Loading Search Query…</div>
+        <div id="status-display">Loading Pyodide…</div>
 
         <div class="main-content-card">
             <label for="query">Query</label>
@@ -139,6 +176,7 @@
                 <option value="wos">WoS</option>
                 <option value="pubmed">PubMed</option>
                 <option value="ebscohost">EBSCOhost</option>
+                <option value="scopus">Scopus</option>
             </select>
 
             <div class="row">
@@ -172,7 +210,7 @@
         // --- Cross-Origin Height Communication ---
         function sendHeight() {
             // Only send height if content is visible
-            if (loader.style.display !== 'none') return;
+            if (document.body.classList.contains('loading-active')) return;
 
             const height = document.body.scrollHeight;
             if (window.parent) {
@@ -203,7 +241,6 @@
                 // Done loading: Unlock viewport, fade out loader, show content
                 document.body.classList.remove('loading-active');
                 loader.style.opacity = '0';
-                statusDisplay.innerText = 'Search Query loaded…'
                 contentWrapper.style.opacity = '1';
 
                 setTimeout(() => {
@@ -230,7 +267,7 @@
             document.body.classList.add('loading-active');
             contentWrapper.style.opacity = '0';
             loader.style.display = 'flex'; 
-            loadingText.textContent = "Loading Pyodide runtime...";
+            loadingText.textContent = "Initializing Pyodide...";
 
             // 1. Send initial minimal height
             window.addEventListener('load', sendHeight);
