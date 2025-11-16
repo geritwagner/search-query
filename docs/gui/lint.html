@@ -197,6 +197,21 @@
             background-color: #fffbeb;
         }
 
+        #lint-view .lint-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-left: 4px solid var(--warning-yellow); /* default */
+            
+            padding: 1rem;
+            margin-top: 1rem;         /* <<< spacing ABOVE each card */
+            margin-bottom: 1rem;      /* <<< spacing BELOW each card */
+            
+            border-radius: 0.65rem;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+        
+            transition: all 0.2s;
+        }
+
     </style>
 </head>
 <body>
