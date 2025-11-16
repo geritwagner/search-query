@@ -5,8 +5,6 @@
     <title>search-query translator</title>
     <meta name="viewport" content="width=device-width,initial-scale=1" />
     
-    <script src="https://cdn.jsdelivr.net/pyodide/v0.26.2/full/pyodide.js"></script>
-
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
     
     <style>
@@ -117,7 +115,7 @@
         /* --- Sequential Log Container --- */
         #loading-log-container {
             width: 80%;
-            max-height: 100px; /* Constrain height */
+            max-height: 100px;
             overflow-y: scroll;
             border: 1px solid var(--border-color);
             padding: 0.5rem;
@@ -150,7 +148,7 @@
     <div id="loading-overlay">
         <div class="loader"></div>
         <div id="loading-text">Initializing Pyodide...</div>
-        <pre id="loading-log-container"></pre> 
+        <pre id="loading-log-container"></pre>
     </div>
     
     <div id="content-wrapper">
@@ -207,7 +205,7 @@
         const loadingText = document.getElementById('loading-text');
         const contentWrapper = document.getElementById('content-wrapper');
         const statusDisplay = document.getElementById('status-display');
-        const loadingLog = document.getElementById('loading-log-container'); // NEW log element
+        const loadingLog = document.getElementById('loading-log-container');
 
         // --- Cross-Origin Height Communication ---
         function sendHeight() {
@@ -229,7 +227,7 @@
             if (statusDiv) {
                 statusDiv.textContent = msg; 
             }
-            // console.log("Pyodide Hook:", msg); // Outputting to console is good for debugging
+            // console.log("Pyodide Hook:", msg); 
         };
         
         window.appendStatus = function(msg) {
@@ -237,19 +235,16 @@
             
             // 1. Append sequential message to the visible log area
             if (cleanMsg) {
-                // We use innerText/textContent here to prevent HTML injection and ensure pre formatting
                 loadingLog.textContent += cleanMsg + '\n';
-                // Scroll the log to the bottom to show the latest message
                 loadingLog.scrollTop = loadingLog.scrollHeight; 
             }
 
             // 2. Control the single-line main loading text
             if (loadingText && cleanMsg) {
-                // Heuristic: If the message looks like a summary or final step, show it prominently.
-                if (cleanMsg.startsWith('Loaded') || cleanMsg.startsWith('Fetching') || cleanMsg.includes('Done') || cleanMsg.includes('ready')) {
+                if (cleanMsg.includes('Done') || cleanMsg.includes('ready')) {
                     loadingText.textContent = cleanMsg;
-                } else if (cleanMsg.includes('installing')) {
-                    loadingText.textContent = 'Installing packages...'; // Generic status for long install
+                } else if (cleanMsg.startsWith('Loaded') || cleanMsg.startsWith('Fetching')) {
+                    loadingText.textContent = cleanMsg;
                 }
             }
 
