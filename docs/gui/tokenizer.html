@@ -139,21 +139,23 @@
 </head>
 <body>
 
+    
     <div id="loading-overlay">
         <div class="loader"></div>
-        <div id="loading-text">Initializing Search Query...</div>
+        <div id="loading-text">Initializing search-query...</div>
     </div>
     
     <div id="content-wrapper">
+        
         <header>
             <h1>Search-Query Tokenizer</h1>
             <p>Paste a query, select a platform, and see the raw tokens from <code>tokenize()</code>.</p>
         </header>
-
+        
         <div id="status">Loading Search Query…</div> 
         
         <div id="status-display">Loading Search Query…</div>
-
+        
         <div class="main-content-card">
             <label for="query">Query</label>
             <textarea id="query" rows="6">(TI=(platform* OR "digital work") AND PY=2020-2025)</textarea>
@@ -262,7 +264,7 @@
             document.body.classList.add('loading-active');
             contentWrapper.style.opacity = '0';
             loader.style.display = 'flex'; 
-            loadingText.textContent = "Loading Pyodide runtime...";
+            loadingText.textContent = "Initializing search-query...";
 
             // 1. Send initial minimal height
             window.addEventListener('load', sendHeight);

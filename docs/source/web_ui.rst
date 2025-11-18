@@ -1,9 +1,9 @@
 .. _webui:
 
-Search-Query Studio
+Search Query Studio
 ==========================================================
 
-The Search-Query Studio Web UI is currently under development.
+The Search Query Studio Web UI is currently under development.
 
 
 .. raw:: html

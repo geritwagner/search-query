@@ -165,7 +165,7 @@ importlib.invalidate_caches()
 }
 
 async function initPyodideAndPackage() {
-  setStatus("Loading Pyodide…");
+  setStatus("Loading search-query…");
   const pyodide = await loadPyodide();
   setStatus("Pyodide loaded. Loading 'packaging'…");
   await pyodide.loadPackage("packaging");
