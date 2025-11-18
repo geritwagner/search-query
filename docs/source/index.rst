@@ -160,6 +160,7 @@ Below is a high-level overview of the core functionalities:
 
    cli
    pre_commit
+   web_ui
 
 .. toctree::
    :hidden:
