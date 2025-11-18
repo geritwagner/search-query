@@ -14,3 +14,4 @@ The Search-Query Studio Web UI is currently under development.
       class="sq-button">
      Open Search-Query Studio
    </a>
+   <br><br>
