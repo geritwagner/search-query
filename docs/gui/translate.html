@@ -140,7 +140,7 @@
     <div id="content-wrapper">
         <header>
             <h1>Search-Query Translator</h1>
-            <p>Translate a database/search-platform query into another platform using the <code>search-query</code> package (running in Pyodide).</p>
+            <p>Translate a database/search-platform query into another platform using the <code>search-query</code> package.</p>
         </header>
 
         <div id="status">Loading Search Query…</div> 
@@ -156,7 +156,6 @@
                 <option value="wos">wos</option>
                 <option value="pubmed">pubmed</option>
                 <option value="ebscohost">ebscohost</option>
-                <option value="scopus">scopus</option>
             </select>
 
             <label for="platform-target">Target platform</label>
@@ -164,7 +163,6 @@
                 <option value="wos">wos</option>
                 <option value="pubmed" selected>pubmed</option>
                 <option value="ebscohost">ebscohost</option>
-                <option value="scopus">scopus</option>
             </select>
 
             <div class="row">
@@ -200,7 +198,7 @@ const appendInterval = setInterval(() => {
 
     loadingText.innerText = lastLine || "Loading…";
 
-    if (lastLine.includes("Pyodide ready.")) {
+    if (lastLine.includes("search-query ready.")) {
         loader.style.display = 'none';
         contentWrapper.style.display = 'block';
         contentWrapper.style.opacity = '1';

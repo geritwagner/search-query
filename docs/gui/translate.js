@@ -167,11 +167,11 @@ importlib.invalidate_caches()
 async function initPyodideAndPackage() {
   setStatus("Loading search-query…");
   const pyodide = await loadPyodide();
-  setStatus("Pyodide loaded. Loading 'packaging'…");
+  setStatus("search-query loaded. Loading 'packaging'…");
   await pyodide.loadPackage("packaging");
   setStatus("'packaging' loaded. Fetching search_query files…", true);
   await loadPackageFilesIntoPyodide(pyodide);
-  setStatus("Pyodide ready.");
+  setStatus("search-query ready.");
   const btn = document.getElementById("btn-translate");
   if (btn) btn.disabled = false;
   return pyodide;
