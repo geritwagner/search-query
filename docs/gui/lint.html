@@ -4,102 +4,33 @@
     <meta charset="UTF-8" />
     <title>Search-Query Linter</title>
     <meta name="viewport" content="width=device-width,initial-scale=1" />
-    
     <script src="https://cdn.jsdelivr.net/pyodide/v0.26.2/full/pyodide.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
     
     <style>
         /* --- CORE CSS --- */
-        :root {
-            --primary: #4f46e5;       
-            --primary-dark: #3f35c5;
-            --bg-card: #ffffff;
-            --border-color: #e5e7eb;  
-            --text-main: #1f2937;     
-            --text-secondary: #6b7280; 
-            --error-red: #dc2626;     
-            --warning-yellow: #d97706; 
-        }
-
+        :root { --primary: #4f46e5; --primary-dark: #3f35c5; --bg-card: #ffffff; --border-color: #e5e7eb; --text-main: #1f2937; --text-secondary: #6b7280; --error-red: #dc2626; --warning-yellow: #d97706; }
         * { box-sizing: border-box; margin: 0; padding: 0; line-height: 1.5; font-family: 'Inter', sans-serif; }
-        body {
-            background-color: var(--bg-card);
-            color: var(--text-main);
-            padding: 1.5rem; 
-            min-height: 100vh;
-            overflow-x: hidden;
-            overflow-y: hidden; 
-            position: relative;
-        }
-        
+        body { background-color: var(--bg-card); color: var(--text-main); padding: 1.5rem; min-height: 100vh; overflow: hidden; position: relative; }
         body.loading-active { overflow: hidden; height: 100vh; }
-
         header h1 { font-size: 1.5rem; font-weight: bold; margin-bottom: 0.25rem; }
         header p { color: var(--text-secondary); margin-top: 0; font-size: 0.95rem; }
-        
-        .main-content-card {
-            margin-top: 1.5rem;
-            background: var(--bg-card);
-            border: 1px solid var(--border-color);
-            border-radius: 0.75rem;
-            padding: 1.5rem;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-        }
-
+        .main-content-card { margin-top: 1.5rem; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 0.75rem; padding: 1.5rem; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05); }
         label { display: block; margin-top: 1.25rem; margin-bottom: 0.25rem; font-weight: 600; font-size: 0.875rem; }
-        
-        #query {
-            font-size: 1.1rem !important;
-            line-height: 1.6;
-            padding: 1rem;
-            min-height: 120px;
-            font-family: 'Courier New', monospace;
-        }
-        
-        textarea, select { 
-            display: block; width: 100%; padding: 0.75rem; border: 1px solid var(--border-color); 
-            border-radius: 0.5rem; box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.07); 
-            transition: border-color 0.2s, box-shadow 0.2s; color: var(--text-main);
-            max-width: 100%;
-        }
-        
-        textarea:focus, select:focus { 
-            border-color: var(--primary); box-shadow: 0 0 0 1px var(--primary); outline: none; 
-        }
-
-        #btn-lint {
-            width: auto; min-width: 200px; padding: 0.75rem 2rem; border: none; border-radius: 0.5rem; font-weight: 600; color: white; background-color: var(--primary); cursor: pointer; transition: background-color 0.2s; box-shadow: 0 2px 4px rgba(79, 70, 229, 0.4); margin-top: 1.5rem; font-size: 1rem; display: block; margin-left: auto; margin-right: auto;
-        }
+        #query { font-size: 1.1rem !important; line-height: 1.6; padding: 1rem; min-height: 120px; font-family: 'Courier New', monospace; }
+        textarea, select { display: block; width: 100%; padding: 0.75rem; border: 1px solid var(--border-color); border-radius: 0.5rem; box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.07); transition: border-color 0.2s, box-shadow 0.2s; color: var(--text-main); max-width: 100%; }
+        textarea:focus, select:focus { border-color: var(--primary); box-shadow: 0 0 0 1px var(--primary); outline: none; }
+        #btn-lint { width: auto; min-width: 200px; padding: 0.75rem 2rem; border: none; border-radius: 0.5rem; font-weight: 600; color: white; background-color: var(--primary); cursor: pointer; transition: background-color 0.2s; box-shadow: 0 2px 4px rgba(79, 70, 229, 0.4); margin-top: 1.5rem; font-size: 1rem; display: block; margin-left: auto; margin-right: auto; }
         #btn-lint:hover:not(:disabled) { background-color: var(--primary-dark); }
         #btn-lint:disabled { opacity: 0.6; cursor: not-allowed; box-shadow: none; }
-
         #platform { max-width: 300px; }
-
         #status { display:none; } 
         #status-display { margin-top: 1rem; padding: 0.5rem 1rem; background: #fff3e0; border: 1px solid #ffcc80; border-radius: 0.375rem; font-size: 0.875rem; color: #a55a00; font-weight: 500; }
         #output-wrap { margin-top: 1.5rem; position: relative; }
         
         /* --- JSON OUTPUT WINDOW --- */
-        pre {
-            background: #1e1e1e; /* VS Code Dark BG */
-            color: #d4d4d4;      /* Default Text Color */
-            padding: 20px;
-            border-radius: 10px;
-            overflow-x: auto;
-            font-size: 15px;
-            font-family: 'Consolas', 'Monaco', monospace;
-            border: 1px solid #333;
-        }
-
-        #output {
-            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
-            font-size: 0.85rem;
-            background: transparent !important;
-            margin: 0;
-            padding: 0;
-            white-space: pre; 
-        }
-
+        pre { background: #1e1e1e; color: #d4d4d4; padding: 20px; border-radius: 10px; overflow-x: auto; font-size: 15px; font-family: 'Consolas', 'Monaco', monospace; border: 1px solid #333; }
+        #output { font-family: 'Consolas', 'Monaco', 'Courier New', monospace; font-size: 0.85rem; background: transparent !important; margin: 0; padding: 0; white-space: pre; }
         .json-actions { position: absolute; top: 15px; right: 15px; display: flex; gap: 8px; z-index: 20; }
         .json-btn { background: transparent !important; border: none !important; border-radius: 4px; color: #d4d4d4; padding: 6px 8px; cursor: pointer; font-size: 14px; transition: all 0.2s ease; backdrop-filter: none; }
         .json-btn:hover { background: rgba(255, 255, 255, 0.1) !important; color: #ffffff; }
@@ -110,24 +41,20 @@
         #lint-view .ansi-yellow { color: var(--warning-yellow); font-weight: 600; }
         #lint-view .lint-title { font-weight: 700; font-size: 1rem; margin-bottom: 0.5rem; color: var(--text-main); }
         #lint-view pre.lint-query { background-color: #f3f4f6; padding: 0.5rem; margin-top: 0.75rem; border: none; border-radius: 0.375rem; font-size: 0.8rem; color: #333; }
-
         #loading-overlay { position: fixed; inset: 0; background-color: rgba(255, 255, 255, 0.95); z-index: 1000; display: flex; flex-direction: column; justify-content: center; align-items: center; transition: opacity 0.5s ease; opacity: 1; }
         .loader { border: 4px solid var(--border-color); border-top: 4px solid var(--primary); border-radius: 50%; width: 50px; height: 50px; animation: spin 1s linear infinite; margin-bottom: 1rem; }
         #loading-text { font-size: 1.1rem; color: var(--text-main); font-weight: 500; text-align: center; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         #content-wrapper { transition: opacity 0.5s ease; opacity: 0; }
-        
         .lint-item { border-top: 1px solid #e5e7eb; margin-top: 16px; padding-top: 8px; background-color: inherit; }
         .lint-title { font-weight: 600; font-size: 1rem; color: #111827; margin-bottom: 4px; }
         .lint-message { font-size: 0.95rem; color: #374151; white-space: pre-wrap; margin-bottom: 4px; }
         .lint-query { background-color: #f9fafb; border-left: 3px solid #4CAF50; padding: 6px 10px; font-family: monospace; font-size: 0.9rem; overflow-x: auto; color: #333; border-radius: 4px; margin-bottom: 60px; }
         .lint-separator { border-top: 1px solid #e5e7eb; margin: 8px 0; }
-
     </style>
 </head>
 
 <body>
-
     <div id="loading-overlay">
         <div class="loader"></div>
         <div id="loading-text">Initializing Search Query...</div>
@@ -183,55 +110,40 @@
     <script src="script.js"></script>
     <script>
         const PARENT_ORIGIN = window.location.origin;
-
         const loader = document.getElementById('loading-overlay');
         const loadingText = document.getElementById('loading-text');
         const contentWrapper = document.getElementById('content-wrapper');
         const statusDisplay = document.getElementById('status-display');
         const codeBlock = document.getElementById('output');
         
-        // ===============================================
-        //  1. THE MANUAL REGEX HIGHLIGHTER
-        // ===============================================
+        // --- HIGHLIGHTER ---
         function syntaxHighlightInline(jsonObj) {
-            // Convert object to string if it isn't already
+            // INPUT MUST BE A JS OBJECT, NOT A STRING
             let json = JSON.stringify(jsonObj, undefined, 4);
-            
-            // Escape HTML characters (security)
             json = json.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-            
-            // The Regex Magic
             return json.replace(/("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/g, function (match) {
-                let style = 'color: #b5cea8;'; // Default: Number (Light Green)
-                
+                let style = 'color: #b5cea8;'; 
                 if (/^"/.test(match)) {
                     if (/:$/.test(match)) {
-                        // KEY DETECTED (ends with :) -> Light Blue
                         return '<span style="color: #9cdcfe;">' + match.slice(0, -1) + '</span>:';
                     } else {
-                        // STRING DETECTED -> Salmon/Orange
                         style = 'color: #ce9178;';
                     }
                 } else if (/true|false/.test(match)) {
-                    // BOOLEAN -> Blue
                     style = 'color: #569cd6;';
                 } else if (/null/.test(match)) {
-                    // NULL -> Blue
                     style = 'color: #569cd6;';
                 }
-                
                 return '<span style="' + style + '">' + match + '</span>';
             });
         }
- 
-        // --- 2. UPDATE LOGIC ---
+
         function updateHighlight(jsonObj) {
-            // Render directly to InnerHTML using your method
             const highlightedHtml = syntaxHighlightInline(jsonObj);
             codeBlock.innerHTML = highlightedHtml;
         }
 
-        // --- 3. UTILITIES ---
+        // --- UTILS ---
         function copyJsonToClipboard() {
             const jsonText = codeBlock.textContent; 
             navigator.clipboard.writeText(jsonText).then(() => {
@@ -267,20 +179,17 @@
             }
         }
 
-        // --- 4. PYODIDE SETUP ---
+        // --- PYODIDE ---
         const originalAppendStatus = window.appendStatus || function(msg) { 
             if (statusDisplay) statusDisplay.textContent = msg; 
         };
-
         window.appendStatus = function(msg) {
             const cleanMsg = msg.replace(/\u001b\[.*?m/g, '').trim(); 
             if (loadingText) loadingText.textContent = cleanMsg;
-
             if (cleanMsg.includes('Done') || cleanMsg.includes('ready') || cleanMsg.includes('Ready')) {
                 document.body.classList.remove('loading-active');
                 loader.style.opacity = '0';
                 contentWrapper.style.opacity = '1';
-
                 setTimeout(() => {
                     loader.style.display = 'none';
                     document.body.style.overflow = '';
@@ -296,27 +205,23 @@
             setTimeout(sendHeight, 50); 
         };
 
-        // --- 5. INIT ---
         document.addEventListener('DOMContentLoaded', () => {
             document.body.classList.add('loading-active');
             contentWrapper.style.opacity = '0';
             loader.style.display = 'flex'; 
             loadingText.textContent = "Initializing Search Query...";
-
             document.getElementById('copy-json').addEventListener('click', copyJsonToClipboard);
             document.getElementById('download-json').addEventListener('click', downloadJson);
-
             window.addEventListener('load', sendHeight);
             const observer = new MutationObserver(sendHeight);
             observer.observe(document.body, { attributes: true, childList: true, subtree: true });
         });
 
-        // --- 6. MAIN APP ---
+        // --- MAIN ---
         (async () => {
             const pyodide = await loadPyodide({ stdout: msg => console.log(msg), stderr: msg => console.error(msg) });
             await pyodide.loadPackage("micropip");
             const micropip = pyodide.pyimport("micropip");
-
             await micropip.install("https://files.pythonhosted.org/packages/50/43/5f6b2e8d83aa1e8324f47b24bf7d44dd7c60dd07fe6b5c72e3568ea6e0b0/search_query_linter-0.1.1-py3-none-any.whl");
 
             const lintBtn = document.getElementById("btn-lint");
@@ -324,86 +229,46 @@
             const platformInput = document.getElementById("platform");
             const lintView = document.getElementById("lint-view");
             const messagesTitle = document.getElementById("messages-title");
-
             lintBtn.disabled = false;
 
-            function escapeHtml(str) {
-                return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-            }
-
-            function convertAnsiToHtml(text) {
-                return text
-                    .replace(/\x1b\[31m/g, '<span class="ansi-red">')
-                    .replace(/\x1b\[33m/g, '<span class="ansi-yellow">')
-                    .replace(/\x1b\[0m/g, '</span>');
-            }
-
+            function escapeHtml(str) { return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
+            function convertAnsiToHtml(text) { return text.replace(/\x1b\[31m/g, '<span class="ansi-red">').replace(/\x1b\[33m/g, '<span class="ansi-yellow">').replace(/\x1b\[0m/g, '</span>'); }
             function renderLintMessages(messages) {
                 lintView.innerHTML = ""; 
                 if (messages.length === 0) {
-                    messagesTitle.style.display = "none";
-                    lintView.style.display = "none";
-                    return;
+                    messagesTitle.style.display = "none"; lintView.style.display = "none"; return;
                 }
                 messages.forEach((msg, index) => {
-                    const container = document.createElement("div");
-                    container.className = "lint-item";
-                    
-                    const titleEl = document.createElement("div");
-                    titleEl.className = "lint-title";
-                    titleEl.textContent = `${index + 1}. ${msg.icon || "⚠️"} ${msg.rule_id}`;
-                    container.appendChild(titleEl);
-                    
-                    const messageEl = document.createElement("div");
-                    messageEl.className = "lint-message";
-                    messageEl.innerHTML = convertAnsiToHtml(escapeHtml(msg.message));
-                    container.appendChild(messageEl);
-                    
+                    const container = document.createElement("div"); container.className = "lint-item";
+                    const titleEl = document.createElement("div"); titleEl.className = "lint-title";
+                    titleEl.textContent = `${index + 1}. ${msg.icon || "⚠️"} ${msg.rule_id}`; container.appendChild(titleEl);
+                    const messageEl = document.createElement("div"); messageEl.className = "lint-message";
+                    messageEl.innerHTML = convertAnsiToHtml(escapeHtml(msg.message)); container.appendChild(messageEl);
                     if (msg.query) {
-                        const queryBlock = document.createElement("pre");
-                        queryBlock.className = "lint-query";
-                        queryBlock.textContent = msg.query;
-                        container.appendChild(queryBlock);
-                        const separator = document.createElement("div");
-                        separator.className = "lint-separator";
-                        container.appendChild(separator);
+                        const queryBlock = document.createElement("pre"); queryBlock.className = "lint-query";
+                        queryBlock.textContent = msg.query; container.appendChild(queryBlock);
+                        const separator = document.createElement("div"); separator.className = "lint-separator"; container.appendChild(separator);
                     }
                     lintView.appendChild(container);
                 });
-
-                if (messages.length > 0) {
-                    messagesTitle.style.display = "block";
-                    lintView.style.display = "block";
-                } else {
-                    messagesTitle.style.display = "none";
-                    lintView.style.display = "none";
-                }
+                if (messages.length > 0) { messagesTitle.style.display = "block"; lintView.style.display = "block"; } 
+                else { messagesTitle.style.display = "none"; lintView.style.display = "none"; }
                 setTimeout(() => { if (window.parent) sendHeight(); }, 80);
             }
 
-            // RESET LOGIC
             function resetState() {
-                codeBlock.innerHTML = "";
-                lintBtn.disabled = false;
-                lintBtn.textContent = "Lint";
-                localStorage.removeItem('jsonData');
-                lintView.innerHTML = "";
-                messagesTitle.style.display = "none";
-                lintView.style.display = "none";
-                document.getElementById("output-wrap").open = false; // Close details
+                codeBlock.innerHTML = ""; lintBtn.disabled = false; lintBtn.textContent = "Lint";
+                localStorage.removeItem('jsonData'); lintView.innerHTML = "";
+                messagesTitle.style.display = "none"; lintView.style.display = "none";
+                document.getElementById("output-wrap").open = false; 
             }
-
             queryInput.addEventListener('input', resetState);
             platformInput.addEventListener('change', resetState);
 
             lintBtn.addEventListener("click", async () => {
-                // 1. LOCK
-                lintBtn.disabled = true;
-                lintBtn.textContent = "Processing...";
-
+                lintBtn.disabled = true; lintBtn.textContent = "Processing...";
                 const query = queryInput.value;
                 const platform = platformInput.value;
-
                 const lintCode = `
 from search_query_linter import lint
 import json
@@ -412,43 +277,23 @@ json.dumps([m.to_dict() for m in result])
                 `;
 
                 let resultJson;
-                try {
-                    resultJson = await pyodide.runPythonAsync(lintCode);
-                } catch (e) {
-                    console.error(e);
-                    alert("Linter error occurred.");
-                    lintBtn.textContent = "Error";
-                    lintBtn.disabled = false;
-                    return;
-                }
+                try { resultJson = await pyodide.runPythonAsync(lintCode); } 
+                catch (e) { console.error(e); alert("Linter error occurred."); lintBtn.textContent = "Error"; lintBtn.disabled = false; return; }
 
-                // ============================================
-                //  FIX IS HERE: PARSE THE PYTHON STRING FIRST
-                // ============================================
-                const rawMessages = JSON.parse(resultJson);
-                
-                // 3. HIGHLIGHT AND INJECT (USING YOUR REGEX METHOD)
-                updateHighlight(rawMessages);
+                // --- CRITICAL FIX IS HERE ---
+                const rawMessages = JSON.parse(resultJson); // 1. Convert String to Object
+                updateHighlight(rawMessages);               // 2. Pass Object to Highlighter
+                // ----------------------------
 
-                // 4. OPEN THE DETAILS PANEL
                 document.getElementById("output-wrap").open = true;
-
-                // 5. RENDER READABLE CARDS
                 const splitMessages = [];
                 rawMessages.forEach(m => {
                     const parts = m.message.split("\n").filter(x => x.trim() !== "");
                     parts.forEach(segment => {
-                        splitMessages.push({
-                            icon: m.icon ?? "⚠️",
-                            rule_id: m.rule_id,
-                            message: segment,
-                            query: m.query
-                        });
+                        splitMessages.push({ icon: m.icon ?? "⚠️", rule_id: m.rule_id, message: segment, query: m.query });
                     });
                 });
-
                 renderLintMessages(splitMessages);
-                console.log(splitMessages)
                 lintBtn.textContent = "Done";
             });
         })();
