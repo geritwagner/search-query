@@ -21,6 +21,8 @@
       --border-color: #e5e7eb;  /* Gray-200 */
       --text-main: #1f2937;     /* Dark Gray */
       --text-secondary: #6b7280; /* Medium Gray */
+      --success-green: #10b981; /* Emerald */
+      --code-bg: #1a1a1a;       /* Dark background for code */
     }
 
     /* --- Global Resets & Body Styles for IFRAME --- */
@@ -61,12 +63,14 @@
       border-radius: 0.5rem;
       box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.07);
       transition: border-color 0.2s, box-shadow 0.2s;
+      background-color: #f8f9fa;
     }
     
     #query:focus {
       border-color: var(--primary);
       box-shadow: 0 0 0 1px var(--primary);
       outline: none;
+      background-color: white;
     }
     
     /* Narrower form elements */
@@ -114,45 +118,102 @@
       white-space: pre-wrap;
     }
 
-    /* === JSON Output Styling (VS Code Dark Theme Look) === */
-    pre {
-      background-color: #1e1e1e !important; /* VS Code Dark Background */
-      border: 1px solid #333;
+    /* === ENHANCED CODE OUTPUT STYLING === */
+    .code-container {
+      position: relative;
+      margin-top: 1rem;
       border-radius: 0.5rem;
-      margin: 0;
-      padding: 1rem;
-      max-height: 400px;
-      overflow: auto;
-      color: #d4d4d4; /* Default Text Color */
+      overflow: hidden;
+      border: 2px solid #e5e7eb;
     }
 
-    #result {
-      font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+    .code-header {
+      background: #2d2d2d;
+      padding: 0.75rem 1rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid #404040;
+    }
+
+    .code-title {
+      color: #ffffff;
+      font-weight: 600;
       font-size: 0.9rem;
-      background: #f3f4f6;
-      padding: 1rem;
-      border: 1px solid var(--border-color);
-      border-radius: 0.5rem;
+      margin: 0;
+    }
+
+    .copy-btn {
+      background: transparent;
+      border: 1px solid #555;
+      border-radius: 0.375rem;
+      color: #d4d4d4;
+      padding: 0.375rem 0.75rem;
+      cursor: pointer;
+      font-size: 0.8rem;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .copy-btn:hover {
+      background: rgba(255, 255, 255, 0.1);
+      border-color: #777;
+    }
+
+    .copy-btn.copied {
+      background: var(--success-green);
+      border-color: var(--success-green);
+      color: white;
+    }
+
+    /* Translated Query Styling */
+    #translated-query-container {
+      background: var(--code-bg);
+      border-left: 4px solid var(--success-green);
+    }
+
+    #translated-query {
+      font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: #4ade80; /* Bright green for visibility */
+      padding: 1.5rem;
+      margin: 0;
       white-space: pre-wrap;
       word-wrap: break-word;
-      margin-top: 0.5rem;
+      background: transparent !important;
+      line-height: 1.6;
+    }
+
+    /* Messages Styling */
+    #messages-container {
+      background: var(--code-bg);
+      border-left: 4px solid var(--primary);
     }
 
     #messages {
       font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
-      font-size: 0.85rem;
+      font-size: 0.9rem;
       background: transparent !important;
       margin: 0;
-      padding: 0;
+      padding: 1.5rem;
       white-space: pre-wrap;
       word-wrap: break-word;
+      color: #d4d4d4;
     }
 
-    /* Custom Syntax Highlighting (VS Code Style) */
-    .hljs-attr { color: #9cdcfe !important; }      /* Keys: Light Blue */
-    .hljs-string { color: #ce9178 !important; }    /* Strings: Orange/Salmon */
-    .hljs-number { color: #b5cea8 !important; }    /* Numbers: Light Green */
-    .hljs-literal, .hljs-keyword { color: #569cd6 !important; } /* Booleans: Blue */
+    /* Enhanced Highlight.js Styling */
+    pre code.hljs {
+      background: transparent !important;
+      padding: 0 !important;
+    }
+
+    .hljs-attr { color: #9cdcfe !important; font-weight: 600; }      /* Keys: Light Blue */
+    .hljs-string { color: #ce9178 !important; font-weight: 500; }    /* Strings: Orange/Salmon */
+    .hljs-number { color: #b5cea8 !important; font-weight: 600; }    /* Numbers: Light Green */
+    .hljs-literal, .hljs-keyword { color: #569cd6 !important; font-weight: 600; } /* Booleans: Blue */
     .hljs-punctuation { color: #d4d4d4 !important; } /* Punctuation: Light Gray */
     
     /* --- LOADING OVERLAY STYLES (Fixed and Centered) --- */
@@ -196,6 +257,18 @@
       margin-top: 1.5rem;
       font-size: 1.25rem;
       font-weight: 600;
+      color: var(--text-main);
+    }
+
+    /* Success badge for translated query */
+    .success-badge {
+      background: var(--success-green);
+      color: white;
+      padding: 0.25rem 0.75rem;
+      border-radius: 1rem;
+      font-size: 0.75rem;
+      font-weight: 600;
+      margin-left: 0.5rem;
     }
     
   </style>
@@ -239,13 +312,36 @@
       <button id="btn-translate" disabled>Translate</button>
     </div>
 
-    <h2 id="result-title" style="display:none; margin-top:1.5rem;">Translated query</h2>
-    <pre id="result" style="display:none;"></pre>
+    <!-- Translated Query with Copy Button -->
+    <h2 id="result-title" style="display:none; margin-top:1.5rem;">
+      Translated Query
+      <span class="success-badge">SUCCESS</span>
+    </h2>
+    <div id="translated-query-container" class="code-container" style="display:none;">
+      <div class="code-header">
+        <span class="code-title">Translated Query Result</span>
+        <button class="copy-btn" id="copy-query" title="Copy translated query">
+          <i class="far fa-copy"></i>
+          Copy
+        </button>
+      </div>
+      <pre id="translated-query"></pre>
+    </div>
 
-    <h2 id="messages-title" style="display:none; margin-top:1.5rem;">Messages</h2>
-    <pre id="messages" style="display:none;"><code class="language-json"></code></pre>
+    <!-- Messages with Copy Button -->
+    <h2 id="messages-title" style="display:none; margin-top:1.5rem;">Translation Messages</h2>
+    <div id="messages-container" class="code-container" style="display:none;">
+      <div class="code-header">
+        <span class="code-title">Translation Details & Messages</span>
+        <button class="copy-btn" id="copy-messages" title="Copy messages">
+          <i class="far fa-copy"></i>
+          Copy
+        </button>
+      </div>
+      <pre id="messages"><code class="language-json"></code></pre>
+    </div>
   </div>
-
+  <script src="translate.js"></script>
   <!-- Pyodide runtime -->
   <script src="https://cdn.jsdelivr.net/pyodide/v0.26.2/full/pyodide.js"></script>
   
@@ -256,8 +352,45 @@
     const loader = document.getElementById('loading-overlay');
     const loadingText = document.getElementById('loading-text');
     const contentWrapper = document.getElementById('content-wrapper');
-    const statusDisplay = document.getElementById('status-display'); // Now using status-display
+    const statusDisplay = document.getElementById('status-display');
     const btnTranslate = document.getElementById('btn-translate');
+    const translatedQueryContainer = document.getElementById('translated-query-container');
+    const messagesContainer = document.getElementById('messages-container');
+    const resultTitle = document.getElementById('result-title');
+    const messagesTitle = document.getElementById('messages-title');
+
+    // Copy functionality
+    function setupCopyButtons() {
+      // Copy translated query
+      document.getElementById('copy-query').addEventListener('click', function() {
+        const queryText = document.getElementById('translated-query').textContent;
+        copyToClipboard(queryText, this);
+      });
+
+      // Copy messages
+      document.getElementById('copy-messages').addEventListener('click', function() {
+        const messagesText = document.getElementById('messages').textContent;
+        copyToClipboard(messagesText, this);
+      });
+    }
+
+    function copyToClipboard(text, button) {
+      navigator.clipboard.writeText(text).then(() => {
+        const originalHTML = button.innerHTML;
+        button.innerHTML = '<i class="fas fa-check"></i> Copied!';
+        button.classList.add('copied');
+        setTimeout(() => {
+          button.innerHTML = originalHTML;
+          button.classList.remove('copied');
+        }, 2000);
+      }).catch(err => {
+        console.error('Failed to copy: ', err);
+        button.innerHTML = '<i class="fas fa-times"></i> Error';
+        setTimeout(() => {
+          button.innerHTML = '<i class="far fa-copy"></i> Copy';
+        }, 2000);
+      });
+    }
 
     // Function to update JSON output with highlighting
     function updateJsonOutput(jsonData) {
@@ -276,6 +409,30 @@
       hljs.highlightElement(codeElement);
       
       console.log('JSON output highlighted with VS Code theme');
+    }
+
+    // Function to show translated results
+    function showTranslatedResults(translatedQuery, messages) {
+      // Show translated query
+      document.getElementById('translated-query').textContent = translatedQuery;
+      resultTitle.style.display = 'block';
+      translatedQueryContainer.style.display = 'block';
+
+      // Show messages if available
+      if (messages && Object.keys(messages).length > 0) {
+        updateJsonOutput(messages);
+        messagesTitle.style.display = 'block';
+        messagesContainer.style.display = 'block';
+      } else {
+        messagesTitle.style.display = 'none';
+        messagesContainer.style.display = 'none';
+      }
+
+      // Setup copy buttons
+      setupCopyButtons();
+      
+      // Update height
+      sendHeight();
     }
 
     // --- Cross-Origin Height Communication ---
@@ -376,6 +533,9 @@
       // Initialize Highlight.js
       hljs.highlightAll();
 
+      // Setup copy buttons
+      setupCopyButtons();
+
       // 1. Send initial minimal height
       window.addEventListener('load', sendHeight);
       
@@ -384,28 +544,9 @@
       observer.observe(document.body, { attributes: true, childList: true, subtree: true });
     });
 
-    // Add event listener for the translate button to handle JSON highlighting
-    btnTranslate.addEventListener('click', function() {
-      // This will be handled by the translate.js functionality
-      // We'll add a small delay to ensure the JSON is rendered before highlighting
-      setTimeout(() => {
-        const messagesElement = document.getElementById('messages');
-        if (messagesElement.style.display !== 'none') {
-          const codeElement = messagesElement.querySelector('code');
-          if (codeElement && codeElement.textContent.trim() !== '') {
-            try {
-              const jsonData = JSON.parse(codeElement.textContent);
-              updateJsonOutput(jsonData);
-            } catch (e) {
-              // If it's not valid JSON, just highlight as is
-              codeElement.removeAttribute('data-highlighted');
-              hljs.highlightElement(codeElement);
-            }
-          }
-        }
-        sendHeight(); // Update height after showing results
-      }, 100);
-    });
+    // Make the showTranslatedResults function available globally for translate.js
+    window.showTranslatedResults = showTranslatedResults;
+
   </script>
   
   <!-- your logic (the file I gave you) -->
