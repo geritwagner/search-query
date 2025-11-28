@@ -115,7 +115,7 @@
             margin-top: 1rem; padding: 0.5rem 1rem; background: #fff3e0; border: 1px solid #ffcc80; 
             border-radius: 0.375rem; font-size: 0.875rem; color: #a55a00; font-weight: 500; 
         }
-        #output-wrap { margin-top: 1.5rem; }
+        #output-wrap { margin-top: 1.5rem; position: relative; }
         
         /* === JSON Output Styling (VS Code Dark Theme Look) === */
         pre {
@@ -151,28 +151,28 @@
         /* --- Action Buttons for JSON Output --- */
         .json-actions {
             position: absolute;
-            top: 10px;
-            right: 10px;
+            top: 15px;
+            right: 15px;
             display: flex;
             gap: 8px;
-            z-index: 10;
+            z-index: 20;
         }
 
         .json-btn {
-            background: rgba(255, 255, 255, 0.1);
-            border: 1px solid rgba(255, 255, 255, 0.2);
+            background: transparent !important;
+            border: none !important;
             border-radius: 4px;
             color: #d4d4d4;
             padding: 6px 8px;
             cursor: pointer;
             font-size: 14px;
             transition: all 0.2s ease;
-            backdrop-filter: blur(10px);
+            backdrop-filter: none;
         }
 
         .json-btn:hover {
-            background: rgba(255, 255, 255, 0.2);
-            border-color: rgba(255, 255, 255, 0.3);
+            background: rgba(255, 255, 255, 0.1) !important;
+            color: #ffffff;
         }
 
         .json-btn:active {
@@ -180,9 +180,11 @@
         }
 
         .json-btn.copied {
-            background: rgba(76, 175, 80, 0.3);
-            border-color: rgba(76, 175, 80, 0.5);
-            color: #4CAF50;
+            color: #4CAF50 !important;
+        }
+
+        .json-btn.copied:hover {
+            background: rgba(76, 175, 80, 0.1) !important;
         }
 
         /* --- LINTER MESSAGE SEPARATION (CRITICAL FIX) --- */
@@ -338,7 +340,7 @@
                 <summary style="font-weight: 600; color: var(--text-secondary); cursor: pointer; padding: 0.5rem 0; position: relative;">
                     Raw Linter Output (JSON)
                 </summary>
-                <pre style="position: relative;">
+                <div style="position: relative;">
                     <div class="json-actions">
                         <button class="json-btn" id="copy-json" title="Copy JSON">
                             <i class="far fa-copy"></i>
@@ -347,14 +349,17 @@
                             <i class="fas fa-download"></i>
                         </button>
                     </div>
-                    <code class="language-json" id="output"></code>
-                </pre>
+                    <pre>
+                        <code class="language-json" id="output"></code>
+                    </pre>
+                </div>
             </details>
             <h2 id="messages-title" style="display:none; font-size: 1.25rem; font-weight: 600; margin-top: 1rem;">Messages</h2>
             <div id="lint-view" style="display:none;"></div>
         </div>
     </div>
-    <script src="script.js"></script>
+        <script src="script.js"></script>
+
     <script>
         const PARENT_ORIGIN = window.location.origin; 
         
