@@ -61,25 +61,54 @@
 
         /* --- Form Elements --- */
         label { display: block; margin-top: 1.25rem; margin-bottom: 0.25rem; font-weight: 600; font-size: 0.875rem; }
+        
+        /* Query textarea with larger font size */
+        #query {
+            font-size: 1.1rem !important;
+            line-height: 1.6;
+            padding: 1rem;
+            min-height: 120px;
+            font-family: 'Courier New', monospace;
+        }
+        
+        /* Narrower form elements */
         textarea, select { 
             display: block; width: 100%; padding: 0.75rem; border: 1px solid var(--border-color); 
             border-radius: 0.5rem; box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.07); 
             transition: border-color 0.2s, box-shadow 0.2s; color: var(--text-main);
+            max-width: 100%;
         }
+        
         textarea:focus, select:focus { 
             border-color: var(--primary); box-shadow: 0 0 0 1px var(--primary); outline: none; 
         }
 
         /* --- Button --- */
         #btn-lint {
-            width: 100%; padding: 0.75rem 1rem; border: none; border-radius: 0.5rem; 
-            font-weight: 600; color: white; background-color: var(--primary); 
-            cursor: pointer; transition: background-color 0.2s; 
+            width: auto; /* Make button narrower */
+            min-width: 200px; /* Minimum width */
+            padding: 0.75rem 2rem; /* Narrower padding */
+            border: none; 
+            border-radius: 0.5rem; 
+            font-weight: 600; 
+            color: white; 
+            background-color: var(--primary); 
+            cursor: pointer; 
+            transition: background-color 0.2s; 
             box-shadow: 0 2px 4px rgba(79, 70, 229, 0.4);
             margin-top: 1.5rem;
+            font-size: 1rem;
+            display: block;
+            margin-left: auto;
+            margin-right: auto;
         }
         #btn-lint:hover:not(:disabled) { background-color: var(--primary-dark); }
         #btn-lint:disabled { opacity: 0.6; cursor: not-allowed; box-shadow: none; }
+
+        /* Narrower platform select */
+        #platform {
+            max-width: 300px;
+        }
 
         /* --- Status & Output --- */
         #status { display:none; } 
