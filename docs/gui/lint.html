@@ -194,48 +194,49 @@
     </div>
     <script src="script.js"></script>
 
-<script>
+    <script>
     const PARENT_ORIGIN = window.location.origin;
 
+    // --- DOM Elements ---
     const loader = document.getElementById('loading-overlay');
     const loadingText = document.getElementById('loading-text');
     const contentWrapper = document.getElementById('content-wrapper');
     const statusDisplay = document.getElementById('status-display');
+    
+    // TARGET: This matches the <code id="output"> in your HTML
     const codeBlock = document.getElementById('output');
 
-    // --- 1. THE HIGHLIGHT LOGIC (PROTOTYPE PRINCIPLE) ---
+    // --- 1. The Fixed Highlight Function (The Principle) ---
     function updateHighlight() {
-        // Read from Storage
         const stored = localStorage.getItem('jsonData');
 
-        // IMPORTANT: Reset highlight state so it runs again
+        // CRITICAL FIX: Unlock Highlight.js state
+        // We remove the attribute so it thinks it's a fresh element
         codeBlock.removeAttribute('data-highlighted');
 
         if (!stored) {
             codeBlock.textContent = "// No JSON stored yet. Click the button.";
-            // Use setTimeout to allow DOM to paint before highlighting
-            setTimeout(() => hljs.highlightElement(codeBlock), 0);
+            hljs.highlightElement(codeBlock);
             return;
         }
 
         try {
             const parsed = JSON.parse(stored);
-            // Render Text
+            
+            // 1. Set the raw text content
             codeBlock.textContent = JSON.stringify(parsed, null, 4);
             
-            // Highlight with small delay to ensure visibility
-            setTimeout(() => {
-                hljs.highlightElement(codeBlock);
-            }, 10);
+            // 2. Trigger Highlight.js
+            hljs.highlightElement(codeBlock);
             
         } catch (err) {
             codeBlock.textContent = "// Invalid JSON found. Clearing…";
             localStorage.removeItem('jsonData');
-            setTimeout(() => hljs.highlightElement(codeBlock), 0);
+            hljs.highlightElement(codeBlock);
         }
     }
 
-    // --- 2. Clipboard Logic ---
+    // --- 2. Copy/Download Utilities ---
     function copyJsonToClipboard() {
         const jsonText = codeBlock.textContent;
         navigator.clipboard.writeText(jsonText).then(() => {
@@ -253,7 +254,6 @@
         });
     }
 
-    // --- 3. Download Logic ---
     function downloadJson() {
         const jsonText = codeBlock.textContent;
         const blob = new Blob([jsonText], { type: 'application/json' });
@@ -267,16 +267,16 @@
         URL.revokeObjectURL(url);
     }
 
-    // --- 4. Iframe Resizer Logic ---
+    // --- 3. Iframe Communication ---
     function sendHeight() {
         if (document.body.classList.contains('loading-active')) return;
         const height = document.body.scrollHeight;
         if (window.parent) {
-            window.parent.postMessage({ type: 'setHeight', height: height }, "*");
+            window.parent.postMessage({ type: 'setHeight', height: height }, PARENT_ORIGIN);
         }
     }
 
-    // --- 5. Pyodide Setup ---
+    // --- 4. Pyodide Status Hook ---
     const originalAppendStatus = window.appendStatus || function(msg) {
         if (statusDisplay) statusDisplay.textContent = msg;
         console.log("Pyodide Hook:", msg);
@@ -305,7 +305,7 @@
         setTimeout(sendHeight, 50);
     };
 
-    // --- 6. Initialization ---
+    // --- 5. Initialization ---
     document.addEventListener('DOMContentLoaded', () => {
         document.body.classList.add('loading-active');
         contentWrapper.style.opacity = '0';
@@ -318,12 +318,12 @@
         window.addEventListener('load', sendHeight);
         const observer = new MutationObserver(sendHeight);
         observer.observe(document.body, { attributes: true, childList: true, subtree: true });
-        
-        // Initial highlight check on load (Reads from Storage)
+
+        // INITIAL LOAD: Check LocalStorage and Highlight
         updateHighlight();
     });
 
-    // --- 7. Pyodide Execution Loop ---
+    // --- 6. Main Pyodide Logic ---
     (async () => {
         const pyodide = await loadPyodide({ stdout: msg => console.log(msg), stderr: msg => console.error(msg) });
         await pyodide.loadPackage("micropip");
@@ -360,17 +360,17 @@
             messages.forEach((msg, index) => {
                 const container = document.createElement("div");
                 container.className = "lint-item";
-
+                
                 const titleEl = document.createElement("div");
                 titleEl.className = "lint-title";
                 titleEl.textContent = `${index + 1}. ${msg.icon || "⚠️"} ${msg.rule_id}`;
                 container.appendChild(titleEl);
-
+                
                 const messageEl = document.createElement("div");
                 messageEl.className = "lint-message";
                 messageEl.innerHTML = convertAnsiToHtml(escapeHtml(msg.message));
                 container.appendChild(messageEl);
-
+                
                 if (msg.query) {
                     const queryBlock = document.createElement("pre");
                     queryBlock.className = "lint-query";
@@ -397,7 +397,6 @@
             const query = queryInput.value;
             const platform = platformInput.value;
 
-            // Python Code to run
             const lintCode = `
 from search_query_linter import lint
 import json
@@ -415,14 +414,14 @@ json.dumps([m.to_dict() for m in result])
             }
 
             const rawMessages = JSON.parse(resultJson);
-
-            // 1. SAVE to LocalStorage (Prototype Principle)
+            
+            // --- ACTION: Save to Storage ---
             localStorage.setItem('jsonData', JSON.stringify(rawMessages));
-
-            // 2. TRIGGER UPDATE (Read from Storage -> Render -> Highlight)
+            
+            // --- ACTION: Update UI using the Fixed Logic ---
             updateHighlight();
 
-            // 3. Render Cards
+            // Process Cards
             const splitMessages = [];
             rawMessages.forEach(m => {
                 const parts = m.message.split("\n").filter(x => x.trim() !== "");
@@ -438,6 +437,9 @@ json.dumps([m.to_dict() for m in result])
 
             renderLintMessages(splitMessages);
         });
+        
+        // Ensure highlight runs on load (Prototype Principle)
+        updateHighlight();
     })();
 </script>
 </body>
