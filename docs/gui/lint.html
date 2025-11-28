@@ -425,11 +425,16 @@ function downloadJson() {
     URL.revokeObjectURL(url);
 }
 
-// Send iframe height to parent
+        // --- Cross-Origin Height Communication ---
 function sendHeight() {
+    if (document.body.classList.contains('loading-active')) return;
+
     const height = document.body.scrollHeight;
     if (window.parent) {
-        window.parent.postMessage({ type: 'setHeight', height }, "*");
+        window.parent.postMessage({
+            type: 'setHeight',
+            height: height
+        }, PARENT_ORIGIN);
     }
 }
 
