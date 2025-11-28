@@ -207,8 +207,7 @@
     const codeBlock = document.getElementById('output');
 
     // --- 1. The Fixed Highlight Function (The Principle) ---
-    function updateHighlight() {
-        const stored = localStorage.getItem('jsonData');
+    function updateHighlight(stored) {
 
         // CRITICAL FIX: Unlock Highlight.js state
         // We remove the attribute so it thinks it's a fresh element
@@ -231,7 +230,7 @@
             
         } catch (err) {
             codeBlock.textContent = "// Invalid JSON found. Clearing…";
-            localStorage.removeItem('jsonData');
+            //localStorage.removeItem('jsonData');
             hljs.highlightElement(codeBlock);
         }
     }
@@ -416,10 +415,10 @@ json.dumps([m.to_dict() for m in result])
             const rawMessages = JSON.parse(resultJson);
             
             // --- ACTION: Save to Storage ---
-            localStorage.setItem('jsonData', JSON.stringify(rawMessages));
+//            localStorage.setItem('jsonData', JSON.stringify(rawMessages));
             
             // --- ACTION: Update UI using the Fixed Logic ---
-            updateHighlight();
+            updateHighlight(rawMessages);
 
             // Process Cards
             const splitMessages = [];
@@ -439,7 +438,7 @@ json.dumps([m.to_dict() for m in result])
         });
         
         // Ensure highlight runs on load (Prototype Principle)
-        updateHighlight();
+        //updateHighlight();
     })();
 </script>
 </body>
