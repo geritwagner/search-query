@@ -102,7 +102,6 @@
             margin: 0;
             padding: 0;
             white-space: pre; 
-            outline: none;
         }
 
         .json-actions { position: absolute; top: 15px; right: 15px; display: flex; gap: 8px; z-index: 20; }
@@ -127,46 +126,6 @@
         .lint-message { font-size: 0.95rem; color: #374151; white-space: pre-wrap; margin-bottom: 4px; }
         .lint-query { background-color: #f9fafb; border-left: 3px solid #4CAF50; padding: 6px 10px; font-family: monospace; font-size: 0.9rem; overflow-x: auto; color: #333; border-radius: 4px; margin-bottom: 60px; }
         .lint-separator { border-top: 1px solid #e5e7eb; margin: 8px 0; }
-        
-        /* Manual JSON input styling */
-        .manual-json-section { margin-top: 1.5rem; }
-        .manual-json-section textarea { 
-            font-family: 'Courier New', monospace; 
-            font-size: 0.85rem; 
-            min-height: 120px; 
-            background-color: #f9fafb;
-        }
-        #btn-apply-json { 
-            margin-top: 0.5rem; 
-            padding: 0.5rem 1rem; 
-            background: var(--primary); 
-            color: white; 
-            border: none; 
-            border-radius: 0.25rem; 
-            cursor: pointer; 
-            font-weight: 500;
-        }
-        #btn-apply-json:hover { background-color: var(--primary-dark); }
-        
-        .notification {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            padding: 12px 20px;
-            border-radius: 6px;
-            color: white;
-            font-weight: 500;
-            z-index: 1001;
-            opacity: 0;
-            transform: translateY(-20px);
-            transition: opacity 0.3s, transform 0.3s;
-        }
-        .notification.show {
-            opacity: 1;
-            transform: translateY(0);
-        }
-        .notification.success { background-color: #10b981; }
-        .notification.error { background-color: #ef4444; }
     </style>
 </head>
 
@@ -216,21 +175,14 @@
                             <i class="fas fa-download"></i>
                         </button>
                     </div>
-                    <pre><code id="output" contenteditable="true" placeholder="Paste JSON here or edit directly..."></code></pre>
+                    <pre><code id="output"></code></pre>
                 </div>
             </details>
-            
-            <div class="manual-json-section">
-                <label for="manual-json">Or paste JSON manually:</label>
-                <textarea id="manual-json" placeholder='Paste JSON here, e.g., [{"rule_id": "test", "message": "test message", "query": "example query"}]'></textarea>
-                <button id="btn-apply-json">Apply JSON</button>
-            </div>
-            
             <h2 id="messages-title" style="display:none; font-size: 1.25rem; font-weight: 600; margin-top: 1rem;">Messages</h2>
             <div id="lint-view" style="display:none;"></div>
         </div>
     </div>
-    <script src="script.js"></script>
+
     <script>
         const PARENT_ORIGIN = window.location.origin;
 
@@ -249,22 +201,25 @@
             json = json.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
             
             return json.replace(/("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/g, function (match) {
-                let style = 'color: #b5cea8;'; // Default Number (Green)
+                let style = 'color: #b5cea8;'; // Default Number (Light Green)
                 
                 if (/^"/.test(match)) {
                     if (/:$/.test(match)) {
-                        // KEY: Light Blue
+                        // KEY: Light Blue (like VS Code)
                         return '<span style="color: #9cdcfe;">' + match.slice(0, -1) + '</span>:';
                     } else {
-                        // STRING: Salmon
+                        // STRING: Orange/Brown (like VS Code)
                         style = 'color: #ce9178;';
                     }
                 } else if (/true|false/.test(match)) {
-                    // BOOLEAN: Blue
+                    // BOOLEAN: Purple (like VS Code)
                     style = 'color: #569cd6;';
                 } else if (/null/.test(match)) {
-                    // NULL: Blue
+                    // NULL: Blue (like VS Code)
                     style = 'color: #569cd6;';
+                } else if (/^-?\d+\.?\d*([eE][+\-]?\d+)?$/.test(match)) {
+                    // NUMBER: Light Green (like VS Code)
+                    style = 'color: #b5cea8;';
                 }
                 return '<span style="' + style + '">' + match + '</span>';
             });
@@ -318,67 +273,6 @@
             URL.revokeObjectURL(url);
         }
 
-        // NEW: Function to handle manual JSON input
-        function handleManualJsonInput() {
-            const jsonText = codeBlock.textContent;
-            
-            if (!jsonText.trim() || jsonText.includes('// No JSON stored yet')) {
-                return;
-            }
-            
-            try {
-                // Try to parse the JSON to validate it
-                const parsedJson = JSON.parse(jsonText);
-                
-                // If valid, store it and update highlighting
-                localStorage.setItem('jsonData', jsonText);
-                updateHighlight();
-                
-                // Also update the lint view if needed
-                try {
-                    const parsedMessages = JSON.parse(jsonText);
-                    const splitMessages = [];
-                    parsedMessages.forEach(m => {
-                        const parts = m.message.split("\n").filter(x => x.trim() !== "");
-                        parts.forEach(segment => {
-                            splitMessages.push({
-                                icon: m.icon ?? "⚠️",
-                                rule_id: m.rule_id,
-                                message: segment,
-                                query: m.query
-                            });
-                        });
-                    });
-                    renderLintMessages(splitMessages);
-                } catch (e) {
-                    console.log("Could not render lint messages from manual input");
-                }
-                
-            } catch (err) {
-                console.error("Invalid JSON:", err);
-                showNotification("Invalid JSON format", "error");
-            }
-        }
-
-        // NEW: Function to show notifications
-        function showNotification(message, type = "success") {
-            const notification = document.createElement('div');
-            notification.className = `notification ${type}`;
-            notification.textContent = message;
-            document.body.appendChild(notification);
-            
-            setTimeout(() => {
-                notification.classList.add('show');
-            }, 10);
-            
-            setTimeout(() => {
-                notification.classList.remove('show');
-                setTimeout(() => {
-                    document.body.removeChild(notification);
-                }, 300);
-            }, 3000);
-        }
-
         function sendHeight() {
             if (document.body.classList.contains('loading-active')) return;
             const height = document.body.scrollHeight;
@@ -425,41 +319,6 @@
 
             document.getElementById('copy-json').addEventListener('click', copyJsonToClipboard);
             document.getElementById('download-json').addEventListener('click', downloadJson);
-
-            // NEW: Add event listener for manual JSON editing
-            codeBlock.addEventListener('input', handleManualJsonInput);
-            codeBlock.addEventListener('paste', handleManualJsonInput);
-            codeBlock.addEventListener('change', handleManualJsonInput);
-
-            // NEW: Add event listener for manual JSON textarea
-            document.getElementById('btn-apply-json').addEventListener('click', function() {
-                const manualJson = document.getElementById('manual-json').value;
-                if (manualJson.trim()) {
-                    try {
-                        const parsed = JSON.parse(manualJson);
-                        localStorage.setItem('jsonData', JSON.stringify(parsed));
-                        updateHighlight();
-                        
-                        const splitMessages = [];
-                        parsed.forEach(m => {
-                            const parts = m.message.split("\n").filter(x => x.trim() !== "");
-                            parts.forEach(segment => {
-                                splitMessages.push({
-                                    icon: m.icon ?? "⚠️",
-                                    rule_id: m.rule_id,
-                                    message: segment,
-                                    query: m.query
-                                });
-                            });
-                        });
-                        renderLintMessages(splitMessages);
-                        showNotification("JSON applied successfully", "success");
-                        
-                    } catch (err) {
-                        showNotification("Invalid JSON format", "error");
-                    }
-                }
-            });
 
             window.addEventListener('load', sendHeight);
             const observer = new MutationObserver(sendHeight);
