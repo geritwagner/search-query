@@ -252,12 +252,9 @@
                 <summary style="font-weight: 600; color: var(--text-secondary); cursor: pointer; padding: 0.5rem 0;">
                     Raw Linter Output (JSON)
                 </summary>
-                <pre id="output" class="json-highlight" style="background-color: #fffacd;"></pre>
+                <pre id="output" class="json-highlight"></pre>
             </details>
-            
-            <link rel="stylesheet" 
-                  href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css">
-            <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+        
 
             <h2 id="messages-title" style="display:none; font-size: 1.25rem; font-weight: 600; margin-top: 1rem;">Messages</h2>
             <div id="lint-view" style="display:none;"></div>
@@ -274,26 +271,10 @@
         const loadingText = document.getElementById('loading-text');
         const contentWrapper = document.getElementById('content-wrapper');
         const statusDisplay = document.getElementById('status-display');
-        
-         function highlightJSON() {
-            const target = document.getElementById("output");
-            if (!target) return;
-    
-            const raw = target.textContent.trim();
-            if (!raw) return; // no JSON yet
-    
-            try {
-                const formatted = JSON.stringify(JSON.parse(raw), null, 2);
-    
-                // highlight ONCE
-                target.innerHTML = hljs.highlight(formatted, { language: "json" }).value;
-            } catch (e) {
-                // if it's invalid JSON, don't break anything
-            }
-        }
-
-    // Run ONCE after the JSON is likely loaded
-    setTimeout(highlightJSON, 150);        // --- Cross-Origin Height Communication ---
+        setTimeout(() => {
+            hljs.highlightAll();
+        }, 200);
+      // --- Cross-Origin Height Communication ---
         function sendHeight() {
             if (document.body.classList.contains('loading-active')) return;
 
