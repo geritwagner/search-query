@@ -181,69 +181,93 @@
         </div>
     </div>
     <script src="script.js"></script>
-    <script>
-        const PARENT_ORIGIN = window.location.origin;
+<script>
+const PARENT_ORIGIN = window.location.origin;
 
-        const loader = document.getElementById('loading-overlay');
-        const loadingText = document.getElementById('loading-text');
-        const contentWrapper = document.getElementById('content-wrapper');
-        const statusDisplay = document.getElementById('status-display');
-        const codeBlock = document.getElementById('output');
-        const codeBlock1 = document.getElementById('output1');
-        // --- 1. THE FORCE-COLOR HIGHLIGHTER ---
-        // Uses Inline Styles to guarantee colors appear regardless of external CSS
-        function syntaxHighlightInline(jsonObj) {
-            // Convert object to string if it isn't already
-            let json = JSON.stringify(jsonObj, undefined, 4);
-            
-            // Escape HTML characters (security)
-            json = json.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-            
-            // The Regex Magic
-            // 1. Strings (including keys)
-            // 2. Booleans (true/false)
-            // 3. Null
-            // 4. Numbers
-            return json.replace(/("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/g, function (match) {
-                let style = 'color: #b5cea8;'; // Default: Number (Light Green)
-                
-                if (/^"/.test(match)) {
-                    if (/:$/.test(match)) {
-                        // KEY DETECTED (ends with :) -> Light Blue
-                        return '<span style="color: #9cdcfe;">' + match.slice(0, -1) + '</span>:';
-                    } else {
-                        // STRING DETECTED -> Salmon/Orange
-                        style = 'color: #ce9178;';
-                    }
-                } else if (/true|false/.test(match)) {
-                    // BOOLEAN -> Blue
-                    style = 'color: #569cd6;';
-                } else if (/null/.test(match)) {
-                    // NULL -> Blue
-                    style = 'color: #569cd6;';
+const loader = document.getElementById('loading-overlay');
+const loadingText = document.getElementById('loading-text');
+const contentWrapper = document.getElementById('content-wrapper');
+const statusDisplay = document.getElementById('status-display');
+const codeBlock = document.getElementById('output');
+const codeBlock1 = document.getElementById('output1');
+
+/* ------------------------------
+   FORCE-COLOR HIGHLIGHTER
+--------------------------------*/
+function syntaxHighlightInline(jsonObj) {
+    let json = JSON.stringify(jsonObj, undefined, 4);
+
+    json = json.replace(/&/g, '&amp;')
+               .replace(/</g, '&lt;')
+               .replace(/>/g, '&gt;');
+
+    return json.replace(
+        /("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/g,
+        function (match) {
+            let style = 'color:#b5cea8;';
+
+            if (/^"/.test(match)) {
+                if (/:$/.test(match)) {
+                    return '<span style="color:#9cdcfe;">' + match.slice(0, -1) + '</span>:';
+                } else {
+                    style = 'color:#ce9178;';
                 }
-                
-                return '<span style="' + style + '">' + match + '</span>';
-            });
+            } else if (/true|false/.test(match)) {
+                style = 'color:#569cd6;';
+            } else if (/null/.test(match)) {
+                style = 'color:#569cd6;';
+            }
+
+            return '<span style="' + style + '">' + match + '</span>';
         }
+    );
+}
 
+/* ----------------------------------
+   UPDATE HIGHLIGHT + LOCALSTORAGE
+-----------------------------------*/
+function updateJsonAndHighlight() {
 
-        // --- 2. UPDATE LOGIC ---
+    let raw = localStorage.getItem("linter-json") || "{}";
 
-        function updateHighlight() {
-            // 3. Render directly to InnerHTML
-            const highlightedHtml = syntaxHighlightInline(document.getElementById('output').innerText);
-            codeBlock1.innerHTML = highlightedHtml;
-        }
-        document.getElementById('btn-lint').addEventListener('click', function(){
-            setTimeout(()=>{
-                console.log(codeBlock1.innerText)
-                updateHighlight()
-            }, 1000)
+    // show raw JSON
+    codeBlock.textContent = raw;
 
-        })
+    // highlight
+    try {
+        const parsed = JSON.parse(raw);
+        codeBlock1.innerHTML = syntaxHighlightInline(parsed);
+    } catch (e) {
+        codeBlock1.innerHTML = "<span style='color:red;'>Invalid JSON</span>";
+    }
+}
 
-        // --- 3. UTILITIES ---
+/* ----------------------------------
+   AUTO-REFRESH EVERY 1 SECOND
+-----------------------------------*/
+setInterval(updateJsonAndHighlight, 1000);
+
+/* ----------------------------------
+   LINT BUTTON
+-----------------------------------*/
+document.getElementById('btn-lint').addEventListener('click', function () {
+
+    // simulate new JSON
+    const demoOutput = {
+        time: new Date().toLocaleTimeString(),
+        query: document.getElementById('query').value,
+        status: "ok",
+        platform: document.getElementById('platform').value
+    };
+
+    // save to localStorage
+    localStorage.setItem("linter-json", JSON.stringify(demoOutput, null, 4));
+
+    // update highlight immediately
+    updateJsonAndHighlight();
+});
+
+/* -----------        // --- 3. UTILITIES ---
         function copyJsonToClipboard() {
             const jsonText = codeBlock.textContent; 
             navigator.clipboard.writeText(jsonText).then(() => {
