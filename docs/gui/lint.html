@@ -114,10 +114,10 @@
 
         /* Lint View */
         #lint-view { padding: 1rem; margin-bottom: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); background-color: var(--bg-card); }
-        #lint-view.ansi-red { color: var(--error-red); font-weight: 600; }
-        #lint-view.ansi-yellow { color: var(--warning-yellow); font-weight: 600; }
-        #lint-view.lint-title { font-weight: 700; font-size: 1rem; margin-bottom: 0.5rem; color: var(--text-main); }
-        #lint-view pre.lint-query { background-color: #f3f4f6; padding: 0.5rem; margin-top: 0.75rem; border: none; border-radius: 0.375rem; font-size: 0.8rem; color: #333; }
+        #lint-view .ansi-red { color: var(--error-red); font-weight: 600; }
+        #lint-view .ansi-yellow { color: var(--warning-yellow); font-weight: 600; }
+        .lint-title { font-weight: 700; font-size: 1rem; margin-bottom: 0.5rem; color: var(--text-main); }
+        .lint-query { background-color: #f3f4f6; padding: 0.5rem; margin-top: 0.75rem; border: none; border-radius: 0.375rem; font-size: 0.8rem; color: #333; }
         #loading-overlay { position: fixed; inset: 0; background-color: rgba(255, 255, 255, 0.95); z-index: 1000; display: flex; flex-direction: column; justify-content: center; align-items: center; transition: opacity 0.5s ease; opacity: 1; }
        .loader { border: 4px solid var(--border-color); border-top: 4px solid var(--primary); border-radius: 50%; width: 50px; height: 50px; animation: spin 1s linear infinite; margin-bottom: 1rem; }
         #loading-text { font-size: 1.1rem; color: var(--text-main); font-weight: 500; text-align: center; }
@@ -269,7 +269,7 @@
 
         function downloadJson() {
             const jsonText = codeBlock.textContent;
-            const blob = new Blob(, { type: 'application/json' });
+            const blob = new Blob([jsonText], { type: 'application/json' });
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
@@ -289,29 +289,164 @@
         }
 
         // --- PYODIDE SETUP ---
-        const originalAppendStatus = window.appendStatus |
-
-| function(msg) { 
+        const originalAppendStatus = window.appendStatus || function(msg) { 
             if (statusDisplay) statusDisplay.textContent = msg; 
         };
+        
         window.appendStatus = function(msg) {
-            const cleanMsg = msg.replace(/\u001b\)
+            const cleanMsg = msg.replace(/\u001b\[.*?m/g, '').trim(); 
+            if (loadingText) loadingText.textContent = cleanMsg;
+            if (cleanMsg.includes('Done') || cleanMsg.includes('ready') || cleanMsg.includes('Ready')) {
+                document.body.classList.remove('loading-active');
+                loader.style.opacity = '0';
+                contentWrapper.style.opacity = '1';
+                setTimeout(() => {
+                    loader.style.display = 'none';
+                    document.body.style.overflow = '';
+                    sendHeight();
+                }, 500);
+            } else {
+                document.body.classList.add('loading-active');
+                loader.style.display = 'flex';
+                loader.style.opacity = '1';
+                contentWrapper.style.opacity = '0';
+            }
+            originalAppendStatus(msg);
+            setTimeout(sendHeight, 50); 
+        };
+
+        document.addEventListener('DOMContentLoaded', () => {
+            document.body.classList.add('loading-active');
+            contentWrapper.style.opacity = '0';
+            loader.style.display = 'flex'; 
+            loadingText.textContent = "Initializing Search Query...";
+            document.getElementById('copy-json').addEventListener('click', copyJsonToClipboard);
+            document.getElementById('download-json').addEventListener('click', downloadJson);
+            window.addEventListener('load', sendHeight);
+            const observer = new MutationObserver(sendHeight);
+            observer.observe(document.body, { attributes: true, childList: true, subtree: true });
+        });
+
+        // --- MAIN APP ---
+        (async () => {
+            const pyodide = await loadPyodide({ stdout: msg => console.log(msg), stderr: msg => console.error(msg) });
+            await pyodide.loadPackage("micropip");
+            const micropip = pyodide.pyimport("micropip");
+            await micropip.install("https://files.pythonhosted.org/packages/50/43/5f6b2e8d83aa1e8324f47b24bf7d44dd7c60dd07fe6b5c72e3568ea6e0b0/search_query_linter-0.1.1-py3-none-any.whl");
+
+            const lintBtn = document.getElementById("btn-lint");
+            const queryInput = document.getElementById("query");
+            const platformInput = document.getElementById("platform");
+            const lintView = document.getElementById("lint-view");
+            const messagesTitle = document.getElementById("messages-title");
+            lintBtn.disabled = false;
+
+            function escapeHtml(str) { 
+                return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); 
+            }
+            
+            function convertAnsiToHtml(text) { 
+                return text.replace(/\x1b\[31m/g, '<span class="ansi-red">')
+                          .replace(/\x1b\[33m/g, '<span class="ansi-yellow">')
+                          .replace(/\x1b\[0m/g, '</span>'); 
+            }
+            
+            function renderLintMessages(rawMessages) {
+                lintView.innerHTML = ""; 
+                if (!rawMessages || rawMessages.length === 0) {
+                    messagesTitle.style.display = "none"; 
+                    lintView.style.display = "none"; 
+                    return;
+                }
+                
+                rawMessages.forEach((msg, index) => {
+                    const container = document.createElement("div"); 
+                    container.className = "lint-item";
+                    
+                    const titleEl = document.createElement("div"); 
+                    titleEl.className = "lint-title";
+                    titleEl.textContent = `${index + 1}. ${msg.icon || "⚠️"} ${msg.rule_id}`; 
+                    container.appendChild(titleEl);
+                    
+                    const messageEl = document.createElement("div"); 
+                    messageEl.className = "lint-message";
+                    messageEl.innerHTML = convertAnsiToHtml(escapeHtml(msg.message)); 
+                    container.appendChild(messageEl);
+                    
+                    if (msg.query) {
+                        const queryBlock = document.createElement("pre"); 
+                        queryBlock.className = "lint-query";
+                        queryBlock.textContent = msg.query; 
+                        container.appendChild(queryBlock);
+                        
+                        const separator = document.createElement("div"); 
+                        separator.className = "lint-separator"; 
+                        container.appendChild(separator);
+                    }
+                    
+                    lintView.appendChild(container);
+                });
+                
+                if (rawMessages.length > 0) { 
+                    messagesTitle.style.display = "block"; 
+                    lintView.style.display = "block"; 
+                } else { 
+                    messagesTitle.style.display = "none"; 
+                    lintView.style.display = "none"; 
+                }
+                
+                setTimeout(() => { 
+                    if (window.parent) sendHeight(); 
+                }, 80);
+            }
+
+            function resetState() {
+                codeBlock.innerHTML = ""; 
+                lintBtn.disabled = false; 
+                lintBtn.textContent = "Lint";
+                localStorage.removeItem('jsonData'); 
+                lintView.innerHTML = "";
+                messagesTitle.style.display = "none"; 
+                lintView.style.display = "none";
+                document.getElementById("output-wrap").open = false; 
+            }
+            
+            queryInput.addEventListener('input', resetState);
+            platformInput.addEventListener('change', resetState);
+
+            lintBtn.addEventListener("click", async () => {
+                lintBtn.disabled = true; 
+                lintBtn.textContent = "Processing...";
+                const query = queryInput.value;
+                const platform = platformInput.value;
+                const lintCode = `
+from search_query_linter import lint
+import json
+result = lint(${JSON.stringify(query)}, platform="${platform}")
+json.dumps([m.to_dict() for m in result])
                 `;
 
                 let resultJson;
-                try { resultJson = await pyodide.runPythonAsync(lintCode); } 
-                catch (e) { console.error(e); alert("Linter error occurred."); lintBtn.textContent = "Error"; lintBtn.disabled = false; return; }
+                try { 
+                    resultJson = await pyodide.runPythonAsync(lintCode); 
+                } catch (e) { 
+                    console.error(e); 
+                    alert("Linter error occurred."); 
+                    lintBtn.textContent = "Error"; 
+                    lintBtn.disabled = false; 
+                    return; 
+                }
 
                 codeBlock.textContent = resultJson;
                 triggerDelayedHighlight();
                 
                 const rawMessages = JSON.parse(resultJson);
                 document.getElementById("output-wrap").open = true;
-                const splitMessages =;
+                const splitMessages = [];
                 rawMessages.forEach(m => {
-                    const parts = m.message.split("\n").filter(x => x.trim()!== "");
+                    const parts = m.message.split("\n").filter(x => x.trim() !== "");
                     parts.forEach(segment => {
-                        splitMessages.push({ icon: m.icon?? "⚠️", rule_id: m.rule_id, message: segment, query: m.query });
+                        splitMessages.push({ icon: m.icon ?? "⚠️", rule_id: m.rule_id, message: segment, query: m.query });
                     });
                 });
                 renderLintMessages(splitMessages);
