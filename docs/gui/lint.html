@@ -172,7 +172,8 @@
                             <i class="fas fa-download"></i>
                         </button>
                     </div>
-                    <pre><code id="output"></code></pre>
+                    <pre style="visibility: hidden;"><code id="output"></code></pre>
+                    <pre><code id="output1"></code></pre>
                 </div>
             </details>
             <h2 id="messages-title" style="display:none; font-size: 1.25rem; font-weight: 600; margin-top: 1rem;">Messages</h2>
@@ -188,9 +189,7 @@
         const contentWrapper = document.getElementById('content-wrapper');
         const statusDisplay = document.getElementById('status-display');
         const codeBlock = document.getElementById('output');
-        setTimeout(()=>{
-            console.log(codeBlock.innerText)
-        }, 1000)
+        const codeBlock1 = document.getElementById('output1');
         // --- 1. THE FORCE-COLOR HIGHLIGHTER ---
         // Uses Inline Styles to guarantee colors appear regardless of external CSS
         function syntaxHighlightInline(jsonObj) {
@@ -231,11 +230,19 @@
 
         // --- 2. UPDATE LOGIC ---
 
-        function updateHighlight(jsonObj) {
+        function updateHighlight() {
             // 3. Render directly to InnerHTML
-            const highlightedHtml = syntaxHighlightInline(jsonObj);
-            codeBlock.innerHTML = highlightedHtml;
+            const highlightedHtml = syntaxHighlightInline(document.getElementById('output').innerText);
+            codeBlock1.innerHTML = highlightedHtml;
         }
+        document.getElementById('btn-lint').addEventListener('click', function(){
+            setTimeout(()=>{
+                console.log(codeBlock1.innerText)
+                updateHighlight()
+            }, 1000)
+
+        })
+
         // --- 3. UTILITIES ---
         function copyJsonToClipboard() {
             const jsonText = codeBlock.textContent; 
