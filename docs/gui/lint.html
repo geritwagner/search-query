@@ -172,7 +172,7 @@
                             <i class="fas fa-download"></i>
                         </button>
                     </div>
-                    <pre style="visibility: hidden;"><code id="output"></code></pre>
+                    <pre ><code id="output"></code></pre>
                     <pre><code id="output1"></code></pre>
                 </div>
             </details>
@@ -267,7 +267,6 @@ document.getElementById('btn-lint').addEventListener('click', function () {
     updateJsonAndHighlight();
 });
 
-/* -----------        // --- 3. UTILITIES ---
         function copyJsonToClipboard() {
             const jsonText = codeBlock.textContent; 
             navigator.clipboard.writeText(jsonText).then(() => {
