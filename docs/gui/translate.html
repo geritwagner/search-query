@@ -5,6 +5,11 @@
     <title>search-query translator</title>
     <meta name="viewport" content="width=device-width,initial-scale=1" />
     
+    <!-- Highlight.js for JSON coloring -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/vs2015.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/json.min.js"></script>
+
     <script src="https://cdn.jsdelivr.net/pyodide/v0.26.2/full/pyodide.js"></script>
 
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
@@ -53,22 +58,46 @@
 
         /* --- Form Elements --- */
         label { display: block; margin-top: 1.25rem; margin-bottom: 0.25rem; font-weight: 600; font-size: 0.875rem; }
+        
+        /* Query textarea with larger font size */
+        #query {
+            font-size: 1.1rem !important;
+            line-height: 1.6;
+            padding: 1rem;
+            min-height: 120px;
+            font-family: 'Courier New', monospace;
+        }
+        
+        /* Narrower form elements */
         textarea, select { 
             display: block; width: 100%; padding: 0.75rem; border: 1px solid var(--border-color); 
             border-radius: 0.5rem; box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.07); 
             transition: border-color 0.2s, box-shadow 0.2s; color: var(--text-main);
+            max-width: 100%;
         }
+        
         textarea:focus, select:focus { 
             border-color: var(--primary); box-shadow: 0 0 0 1px var(--primary); outline: none; 
         }
 
         /* --- Button --- */
         #btn-translate {
-            width: 100%; padding: 0.75rem 1rem; border: none; border-radius: 0.5rem; 
-            font-weight: 600; color: white; background-color: var(--primary); 
-            cursor: pointer; transition: background-color 0.2s; 
+            width: auto; /* Make button narrower */
+            min-width: 200px; /* Minimum width */
+            padding: 0.75rem 2rem; /* Narrower padding */
+            border: none; 
+            border-radius: 0.5rem; 
+            font-weight: 600; 
+            color: white; 
+            background-color: var(--primary); 
+            cursor: pointer; 
+            transition: background-color 0.2s; 
             box-shadow: 0 2px 4px rgba(79, 70, 229, 0.4);
             margin-top: 1.5rem;
+            font-size: 1rem;
+            display: block;
+            margin-left: auto;
+            margin-right: auto;
         }
         #btn-translate:hover:not(:disabled) { background-color: var(--primary-dark); }
         #btn-translate:disabled { opacity: 0.6; cursor: not-allowed; box-shadow: none; }
@@ -80,6 +109,35 @@
             border-radius: 0.375rem; font-size: 0.875rem; color: #a55a00; font-weight: 500; 
         }
 
+        /* === JSON Output Styling (VS Code Dark Theme Look) === */
+        pre {
+            background-color: #1e1e1e !important; /* VS Code Dark Background */
+            border: 1px solid #333;
+            border-radius: 0.5rem;
+            margin: 0;
+            padding: 1rem;
+            max-height: 400px;
+            overflow: auto;
+            color: #d4d4d4; /* Default Text Color */
+        }
+
+        #result, #messages {
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            font-size: 0.85rem;
+            background: transparent !important;
+            margin: 0;
+            padding: 0;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+
+        /* Custom Syntax Highlighting (VS Code Style) */
+        .hljs-attr { color: #9cdcfe !important; }      /* Keys: Light Blue */
+        .hljs-string { color: #ce9178 !important; }    /* Strings: Orange/Salmon */
+        .hljs-number { color: #b5cea8 !important; }    /* Numbers: Light Green */
+        .hljs-literal, .hljs-keyword { color: #569cd6 !important; } /* Booleans: Blue */
+        .hljs-punctuation { color: #d4d4d4 !important; } /* Punctuation: Light Gray */
+
         /* --- Translation Output Styling --- */
         .output-section {
             margin-top: 1.5rem;
@@ -89,9 +147,7 @@
             border-radius: 0.75rem;
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
         }
-        #result { background-color: #f3f4f6; padding: 1rem; border: 1px solid var(--border-color); border-radius: 0.5rem; font-size: 0.9rem; white-space: pre-wrap; word-wrap: break-word; margin-top: 0.5rem; }
-        #messages { background-color: #f3f4f6; padding: 1rem; border: 1px solid var(--border-color); border-radius: 0.5rem; font-size: 0.85rem; white-space: pre-wrap; word-wrap: break-word; margin-top: 0.5rem; color: var(--text-secondary); }
-
+        
         /* --- LOADING OVERLAY STYLES (Fixed and Centered) --- */
         #loading-overlay {
             position: fixed;
@@ -128,6 +184,11 @@
         /* Utility to hide the content on load */
         #content-wrapper { transition: opacity 0.5s ease; opacity: 0; }
         
+        /* Narrower platform select */
+        #platform-source, #platform-target {
+            max-width: 300px;
+        }
+        
     </style>
 </head>
 <body>
@@ -135,7 +196,7 @@
     <div id="loading-overlay">
         <div class="loader"></div>
         <div id="loading-text">Initializing search-query...</div>
-        </div>
+    </div>
     
     <div id="content-wrapper">
         <header>
@@ -179,104 +240,159 @@
         </div>
     </div>
 
-    <script src="translate.js"></script>
     <script>
-    const PARENT_ORIGIN = window.location.origin; 
-    
-    const loader = document.getElementById('loading-overlay');
-    const loadingText = document.getElementById('loading-text');
-    const contentWrapper = document.getElementById('content-wrapper');
-    const statusDisplay = document.getElementById('status-display');
-    const btnTranslate = document.getElementById('btn-translate'); // Added
-
-    // This function is kept, as requested, but handles the interface transition
-    // --- Append module with interval stopped after ready ---
-const appendInterval = setInterval(() => {
-    const statusText = document.getElementById('status');
-    const lines = statusText.innerText.split("\n");
-    const lastLine = lines[lines.length - 1].trim();
-
-    loadingText.innerText = lastLine || "Loading…";
-
-    if (lastLine.includes("search-query ready.")) {
-        loader.style.display = 'none';
-        contentWrapper.style.display = 'block';
-        contentWrapper.style.opacity = '1';
-        statusText.innerText = 'Search Query Ready';
+        // Initialize Highlight.js
+        hljs.configure({ ignoreUnescapedHTML: true });
         
-        // Stop the interval to prevent unnecessary height updates
-        clearInterval(appendInterval);
+        const PARENT_ORIGIN = window.location.origin; 
+        
+        const loader = document.getElementById('loading-overlay');
+        const loadingText = document.getElementById('loading-text');
+        const contentWrapper = document.getElementById('content-wrapper');
+        const statusDisplay = document.getElementById('status-display');
+        const btnTranslate = document.getElementById('btn-translate');
 
-        // Send final height once
-        sendHeight();
-    }
-}, 100);
+        // Function to update JSON output with highlighting
+        function updateJsonOutput(elementId, jsonData) {
+            const codeElement = document.getElementById(elementId);
+            
+            // 1. Convert to Pretty String
+            const formattedJson = JSON.stringify(jsonData, null, 2);
+            
+            // 2. Set text content
+            codeElement.textContent = formattedJson;
+            
+            // 3. Clear markers
+            codeElement.removeAttribute('data-highlighted');
+            
+            // 4. Trigger Highlight.js
+            hljs.highlightElement(codeElement);
+            
+            console.log('JSON output highlighted with VS Code theme');
+        }
 
-  let lastSentHeight = 0;
+        // --- Append module with interval stopped after ready ---
+        const appendInterval = setInterval(() => {
+            const statusText = document.getElementById('status');
+            const lines = statusText.innerText.split("\n");
+            const lastLine = lines[lines.length - 1].trim();
 
-    // --- Cross-Origin Height Communication (FIXED) ---
-    function sendHeight() {
-        // Only proceed if the loading overlay is hidden.
-        if (loader.style.display !== 'none') return; 
+            loadingText.innerText = lastLine || "Loading…";
 
-        // Get the total scrollable height of the body content
-        const currentHeight = document.body.scrollHeight; 
+            if (lastLine.includes("search-query ready.")) {
+                loader.style.display = 'none';
+                contentWrapper.style.display = 'block';
+                contentWrapper.style.opacity = '1';
+                statusText.innerText = 'Search Query Ready';
+                
+                // Enable the translate button
+                btnTranslate.disabled = false;
+                
+                // Stop the interval to prevent unnecessary height updates
+                clearInterval(appendInterval);
 
-        // Check if the height has changed significantly before sending the message
-        // This prevents unnecessary resizing during minor reflows or idle states.
-        if (currentHeight !== lastSentHeight) {
-            if (window.parent) {
-                window.parent.postMessage({
-                    type: 'setHeight',
-                    height: currentHeight
-                }, PARENT_ORIGIN);
-                lastSentHeight = currentHeight; // Update tracking variable
+                // Send final height once
+                sendHeight();
             }
-        }
-    }  
-    // --- Pyodide Status Hook (Modified to primarily update the hidden #status) ---
-    
-    const originalAppendStatus = window.appendStatus || function(msg) { 
-        const statusDiv = document.getElementById('status');
-        if (statusDiv) {
-            // Write to the hidden status div for appendModule to read
-            statusDiv.textContent = msg; 
-        }
-        if(statusDiv.innerText == 'Loading Search Query…'){
-            statusDiv.innerText == 'Search Query Ready…';
-            statusDiv.textContent = 'Search Query Ready…';
-        }
-        console.log("Pyodide Hook:", msg); 
-    };
-    
-    window.appendStatus = function(msg) {
-        // 1. Call the original function which writes to the hidden #status div
-        originalAppendStatus(msg);
+        }, 100);
 
-        // 2. Re-trigger height update immediately if loading is active
-        // The display logic is now primarily handled by appendModule's interval
-        if (loader.style.display === 'none') {
-             setTimeout(sendHeight, 50); 
-        }
-    };
-    
-    // --- Initial Setup and DOM Observer ---
-    document.addEventListener('DOMContentLoaded', () => {
-        // Initial state setup: LOCK VIEWPORT IMMEDIATELY
-        document.body.classList.add('loading-active');
-        contentWrapper.style.opacity = '0';
-        contentWrapper.style.display = 'none'; // Ensure content is hidden
-        loader.style.display = 'flex'; 
-        loadingText.textContent = "Loading Search Query runtime...";
-        btnTranslate.disabled = true; // Disable button initially
+        let lastSentHeight = 0;
 
-        // 1. Send initial minimal height
-        window.addEventListener('load', sendHeight);
+        // --- Cross-Origin Height Communication (FIXED) ---
+        function sendHeight() {
+            // Only proceed if the loading overlay is hidden.
+            if (loader.style.display !== 'none') return; 
+
+            // Get the total scrollable height of the body content
+            const currentHeight = document.body.scrollHeight; 
+
+            // Check if the height has changed significantly before sending the message
+            // This prevents unnecessary resizing during minor reflows or idle states.
+            if (currentHeight !== lastSentHeight) {
+                if (window.parent) {
+                    window.parent.postMessage({
+                        type: 'setHeight',
+                        height: currentHeight
+                    }, PARENT_ORIGIN);
+                    lastSentHeight = currentHeight; // Update tracking variable
+                }
+            }
+        }  
+
+        // --- Pyodide Status Hook (Modified to primarily update the hidden #status) ---
+        const originalAppendStatus = window.appendStatus || function(msg) { 
+            const statusDiv = document.getElementById('status');
+            if (statusDiv) {
+                // Write to the hidden status div for appendModule to read
+                statusDiv.textContent = msg; 
+            }
+            if(statusDiv.innerText == 'Loading Search Query…'){
+                statusDiv.innerText == 'Search Query Ready…';
+                statusDiv.textContent = 'Search Query Ready…';
+            }
+            console.log("Pyodide Hook:", msg); 
+        };
         
-        // 2. Observe DOM changes 
-        const observer = new MutationObserver(sendHeight);
-        observer.observe(document.body, { attributes: true, childList: true, subtree: true });
-    });
-</script>
+        window.appendStatus = function(msg) {
+            // 1. Call the original function which writes to the hidden #status div
+            originalAppendStatus(msg);
+
+            // 2. Re-trigger height update immediately if loading is active
+            // The display logic is now primarily handled by appendModule's interval
+            if (loader.style.display === 'none') {
+                setTimeout(sendHeight, 50); 
+            }
+        };
+        
+        // --- Initial Setup and DOM Observer ---
+        document.addEventListener('DOMContentLoaded', () => {
+            // Initial state setup: LOCK VIEWPORT IMMEDIATELY
+            document.body.classList.add('loading-active');
+            contentWrapper.style.opacity = '0';
+            contentWrapper.style.display = 'none'; // Ensure content is hidden
+            loader.style.display = 'flex'; 
+            loadingText.textContent = "Loading Search Query runtime...";
+            btnTranslate.disabled = true; // Disable button initially
+
+            // Initialize Highlight.js
+            hljs.highlightAll();
+
+            // 1. Send initial minimal height
+            window.addEventListener('load', sendHeight);
+            
+            // 2. Observe DOM changes 
+            const observer = new MutationObserver(sendHeight);
+            observer.observe(document.body, { attributes: true, childList: true, subtree: true });
+            
+            // 3. Add event listener for the translate button
+            btnTranslate.addEventListener('click', function() {
+                // Simulate translation result (replace with actual translation logic)
+                const query = document.getElementById('query').value;
+                const sourcePlatform = document.getElementById('platform-source').value;
+                const targetPlatform = document.getElementById('platform-target').value;
+                
+                // Example result (replace with actual translation)
+                const translatedQuery = `Translated from ${sourcePlatform} to ${targetPlatform}: ${query}`;
+                
+                // Example messages (replace with actual messages)
+                const messages = {
+                    warnings: ["Field 'PY' was converted to 'Publication Year'"],
+                    info: ["Query successfully translated"]
+                };
+                
+                // Display results
+                document.getElementById('result-title').style.display = 'block';
+                document.getElementById('result').style.display = 'block';
+                document.getElementById('result').textContent = translatedQuery;
+                
+                document.getElementById('messages-title').style.display = 'block';
+                document.getElementById('messages').style.display = 'block';
+                updateJsonOutput('messages', messages);
+                
+                // Update height after showing results
+                setTimeout(sendHeight, 100);
+            });
+        });
+    </script>
 </body>
 </html>
