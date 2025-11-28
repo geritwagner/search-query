@@ -80,7 +80,7 @@
         #output-wrap { margin-top: 1.5rem; position: relative; }
         
         /* --- JSON OUTPUT WINDOW --- */
-              pre {
+        pre {
             background: #1e1e1e; /* VS Code Dark BG */
             color: #d4d4d4;      /* Default Text Color */
             padding: 20px;
@@ -172,91 +172,68 @@
                             <i class="fas fa-download"></i>
                         </button>
                     </div>
-                    <pre style="visibility: hidden;"><code id="output"></code></pre>
-                    <pre><code id="output1"></code></pre>
+                    <pre><code id="output"></code></pre>
                 </div>
             </details>
             <h2 id="messages-title" style="display:none; font-size: 1.25rem; font-weight: 600; margin-top: 1rem;">Messages</h2>
             <div id="lint-view" style="display:none;"></div>
         </div>
     </div>
-    <script src="script.js"></script>
-<script>
-const PARENT_ORIGIN = window.location.origin;
 
-const loader = document.getElementById('loading-overlay');
-const loadingText = document.getElementById('loading-text');
-const contentWrapper = document.getElementById('content-wrapper');
-const statusDisplay = document.getElementById('status-display');
-const codeBlock = document.getElementById('output');
-const codeBlock1 = document.getElementById('output1');
+    <script>
+        const PARENT_ORIGIN = window.location.origin;
+        const loader = document.getElementById('loading-overlay');
+        const loadingText = document.getElementById('loading-text');
+        const contentWrapper = document.getElementById('content-wrapper');
+        const statusDisplay = document.getElementById('status-display');
+        const codeBlock = document.getElementById('output');
 
-/* ------------------------------
-   FORCE-COLOR HIGHLIGHTER
---------------------------------*/
-
-// --- 2. THE MANUAL REGEX HIGHLIGHTER ---
-function syntaxHighlightInline(jsonObj) {
-    // Convert object to string if it isn't already
-    let json = JSON.stringify(jsonObj, undefined, 4);
-    
-    // Escape HTML characters (security)
-    json = json.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-    
-    // The Regex Magic
-    // 1. Strings (including keys)
-    // 2. Booleans (true/false)
-    // 3. Null
-    // 4. Numbers
-    return json.replace(/("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/g, function (match) {
-        let style = 'color: #b5cea8;'; // Default: Number (Light Green)
-        
-        if (/^"/.test(match)) {
-            if (/:$/.test(match)) {
-                // KEY DETECTED (ends with :) -> Light Blue
-                return '<span style="color: #9cdcfe;">' + match.slice(0, -1) + '</span>:';
-            } else {
-                // STRING DETECTED -> Salmon/Orange
-                style = 'color: #ce9178;';
-            }
-        } else if (/true|false/.test(match)) {
-            // BOOLEAN -> Blue
-            style = 'color: #569cd6;';
-        } else if (/null/.test(match)) {
-            // NULL -> Blue
-            style = 'color: #569cd6;';
+        /* ------------------------------
+           FORCE-COLOR HIGHLIGHTER
+        ---------------------------------*/
+        function syntaxHighlightInline(jsonObj) {
+            // Convert object to string if it isn't already
+            let json = JSON.stringify(jsonObj, undefined, 4);
+            
+            // Escape HTML characters (security)
+            json = json.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+            
+            // The Regex Magic
+            return json.replace(/("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/g, function (match) {
+                let style = 'color: #b5cea8;'; // Default: Number (Light Green)
+                
+                if (/^"/.test(match)) {
+                    if (/:$/.test(match)) {
+                        // KEY DETECTED (ends with :) -> Light Blue
+                        return '<span style="color: #9cdcfe;">' + match.slice(0, -1) + '</span>:';
+                    } else {
+                        // STRING DETECTED -> Salmon/Orange
+                        style = 'color: #ce9178;';
+                    }
+                } else if (/true|false/.test(match)) {
+                    // BOOLEAN -> Blue
+                    style = 'color: #569cd6;';
+                } else if (/null/.test(match)) {
+                    // NULL -> Blue
+                    style = 'color: #569cd6;';
+                }
+                
+                return '<span style="' + style + '">' + match + '</span>';
+            });
         }
-        
-        return '<span style="' + style + '">' + match + '</span>';
-    });
-}
 
-/* ----------------------------------
-   UPDATE HIGHLIGHT + LOCALSTORAGE
------------------------------------*/
-function updateHighlight() {
-    // 3. Render directly to InnerHTML
-    const highlightedHtml = syntaxHighlightInline(JSON.parse(codeBlock.innerText));
-    codeBlock1.innerHTML = highlightedHtml;
-}
-/* ----------------------------------
-   AUTO-REFRESH EVERY 1 SECOND
------------------------------------*/
+        /* ----------------------------------
+           UPDATE HIGHLIGHT
+        -----------------------------------*/
+        function updateHighlight(jsonData) {
+            const highlightedHtml = syntaxHighlightInline(jsonData);
+            codeBlock.innerHTML = highlightedHtml;
+        }
 
-/* ----------------------------------
-   LINT BUTTON
------------------------------------*/
-document.getElementById('btn-lint').addEventListener('click', function () {
-
-    setTimeout(()=>{
-        updateHighlight()
-    },100)
-
-});
-
-        // --- 3. UTILITIES ---
+        // --- UTILITIES ---
         function copyJsonToClipboard() {
-            const jsonText = codeBlock.textContent; 
+            // Get raw text without HTML tags for copying
+            const jsonText = codeBlock.textContent || codeBlock.innerText;
             navigator.clipboard.writeText(jsonText).then(() => {
                 const copyBtn = document.getElementById('copy-json');
                 const originalHTML = copyBtn.innerHTML;
@@ -270,7 +247,7 @@ document.getElementById('btn-lint').addEventListener('click', function () {
         }
 
         function downloadJson() {
-            const jsonText = codeBlock.textContent;
+            const jsonText = codeBlock.textContent || codeBlock.innerText;
             const blob = new Blob([jsonText], { type: 'application/json' });
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
@@ -290,7 +267,7 @@ document.getElementById('btn-lint').addEventListener('click', function () {
             }
         }
 
-        // --- 4. PYODIDE SETUP ---
+        // --- PYODIDE SETUP ---
         const originalAppendStatus = window.appendStatus || function(msg) { 
             if (statusDisplay) statusDisplay.textContent = msg; 
         };
@@ -319,7 +296,7 @@ document.getElementById('btn-lint').addEventListener('click', function () {
             setTimeout(sendHeight, 50); 
         };
 
-        // --- 5. INIT ---
+        // --- INIT ---
         document.addEventListener('DOMContentLoaded', () => {
             document.body.classList.add('loading-active');
             contentWrapper.style.opacity = '0';
@@ -332,11 +309,9 @@ document.getElementById('btn-lint').addEventListener('click', function () {
             window.addEventListener('load', sendHeight);
             const observer = new MutationObserver(sendHeight);
             observer.observe(document.body, { attributes: true, childList: true, subtree: true });
-
-
         });
 
-        // --- 6. MAIN APP ---
+        // --- MAIN APP ---
         (async () => {
             const pyodide = await loadPyodide({ stdout: msg => console.log(msg), stderr: msg => console.error(msg) });
             await pyodide.loadPackage("micropip");
@@ -413,12 +388,11 @@ document.getElementById('btn-lint').addEventListener('click', function () {
                 // Unlock Button
                 lintBtn.disabled = false;
                 lintBtn.textContent = "Lint";
-                // Clear Storage
-                localStorage.removeItem('jsonData');
                 // Clear Messages
                 lintView.innerHTML = "";
                 messagesTitle.style.display = "none";
                 lintView.style.display = "none";
+                document.getElementById("output-wrap").open = false;
             }
 
             queryInput.addEventListener('input', resetState);
@@ -446,13 +420,11 @@ json.dumps([m.to_dict() for m in result])
                     console.error(e);
                     alert("Linter error occurred.");
                     lintBtn.textContent = "Error";
+                    lintBtn.disabled = false;
                     return;
                 }
 
                 const rawMessages = JSON.parse(resultJson);
-                
-                // SAVE
-                //localStorage.setItem('jsonData', JSON.stringify(rawMessages));
                 
                 // HIGHLIGHT (With Inline Styles)
                 updateHighlight(rawMessages);
@@ -472,7 +444,11 @@ json.dumps([m.to_dict() for m in result])
                 });
 
                 renderLintMessages(splitMessages);
-                lintBtn.textContent = "Done"; // Keep locked until edit
+                document.getElementById("output-wrap").open = true;
+                lintBtn.textContent = "Done";
+                
+                // Update height after everything is rendered
+                setTimeout(sendHeight, 100);
             });
         })();
     </script>
