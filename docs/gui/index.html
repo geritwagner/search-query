@@ -173,6 +173,25 @@
             color: var(--primary);
         }
 
+        /* --- Sidebar Navigation Styles --- */
+        .sidebar-tool-link {
+            display: flex;
+            align-items: center;
+            padding: 0.5rem 0.75rem;
+            border-radius: 0.375rem;
+            color: var(--text-heading);
+            transition: all 0.2s ease;
+            margin-bottom: 0.25rem;
+        }
+        .sidebar-tool-link:hover {
+            background-color: var(--bg-base-lighter);
+            color: var(--primary);
+        }
+        .sidebar-tool-link.active {
+            background-color: var(--primary);
+            color: white;
+        }
+
         @keyframes text-flow {
             0% { background-position: 0% 50%; }
             100% { background-position: 100% 50%; }
@@ -210,26 +229,26 @@
         <div style="display: flex; flex-direction: column; margin-top: 1rem; color: var(--text-heading);">
             
             <div style="padding: 1rem 0; font-size: 0.75rem; font-weight: bold; color: var(--text-body); text-transform: uppercase;">Features</div>
-            <a href="#tool-area" data-tool-url="lint.html" class="sidebar-tool-link" style="padding: 0.5rem 0.75rem; border-radius: 0.375rem;">
+            <a href="#tool-area" data-tool-url="lint.html" class="sidebar-tool-link">
                 <i class="fas fa-tasks w-5 mr-3"></i> Lint
             </a>
-            <a href="#tool-area" data-tool-url="translate.html" class="sidebar-tool-link" style="padding: 0.5rem 0.75rem; border-radius: 0.375rem;">
+            <a href="#tool-area" data-tool-url="translate.html" class="sidebar-tool-link">
                 <i class="fas fa-language w-5 mr-3"></i> Translate
             </a>
             
             <div style="padding: 1rem 0; font-size: 0.75rem; font-weight: bold; color: var(--text-body); text-transform: uppercase;">Debug</div>
-            <a href="#tool-area" data-tool-url="tokenizer.html" class="sidebar-tool-link" style="padding: 0.5rem 0.75rem; border-radius: 0.375rem;">
+            <a href="#tool-area" data-tool-url="tokenizer.html" class="sidebar-tool-link">
                 <i class="fas fa-microchip w-5 mr-3"></i> Tokenize
             </a>
             
             <div style="padding: 1rem 0; font-size: 0.75rem; font-weight: bold; color: var(--text-body); text-transform: uppercase;">Resources</div>
-            <a href="https://github.com/geritwagner/search-query" target="_blank" style="padding: 0.5rem 0.75rem; border-radius: 0.375rem;">
+            <a href="https://github.com/geritwagner/search-query" target="_blank" class="sidebar-tool-link">
                 <i class="fab fa-github w-5 mr-3"></i> GitHub
             </a>
-            <a href="https://github.com/geritwagner/search-query/blob/main/docs/index.md" target="_blank" style="padding: 0.5rem 0.75rem; border-radius: 0.375rem;">
+            <a href="https://github.com/geritwagner/search-query/blob/main/docs/index.md" target="_blank" class="sidebar-tool-link">
                 <i class="fas fa-book w-5 mr-3"></i> Documentation
             </a>
-            <a href="https://github.com/geritwagner/search-query/blob/main/LICENSE" target="_blank" style="padding: 0.5rem 0.75rem; border-radius: 0.375rem;">
+            <a href="https://github.com/geritwagner/search-query/blob/main/LICENSE" target="_blank" class="sidebar-tool-link">
                 <i class="fas fa-file-contract w-5 mr-3"></i> License
             </a>
         </div>
@@ -256,8 +275,6 @@
                                    
                 </section>
 
-
-
                 <div id="tool-area-content">
                     <iframe id="tool-iframe" src="about:blank" frameborder="0" scrolling="no"></iframe>
                 </div>
@@ -281,11 +298,8 @@
             closeMenuBtn: document.getElementById('close-menu'),
             backdrop: document.getElementById('backdrop'),
             interactiveToolWrap: document.getElementById('interactive-tool-wrap'),
-            launchToolCta: document.getElementById('launch-tool-cta'),
-            toolAreaAnchor: document.getElementById('tool-area'),
             toolIframe: document.getElementById('tool-iframe'),
-            sidebarToolLinks: document.querySelectorAll('.sidebar-tool-link'),
-            quickCtaBtns: document.querySelectorAll('#quick-access-ctas button[data-tool-url]'),
+            sidebarToolLinks: document.querySelectorAll('.sidebar-tool-link')
         };
 
         const BASE_PATH = 'https://geritwagner.github.io/search-query/gui/'; 
@@ -308,25 +322,24 @@
         }
 
         function loadToolIntoIframe(toolUrl) {
+            console.log('Loading tool:', toolUrl);
             if (DOM.toolIframe.src !== toolUrl) {
-                // NOTE: We do not add cache busting here as the iframe content script will handle reload if needed.
                 DOM.toolIframe.src = toolUrl;
             }
-        }
-        
-        /* --- CTA LAUNCHER --- */
-        
-        function launchToolArea(initialToolUrl) {
-            // 1. Ensure the tool is visible
-            DOM.interactiveToolWrap.classList.remove('hidden');
-
-            // 2. Load the specified tool into the iframe
-            loadToolIntoIframe(initialToolUrl);
-
-            // 3. Scroll smoothly to the tool anchor
-            if (DOM.toolAreaAnchor) {
-                 DOM.toolAreaAnchor.scrollIntoView({ behavior: 'smooth', block: 'start' });
-            }
+            
+            // Update active state in sidebar
+            DOM.sidebarToolLinks.forEach(link => {
+                link.classList.remove('active');
+                if (link.getAttribute('data-tool-url') === toolUrl.replace(BASE_PATH, '')) {
+                    link.classList.add('active');
+                }
+            });
+            
+            // Ensure iframe is visible and scroll to it
+            DOM.interactiveToolWrap.style.display = 'block';
+            setTimeout(() => {
+                DOM.toolIframe.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }, 100);
         }
         
         /* --- IFRAME RESIZE LISTENER --- */
@@ -356,44 +369,43 @@
             // Clear storage immediately after retrieval
             localStorage.removeItem('toolToLaunch');
 
-            // 1. If a URL was stored (meaning user clicked a sidebar link), launch the tool area
+            // 1. If a URL was stored (meaning user clicked a sidebar link), load that tool
             if (storedUrl) {
-                 launchToolArea(storedUrl);
+                loadToolIntoIframe(storedUrl);
             } else {
-                 // Load default tokenizer into iframe, but keep the tool area hidden
-                 loadToolIntoIframe(initialToolUrl);
+                // Load default tool into iframe
+                loadToolIntoIframe(initialToolUrl);
             }
-            
-            // 2. Primary CTA click (Hero Section): Launches the default tool
-            DOM.launchToolCta.addEventListener('click', (e) => {
-                e.preventDefault();
-                launchToolArea(initialToolUrl); 
-            });
 
-            // 3. Mobile Menu Toggles
+            // 2. Mobile Menu Toggles
             DOM.menuToggle.addEventListener('click', () => toggleSidebar());
             DOM.backdrop.addEventListener('click', () => toggleSidebar(true));
             document.getElementById('close-menu').addEventListener('click', () => toggleSidebar(true));
 
-            // 4. Sidebar and Quick CTA Navigation Handler
+            // 3. Sidebar Navigation Handler - FIXED VERSION
             const handleToolSwitch = (e) => {
                 const link = e.target.closest('[data-tool-url]');
                 if (link) {
-                    e.preventDefault(); // Prevent immediate hash scroll until reload occurs
+                    e.preventDefault();
                     const relativeUrl = link.getAttribute('data-tool-url');
                     const fullUrl = BASE_PATH + relativeUrl;
                     
-                    // 1. Save target URL to localStorage
-                    localStorage.setItem('toolToLaunch', fullUrl);
+                    console.log('Tool switch clicked:', fullUrl);
                     
-                    // 2. Force page reload to ensure Pyodide restarts cleanly
-                    window.location.reload(); 
+                    // Close mobile sidebar if open
+                    if (window.innerWidth < 1024) {
+                        toggleSidebar(true);
+                    }
+                    
+                    // Load the tool directly without page reload
+                    loadToolIntoIframe(fullUrl);
                 }
             };
             
-            // Attach handler to buttons/links
-            DOM.sidebar.addEventListener('click', handleToolSwitch);
-            DOM.quickCtaBtns.forEach(btn => btn.addEventListener('click', handleToolSwitch));
+            // Attach handler to sidebar links
+            DOM.sidebarToolLinks.forEach(link => {
+                link.addEventListener('click', handleToolSwitch);
+            });
         });
     </script>
 </body>
