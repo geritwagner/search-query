@@ -403,15 +403,15 @@
 
             queryInput.addEventListener('input', resetState);
             platformInput.addEventListener('change', resetState);
-
-            lintBtn.addEventListener("click", async () => {
-                // LOCK
+lintBtn.addEventListener("click", async () => {
+                // 1. LOCK BUTTON
                 lintBtn.disabled = true;
                 lintBtn.textContent = "Processing...";
 
                 const query = queryInput.value;
                 const platform = platformInput.value;
 
+                // 2. PREPARE PYTHON CODE
                 const lintCode = `
 from search_query_linter import lint
 import json
@@ -426,18 +426,20 @@ json.dumps([m.to_dict() for m in result])
                     console.error(e);
                     alert("Linter error occurred.");
                     lintBtn.textContent = "Error";
+                    lintBtn.disabled = false; // Re-enable on error
                     return;
                 }
 
                 const rawMessages = JSON.parse(resultJson);
                 
-                // SAVE
-                //localStorage.setItem('jsonData', JSON.stringify(rawMessages));
-                
-                // HIGHLIGHT (With Inline Styles)
+                // 3. HIGHLIGHT JSON & UPDATE HTML
                 updateHighlight(rawMessages);
                 
-                // RENDER CARDS
+                // --- NEW: FORCE OPEN THE JSON PANEL ---
+                document.getElementById("output-wrap").open = true; 
+                // --------------------------------------
+
+                // 4. RENDER VISUAL CARDS
                 const splitMessages = [];
                 rawMessages.forEach(m => {
                     const parts = m.message.split("\n").filter(x => x.trim() !== "");
@@ -452,7 +454,7 @@ json.dumps([m.to_dict() for m in result])
                 });
 
                 renderLintMessages(splitMessages);
-                lintBtn.textContent = "Done"; // Keep locked until edit
+                lintBtn.textContent = "Done"; 
             });
         })();
     </script>
