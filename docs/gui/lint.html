@@ -199,174 +199,170 @@
     </div>
     <script src="script.js"></script>
 
-    <script>
-        const PARENT_ORIGIN = window.location.origin; 
-        
-        const loader = document.getElementById('loading-overlay');
-        const loadingText = document.getElementById('loading-text');
-        const contentWrapper = document.getElementById('content-wrapper');
-        const statusDisplay = document.getElementById('status-display');
-        const codeBlock = document.getElementById('output');
+   <script>
+    const PARENT_ORIGIN = window.location.origin; 
+    
+    const loader = document.getElementById('loading-overlay');
+    const loadingText = document.getElementById('loading-text');
+    const contentWrapper = document.getElementById('content-wrapper');
+    const statusDisplay = document.getElementById('status-display');
+    const codeBlock = document.getElementById('output');
 
-        // --- NEW FUNCTION: Safely update JSON output and highlight ---
-        function updateJsonOutput(jsonData) {
-            try {
-                const codeElement = document.getElementById('output');
-                const formattedJson = JSON.stringify(jsonData, null, 4); // pretty print
-                codeElement.textContent = formattedJson;
-                codeElement.className = "language-json"; // ensure HL sees it
-                hljs.highlightElement(codeElement);       // trigger highlight
-            } catch (err) {
-                console.error("Failed to update and highlight JSON:", err);
-            }
-        }
-
-        // --- OVERRIDE existing updateHighlight to use the new function ---
-        function updateHighlight() {
-            const stored = localStorage.getItem('jsonData');
-
-            if (!stored) {
-                const codeBlock = document.getElementById('output');
-                codeBlock.textContent = "// No JSON stored yet. Click the button.";
-                hljs.highlightElement(codeBlock);
-                return;
-            }
-
-            try {
-                const parsed = JSON.parse(stored);
-                updateJsonOutput(parsed); // use the new function
-            } catch (err) {
-                console.warn("Invalid JSON in localStorage. Clearing…");
-                localStorage.removeItem('jsonData');
-                const codeBlock = document.getElementById('output');
-                codeBlock.textContent = "// Invalid JSON found. Click the button again.";
-                hljs.highlightElement(codeBlock);
-            }
-        }
-
-        // --- Copy JSON Function ---
-        function copyJsonToClipboard() {
+    // --- Function: Update JSON output and highlight ---
+    function updateJsonOutput(jsonData) {
+        try {
             const codeElement = document.getElementById('output');
-            const jsonText = codeElement.textContent;
-            
-            navigator.clipboard.writeText(jsonText).then(() => {
-                const copyBtn = document.getElementById('copy-json');
-                const originalHTML = copyBtn.innerHTML;
-                copyBtn.innerHTML = '<i class="fas fa-check"></i>';
-                copyBtn.classList.add('copied');
-                setTimeout(() => {
-                    copyBtn.innerHTML = originalHTML;
-                    copyBtn.classList.remove('copied');
-                }, 2000);
-            }).catch(err => {
-                console.error('Failed to copy JSON: ', err);
-                alert('Failed to copy JSON to clipboard');
-            });
+            const formattedJson = JSON.stringify(jsonData, null, 4);
+            codeElement.textContent = formattedJson;
+            codeElement.className = "language-json";
+            hljs.highlightElement(codeElement);
+        } catch (err) {
+            console.error("Failed to update and highlight JSON:", err);
         }
+    }
 
-        // --- Download JSON Function ---
-        function downloadJson() {
-            const codeElement = document.getElementById('output');
-            const jsonText = codeElement.textContent;
-            const blob = new Blob([jsonText], { type: 'application/json' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = 'linter-output.json';
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
+    // --- Function: Update highlight from localStorage ---
+    function updateHighlight() {
+        const stored = localStorage.getItem('jsonData');
+        const codeElement = document.getElementById('output');
+
+        if (!stored) {
+            codeElement.textContent = "// No JSON stored yet. Click the button.";
+            hljs.highlightElement(codeElement);
+            return;
         }
-
-        // --- Cross-Origin Height Communication ---
-        function sendHeight() {
-            if (document.body.classList.contains('loading-active')) return;
-            const height = document.body.scrollHeight;
-            if (window.parent) {
-                window.parent.postMessage({
-                    type: 'setHeight',
-                    height: height
-                }, PARENT_ORIGIN);
-            }
-        }
-        
-        // --- Pyodide Status Hook and Loader Control ---
-        const originalAppendStatus = window.appendStatus || function(msg) { 
-            const statusDiv = document.getElementById('status');
-            if (statusDiv) statusDiv.textContent = msg; 
-            console.log("Pyodide Hook:", msg); 
-        };
-        
-        window.appendStatus = function(msg) {
-            const cleanMsg = msg.replace(/\u001b\[.*?m/g, '').trim(); 
-            if (loadingText) loadingText.textContent = cleanMsg;
-            if (cleanMsg.includes('Done') || cleanMsg.includes('ready') || cleanMsg.includes('Ready')) {
-                document.body.classList.remove('loading-active');
-                loader.style.opacity = '0';
-                contentWrapper.style.opacity = '1';
-                setTimeout(() => {
-                    loader.style.display = 'none';
-                    document.body.style.overflow = '';
-                    sendHeight();
-                }, 500);
-            } else {
-                document.body.classList.add('loading-active');
-                loader.style.display = 'flex';
-                loader.style.opacity = '1';
-                contentWrapper.style.opacity = '0';
-            }
-            originalAppendStatus(msg);
-            setTimeout(sendHeight, 50); 
-        };
-        
-        document.addEventListener('DOMContentLoaded', () => {
-            document.body.classList.add('loading-active');
-            contentWrapper.style.opacity = '0';
-            loader.style.display = 'flex'; 
-            loadingText.textContent = "Initializing Search Query...";
-            document.getElementById('copy-json').addEventListener('click', copyJsonToClipboard);
-            document.getElementById('download-json').addEventListener('click', downloadJson);
-            window.addEventListener('load', sendHeight);
-            const observer = new MutationObserver(sendHeight);
-            observer.observe(document.body, { attributes: true, childList: true, subtree: true });
-        });
-
-(async () => {
-    const pyodide = await loadPyodide({ stdout: msg => console.log(msg), stderr: msg => console.error(msg) });
-    await pyodide.loadPackage("micropip");
-    const micropip = pyodide.pyimport("micropip");
-    await micropip.install("https://files.pythonhosted.org/packages/50/43/5f6b2e8d83aa1e8324f47b24bf7d44dd7c60dd07fe6b5c72e3568ea6e0b0/search_query_linter-0.1.1-py3-none-any.whl");
-
-    const lintBtn = document.getElementById('btn-lint');
-    lintBtn.disabled = false;
-
-    lintBtn.addEventListener('click', async () => {
-        const query = document.getElementById('query').value;
-        const platform = document.getElementById('platform').value;
-        loadingText.textContent = "Linting…";
-        document.body.classList.add('loading-active');
-        loader.style.display = 'flex';
-        contentWrapper.style.opacity = '0';
 
         try {
-            const linter = pyodide.pyimport("search_query_linter");
-            const result = linter.lint_query(query, platform);
-            localStorage.setItem('jsonData', JSON.stringify(result));
-            updateHighlight();
-        } catch(err) {
-            console.error(err);
-        } finally {
+            const parsed = JSON.parse(stored);
+            updateJsonOutput(parsed);
+        } catch (err) {
+            console.warn("Invalid JSON in localStorage. Clearing…");
+            localStorage.removeItem('jsonData');
+            codeElement.textContent = "// Invalid JSON found. Click the button again.";
+            hljs.highlightElement(codeElement);
+        }
+    }
+
+    // --- Copy JSON to clipboard ---
+    function copyJsonToClipboard() {
+        const codeElement = document.getElementById('output');
+        const jsonText = codeElement.textContent;
+
+        navigator.clipboard.writeText(jsonText).then(() => {
+            const copyBtn = document.getElementById('copy-json');
+            const originalHTML = copyBtn.innerHTML;
+            copyBtn.innerHTML = '<i class="fas fa-check"></i>';
+            copyBtn.classList.add('copied');
+            setTimeout(() => {
+                copyBtn.innerHTML = originalHTML;
+                copyBtn.classList.remove('copied');
+            }, 2000);
+        }).catch(err => {
+            console.error('Failed to copy JSON: ', err);
+            alert('Failed to copy JSON to clipboard');
+        });
+    }
+
+    // --- Download JSON ---
+    function downloadJson() {
+        const codeElement = document.getElementById('output');
+        const jsonText = codeElement.textContent;
+        const blob = new Blob([jsonText], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'linter-output.json';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    }
+
+    // --- Post height to parent for iframe resizing ---
+    function sendHeight() {
+        if (document.body.classList.contains('loading-active')) return;
+        const height = document.body.scrollHeight;
+        if (window.parent) {
+            window.parent.postMessage({ type: 'setHeight', height: height }, PARENT_ORIGIN);
+        }
+    }
+
+    // --- Pyodide Status Hook ---
+    const originalAppendStatus = window.appendStatus || function(msg) { 
+        const statusDiv = document.getElementById('status');
+        if (statusDiv) statusDiv.textContent = msg; 
+        console.log("Pyodide Hook:", msg); 
+    };
+    
+    window.appendStatus = function(msg) {
+        const cleanMsg = msg.replace(/\u001b\[.*?m/g, '').trim(); 
+        if (loadingText) loadingText.textContent = cleanMsg;
+        if (cleanMsg.toLowerCase().includes('done') || cleanMsg.toLowerCase().includes('ready')) {
             document.body.classList.remove('loading-active');
             loader.style.opacity = '0';
             contentWrapper.style.opacity = '1';
-            setTimeout(() => loader.style.display='none', 500);
-            sendHeight();
+            setTimeout(() => {
+                loader.style.display = 'none';
+                document.body.style.overflow = '';
+                sendHeight();
+            }, 500);
+        } else {
+            document.body.classList.add('loading-active');
+            loader.style.display = 'flex';
+            loader.style.opacity = '1';
+            contentWrapper.style.opacity = '0';
         }
+        originalAppendStatus(msg);
+        setTimeout(sendHeight, 50); 
+    };
+
+    document.addEventListener('DOMContentLoaded', () => {
+        document.body.classList.add('loading-active');
+        contentWrapper.style.opacity = '0';
+        loader.style.display = 'flex'; 
+        loadingText.textContent = "Initializing Search Query...";
+        document.getElementById('copy-json').addEventListener('click', copyJsonToClipboard);
+        document.getElementById('download-json').addEventListener('click', downloadJson);
+        window.addEventListener('load', sendHeight);
+        const observer = new MutationObserver(sendHeight);
+        observer.observe(document.body, { attributes: true, childList: true, subtree: true });
     });
 
-    updateHighlight(); // Highlight stored JSON on initial load
-})();
-    </script>
+    (async () => {
+        const pyodide = await loadPyodide({ stdout: msg => console.log(msg), stderr: msg => console.error(msg) });
+        await pyodide.loadPackage("micropip");
+        const micropip = pyodide.pyimport("micropip");
+        await micropip.install("https://files.pythonhosted.org/packages/50/43/5f6b2e8d83aa1e8324f47b24bf7d44dd7c60dd07fe6b5c72e3568ea6e0b0/search_query_linter-0.1.1-py3-none-any.whl");
+
+        const lintBtn = document.getElementById('btn-lint');
+        lintBtn.disabled = false;
+
+        lintBtn.addEventListener('click', async () => {
+            const query = document.getElementById('query').value;
+            const platform = document.getElementById('platform').value;
+            loadingText.textContent = "Linting…";
+            document.body.classList.add('loading-active');
+            loader.style.display = 'flex';
+            contentWrapper.style.opacity = '0';
+
+            try {
+                const linter = pyodide.pyimport("search_query_linter");
+                const result = linter.lint_query(query, platform);
+                // Update JSON display directly without saving first
+                updateJsonOutput(result);
+            } catch(err) {
+                console.error(err);
+            } finally {
+                document.body.classList.remove('loading-active');
+                loader.style.opacity = '0';
+                contentWrapper.style.opacity = '1';
+                setTimeout(() => loader.style.display='none', 500);
+                sendHeight();
+            }
+        });
+
+        updateHighlight(); // Highlight stored JSON on initial load
+    })();
+</script>
 </body>
 </html>
