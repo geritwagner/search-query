@@ -6,7 +6,6 @@
     <meta name="viewport" content="width=device-width,initial-scale=1" />
     
     <script src="https://cdn.jsdelivr.net/pyodide/v0.26.2/full/pyodide.js"></script>
-
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
     
     <style>
@@ -43,8 +42,16 @@
         body::-webkit-scrollbar-thumb { background-color: var(--primary-accent); border-radius: 10px; }
 
         /* --- Layout & Responsiveness --- */
-        #mobile-header { position: fixed; top: 0; left: 0; width: 100%; height: 64px; background-color: var(--bg-card); border-bottom: 1px solid var(--border-color); z-index: 50; display: flex; align-items: center; padding: 0 1rem; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
-        #mobile-header h1 { font-size: 1.25rem; font-weight: bold; margin-left: 1rem; }
+        #mobile-header { 
+            position: fixed; top: 0; left: 0; width: 100%; height: 64px; 
+            background-color: var(--bg-card); border-bottom: 1px solid var(--border-color); 
+            z-index: 50; display: flex; align-items: center; padding: 0 1rem; 
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1); 
+        }
+        #mobile-header h1 { 
+            font-size: 1.25rem; font-weight: bold; margin-left: 1rem; 
+            display: flex; align-items: center;
+        }
         #menu-toggle { border: none; background: none; color: var(--text-heading); cursor: pointer; padding: 0.5rem; }
 
         #sidebar { 
@@ -79,6 +86,32 @@
             #close-menu { display: none !important; }
         }
 
+        /* --- Logo and Branding --- */
+        .logo-container {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 1.5rem;
+        }
+        .logo-icon {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, #4f46e5, #6366f1);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 1.2rem;
+        }
+        .logo-text {
+            font-size: 1.5rem;
+            font-weight: 700;
+            background: linear-gradient(90deg, #4f46e5, #6366f1);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
 
         /* --- Hero Section (Now Documentation Header) --- */
         #hero-headline { 
@@ -124,6 +157,22 @@
         }
         .doc-card-icon { color: var(--primary); font-size: 2rem; flex-shrink: 0; padding-top: 0.25rem; }
 
+        /* --- Footer Links --- */
+        .footer-links {
+            display: flex;
+            gap: 1.5rem;
+            justify-content: center;
+            margin-top: 1rem;
+        }
+        .footer-links a {
+            color: var(--text-body);
+            font-size: 0.875rem;
+            transition: color 0.2s;
+        }
+        .footer-links a:hover {
+            color: var(--primary);
+        }
+
         @keyframes text-flow {
             0% { background-position: 0% 50%; }
             100% { background-position: 100% 50%; }
@@ -137,14 +186,22 @@
         <button id="menu-toggle" class="p-2">
             <i class="fas fa-bars text-xl"></i>
         </button>
-        <h1 class="text-xl font-bold ml-4">Search-Query Studio</h1>
+        <h1 class="text-xl font-bold ml-4">
+            <div class="logo-container">
+                <div class="logo-icon">SQ</div>
+                <span class="logo-text">Search-Query</span>
+            </div>
+        </h1>
     </header>
 
     <div id="backdrop" style="display:none;"></div>
 
     <nav id="sidebar">
         <header style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 1rem; border-bottom: 1px solid var(--border-color);">
-            <h2 style="font-size: 1.5rem; font-weight: bold;">Menu</h2>
+            <div class="logo-container">
+                <div class="logo-icon">SQ</div>
+                <span class="logo-text">Search-Query</span>
+            </div>
             <button id="close-menu" style="border: none; background: none; color: var(--text-heading); cursor: pointer; padding: 0.5rem;" class="lg:hidden">
                 <i class="fas fa-times text-xl"></i>
             </button>
@@ -163,6 +220,17 @@
             <div style="padding: 1rem 0; font-size: 0.75rem; font-weight: bold; color: var(--text-body); text-transform: uppercase;">Debug</div>
             <a href="#tool-area" data-tool-url="tokenizer.html" class="sidebar-tool-link" style="padding: 0.5rem 0.75rem; border-radius: 0.375rem;">
                 <i class="fas fa-microchip w-5 mr-3"></i> Tokenize
+            </a>
+            
+            <div style="padding: 1rem 0; font-size: 0.75rem; font-weight: bold; color: var(--text-body); text-transform: uppercase;">Resources</div>
+            <a href="https://github.com/geritwagner/search-query" target="_blank" style="padding: 0.5rem 0.75rem; border-radius: 0.375rem;">
+                <i class="fab fa-github w-5 mr-3"></i> GitHub
+            </a>
+            <a href="https://github.com/geritwagner/search-query/blob/main/docs/index.md" target="_blank" style="padding: 0.5rem 0.75rem; border-radius: 0.375rem;">
+                <i class="fas fa-book w-5 mr-3"></i> Documentation
+            </a>
+            <a href="https://github.com/geritwagner/search-query/blob/main/LICENSE" target="_blank" style="padding: 0.5rem 0.75rem; border-radius: 0.375rem;">
+                <i class="fas fa-file-contract w-5 mr-3"></i> License
             </a>
         </div>
         
@@ -185,62 +253,10 @@
                     <p style="font-size: 1.25rem; color: var(--text-body); text-align: center; max-width: 42rem; margin: 0 auto 2rem;">
                         The web interface for search-query.
                     </p>
-                                        
-                    <div id="documentation-grid">
-                        
-                        <article class="doc-card">
-                            <i class="doc-card-icon fas fa-microchip"></i>
-                            <div>
-                                <h3 style="font-size: 1.25rem; font-weight: 600; margin-bottom: 0.25rem;">Tokenize (Debug)</h3>
-                                <p style="font-size: 0.875rem; color: var(--text-body);">
-                                    Breaks down your search query into fundamental tokens (fields, operators, terms) for inspection.
-                                </p>
-                            </div>
-                        </article>
-
-                        <article class="doc-card">
-                            <i class="doc-card-icon fas fa-tasks"></i>
-                            <div>
-                                <h3 style="font-size: 1.25rem; font-weight: 600; margin-bottom: 0.25rem;">Lint & Normalize</h3>
-                                <p style="font-size: 0.875rem; color: var(--text-body);">
-                                    Checks query structure against platform rules and provides a standardized output.
-                                </p>
-                            </div>
-                        </article>
-
-                        <article class="doc-card">
-                            <i class="doc-card-icon fas fa-language"></i>
-                            <div>
-                                <h3 style="font-size: 1.25rem; font-weight: 600; margin-bottom: 0.25rem;">Translate</h3>
-                                <p style="font-size: 0.875rem; color: var(--text-body);">
-                                    Translates the query between platforms (e.g., WoS to PubMed), handling syntax differences.
-                                </p>
-                            </div>
-                        </article>
-
-                    </div>
+                                   
                 </section>
 
-                <div style="text-align: center; padding: 2rem 0;">
-                    <button id="launch-tool-cta">
-                        Start Interactive Session ↓
-                    </button>
-                </div>
-                
-                <div id="quick-access-ctas" style="display: grid; margin: 2rem auto; max-width: 42rem;">
-                    <button data-tool-url="tokenizer.html" class="quick-cta-btn">
-                        <i class="fas fa-microchip mr-1"></i> Tokenize
-                    </button>
-                    <button data-tool-url="lint.html" class="quick-cta-btn">
-                        <i class="fas fa-tasks mr-1"></i> Lint
-                    </button>
-                    <button data-tool-url="translate.html" class="quick-cta-btn">
-                        <i class="fas fa-language mr-1"></i> Translate
-                    </button>
-                </div>
 
-
-                <h2 id="tool-area" style="font-size: 1.875rem; font-weight: bold; text-align: center; width: 100%; margin-bottom: 1.5rem; padding-top: 1rem;">Interactive Query Tool</h2>
 
                 <div id="tool-area-content">
                     <iframe id="tool-iframe" src="about:blank" frameborder="0" scrolling="no"></iframe>
@@ -250,6 +266,11 @@
 
         <footer style="font-size: 0.875rem; color: var(--text-body); text-align: center; padding: 1.5rem 0;">
             Search-Query Studio © 2025
+            <div class="footer-links">
+                <a href="https://github.com/geritwagner/search-query" target="_blank">GitHub</a>
+                <a href="https://github.com/geritwagner/search-query/blob/main/docs/index.md" target="_blank">Documentation</a>
+                <a href="https://github.com/geritwagner/search-query/blob/main/LICENSE" target="_blank">License</a>
+            </div>
         </footer>
     </div>
 
