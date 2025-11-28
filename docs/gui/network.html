@@ -1,0 +1,969 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SearchQuery Studio - Advanced Text Processing</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+    <script src="https://cdn.jsdelivr.net/pyodide/v0.26.2/full/pyodide.js"></script>
+    <style>
+        /* CSS Variables - Color Palette */
+        :root {
+            /* Primary Colors */
+            --primary-main: #6366f1;
+            --primary-dark: #4f46e5;
+            --primary-light: #818cf8;
+            --primary-contrast: #ffffff;
+            
+            /* Secondary Colors */
+            --secondary-main: #a855f7;
+            --secondary-light: #c084fc;
+            --secondary-dark: #9333ea;
+            --secondary-contrast: #ffffff;
+            
+            /* Background Colors */
+            --bg-dark: #0f172a;
+            --bg-darker: #1e1b4b;
+            --bg-card: #1e293b;
+            --bg-card-light: #334155;
+            --bg-input: rgba(15, 23, 42, 0.5);
+            
+            /* Text Colors */
+            --text-primary: #ffffff;
+            --text-secondary: #94a3b8;
+            --text-muted: #64748b;
+            --text-light: #cbd5e1;
+            --text-accent: #e0e7ff;
+            
+            /* Status Colors */
+            --success: #10b981;
+            --warning: #f59e0b;
+            --error: #ef4444;
+            --info: #3b82f6;
+            
+            /* Code Colors */
+            --code-purple: #c084fc;
+            --code-blue: #818cf8;
+            --code-green: #34d399;
+            --code-yellow: #fbbf24;
+            --code-gray: #64748b;
+            
+            /* Border Colors */
+            --border-primary: rgba(99, 102, 241, 0.2);
+            --border-secondary: rgba(168, 85, 247, 0.2);
+            --border-info: rgba(59, 130, 246, 0.2);
+            
+            /* Shadow Colors */
+            --shadow-primary: rgba(99, 102, 241, 0.4);
+            --shadow-secondary: rgba(168, 85, 247, 0.4);
+            --shadow-blue: rgba(59, 130, 246, 0.4);
+            --shadow-green: rgba(16, 185, 129, 0.4);
+            --shadow-dark: rgba(0, 0, 0, 0.5);
+            
+            /* Gradient Colors */
+            --gradient-primary: linear-gradient(135deg, #6366f1, #a855f7);
+            --gradient-primary-light: linear-gradient(135deg, #6366f1, #8b5cf6);
+            --gradient-secondary: linear-gradient(135deg, #a855f7, #ec4899);
+            --gradient-blue: linear-gradient(135deg, #3b82f6, #06b6d4);
+            --gradient-green: linear-gradient(135deg, #10b981, #14b8a6);
+            --gradient-dark: linear-gradient(135deg, #1e293b, #334155);
+            --gradient-hero: linear-gradient(180deg, #0f172a 0%, #1e1b4b 100%);
+            --gradient-appbar: linear-gradient(to right, #1e1b4b, #312e81);
+            
+            /* Typography */
+            --font-family: 'Inter', sans-serif;
+            --font-family-mono: monospace;
+            
+            /* Border Radius */
+            --border-radius-sm: 8px;
+            --border-radius-md: 12px;
+            --border-radius-lg: 16px;
+            --border-radius-xl: 50%;
+            
+            /* Spacing */
+            --spacing-xs: 8px;
+            --spacing-sm: 12px;
+            --spacing-md: 16px;
+            --spacing-lg: 24px;
+            --spacing-xl: 32px;
+            --spacing-2xl: 40px;
+            --spacing-3xl: 48px;
+            --spacing-4xl: 64px;
+            --spacing-5xl: 120px;
+        }
+
+        /* Global Styles */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: var(--font-family);
+            background-color: var(--bg-dark);
+            color: var(--text-primary);
+            line-height: 1.6;
+        }
+
+        /* Utility Classes */
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 var(--spacing-md);
+        }
+
+        .text-center {
+            text-align: center;
+        }
+
+        .text-left {
+            text-align: left;
+        }
+
+        .d-flex {
+            display: flex;
+        }
+
+        .align-center {
+            align-items: center;
+        }
+
+        .justify-between {
+            justify-content: space-between;
+        }
+
+        .gap-sm {
+            gap: var(--spacing-sm);
+        }
+
+        .gap-md {
+            gap: var(--spacing-md);
+        }
+
+        .gap-lg {
+            gap: var(--spacing-lg);
+        }
+
+        .gap-xl {
+            gap: var(--spacing-xl);
+        }
+
+        .w-100 {
+            width: 100%;
+        }
+
+        .h-100 {
+            height: 100%;
+        }
+
+        /* Typography */
+        .h1, .h2, .h3, .h4, .h5, .h6 {
+            font-weight: 700;
+            color: var(--text-primary);
+            line-height: 1.2;
+        }
+
+        .h1 { font-size: 56px; }
+        .h2 { font-size: 48px; }
+        .h3 { font-size: 40px; }
+        .h4 { font-size: 32px; }
+        .h5 { font-size: 24px; }
+        .h6 { font-size: 20px; }
+
+        .body1 {
+            font-size: 16px;
+            color: var(--text-light);
+            line-height: 1.7;
+        }
+
+        .body2 {
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+
+        .code {
+            font-family: var(--font-family-mono);
+            font-size: 13px;
+            color: var(--text-secondary);
+            line-height: 1.8;
+        }
+
+        /* App Bar */
+        .app-bar {
+            position: sticky;
+            top: 0;
+            background: var(--gradient-appbar);
+            box-shadow: 0 4px 20px rgba(99, 102, 241, 0.3);
+            z-index: 1000;
+        }
+
+        .app-bar-toolbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+        }
+
+        .logo {
+            width: 48px;
+            height: 48px;
+            border-radius: var(--border-radius-sm);
+            background: var(--gradient-primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .nav-link {
+            color: var(--text-accent);
+            font-weight: 500;
+            font-size: 15px;
+            text-decoration: none;
+            transition: color 0.3s ease;
+        }
+
+        .nav-link:hover {
+            color: var(--text-primary);
+        }
+
+        .nav-link.active {
+            color: var(--text-primary);
+        }
+
+        /* Hero Section */
+        .hero {
+            background: var(--gradient-hero);
+            padding: var(--spacing-5xl) 0;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .chip {
+            background: rgba(99, 102, 241, 0.2);
+            color: var(--primary-light);
+            border: 1px solid var(--border-primary);
+            font-weight: 600;
+            padding: 8px 16px;
+            border-radius: 20px;
+            display: inline-block;
+            margin-bottom: var(--spacing-lg);
+        }
+
+        /* Buttons */
+        .btn {
+            padding: 14px 32px;
+            font-size: 16px;
+            font-weight: 600;
+            text-transform: none;
+            border: none;
+            border-radius: var(--border-radius-sm);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: var(--spacing-sm);
+        }
+
+        .btn-contained {
+            background: var(--gradient-primary);
+            color: var(--primary-contrast);
+            box-shadow: 0 8px 24px var(--shadow-primary);
+        }
+
+        .btn-contained:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 32px var(--shadow-primary);
+        }
+
+        .btn-outlined {
+            background: transparent;
+            color: var(--primary-light);
+            border: 2px solid var(--primary-main);
+        }
+
+        .btn-outlined:hover {
+            background: rgba(99, 102, 241, 0.1);
+        }
+
+        .btn-large {
+            padding: 16px 32px;
+            font-size: 16px;
+        }
+
+        .btn-full {
+            width: 100%;
+        }
+
+        /* Cards */
+        .card {
+            background: var(--gradient-dark);
+            border: 1px solid var(--border-primary);
+            border-radius: var(--border-radius-lg);
+            padding: var(--spacing-xl);
+            height: 100%;
+            transition: transform 0.3s ease;
+            box-shadow: 0 10px 40px var(--shadow-dark);
+        }
+
+        .card:hover {
+            transform: translateY(-4px);
+        }
+
+        .card-highlight {
+            background: var(--gradient-primary-light);
+            border: 2px solid var(--secondary-main);
+            position: relative;
+        }
+
+        .icon-container {
+            width: 64px;
+            height: 64px;
+            border-radius: var(--border-radius-md);
+            background: var(--gradient-primary-light);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: var(--spacing-lg);
+        }
+
+        .icon-container-secondary {
+            background: var(--gradient-secondary);
+        }
+
+        .icon-container-blue {
+            background: var(--gradient-blue);
+        }
+
+        /* Code Display */
+        .code-block {
+            background: #0f172a;
+            padding: 20px;
+            border-radius: var(--border-radius-sm);
+            border: 1px solid var(--border-primary);
+            overflow-x: auto;
+        }
+
+        .code-purple { color: var(--code-purple); }
+        .code-blue { color: var(--code-blue); }
+        .code-green { color: var(--code-green); }
+        .code-yellow { color: var(--code-yellow); }
+        .code-gray { color: var(--code-gray); }
+        .code-white { color: var(--text-primary); }
+
+        /* Process Steps */
+        .step-circle {
+            width: 80px;
+            height: 80px;
+            border-radius: var(--border-radius-xl);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto var(--spacing-lg);
+            box-shadow: 0 8px 32px var(--shadow-primary);
+        }
+
+        .step-circle-1 { background: var(--gradient-primary-light); }
+        .step-circle-2 { background: var(--gradient-secondary); }
+        .step-circle-3 { background: var(--gradient-blue); }
+        .step-circle-4 { background: var(--gradient-green); }
+
+        /* Pricing */
+        .pricing-chip {
+            position: absolute;
+            top: 16px;
+            right: 16px;
+            background: var(--primary-contrast);
+            color: var(--primary-main);
+            font-weight: 700;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+        }
+
+        /* Forms */
+        .form-group {
+            margin-bottom: var(--spacing-lg);
+        }
+
+        .form-input {
+            width: 100%;
+            background: var(--bg-input);
+            border: 1px solid var(--border-primary);
+            border-radius: var(--border-radius-sm);
+            padding: 12px 16px;
+            color: var(--text-primary);
+            font-family: var(--font-family);
+            font-size: 16px;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: var(--primary-main);
+            box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
+        }
+
+        .form-textarea {
+            resize: vertical;
+            min-height: 120px;
+        }
+
+        /* Footer */
+        .footer {
+            background: var(--gradient-appbar);
+            padding: var(--spacing-4xl) 0;
+            border-top: 1px solid var(--border-primary);
+        }
+
+        .social-icon {
+            background: rgba(99, 102, 241, 0.2);
+            color: var(--primary-light);
+            border: none;
+            width: 40px;
+            height: 40px;
+            border-radius: var(--border-radius-sm);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+
+        .social-icon:hover {
+            background: rgba(99, 102, 241, 0.3);
+        }
+
+        /* Grid System */
+        .grid {
+            display: grid;
+            gap: var(--spacing-lg);
+        }
+
+        .grid-2 { grid-template-columns: repeat(2, 1fr); }
+        .grid-3 { grid-template-columns: repeat(3, 1fr); }
+        .grid-4 { grid-template-columns: repeat(4, 1fr); }
+
+        /* Section spacing */
+        .section-dark {
+            background-color: var(--bg-dark);
+            padding: var(--spacing-5xl) 0;
+        }
+
+        .section-gradient {
+            background: var(--gradient-hero);
+            padding: var(--spacing-5xl) 0;
+        }
+
+        /* Feature highlights */
+        .feature-highlight {
+            background: rgba(99, 102, 241, 0.1);
+            padding: var(--spacing-md);
+            border-radius: var(--border-radius-sm);
+            border: 1px solid var(--border-primary);
+        }
+
+        .feature-highlight-secondary {
+            background: rgba(168, 85, 247, 0.1);
+            border-color: var(--border-secondary);
+        }
+
+        .feature-highlight-blue {
+            background: rgba(59, 130, 246, 0.1);
+            border-color: var(--border-info);
+        }
+
+        /* Chip variants */
+        .chip-small {
+            background: rgba(168, 85, 247, 0.3);
+            color: var(--secondary-light);
+            font-size: 11px;
+            padding: 4px 8px;
+            border-radius: 12px;
+            display: inline-block;
+        }
+
+        /* Dot indicators */
+        .dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+
+        .dot.red { background-color: var(--error); }
+        .dot.yellow { background-color: var(--warning); }
+        .dot.green { background-color: var(--success); }
+
+        /* Divider */
+        .divider {
+            border: none;
+            border-top: 1px solid var(--border-primary);
+            margin: var(--spacing-xl) 0;
+        }
+
+        /* Tool Interface Styles */
+        .tool-interface {
+            background: var(--bg-card);
+            border-radius: var(--border-radius-lg);
+            border: 1px solid var(--border-primary);
+            overflow: hidden;
+            margin-top: var(--spacing-lg);
+        }
+
+        .tool-header {
+            background: var(--gradient-appbar);
+            padding: var(--spacing-md);
+            border-bottom: 1px solid var(--border-primary);
+        }
+
+        .tool-content {
+            padding: var(--spacing-xl);
+        }
+
+        .tool-iframe {
+            width: 100%;
+            height: 600px;
+            border: none;
+            border-radius: var(--border-radius-sm);
+            background: var(--bg-dark);
+        }
+
+        .tool-nav {
+            display: flex;
+            gap: var(--spacing-sm);
+            margin-bottom: var(--spacing-lg);
+        }
+
+        .tool-nav-btn {
+            background: transparent;
+            border: 1px solid var(--border-primary);
+            color: var(--text-secondary);
+            padding: var(--spacing-sm) var(--spacing-md);
+            border-radius: var(--border-radius-sm);
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .tool-nav-btn.active {
+            background: var(--gradient-primary);
+            color: var(--primary-contrast);
+            border-color: var(--primary-main);
+        }
+
+        .tool-nav-btn:hover:not(.active) {
+            background: rgba(99, 102, 241, 0.1);
+            color: var(--text-primary);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .container {
+                padding: 0 var(--spacing-sm);
+            }
+            
+            .h1 { font-size: 40px; }
+            .h2 { font-size: 32px; }
+            .h3 { font-size: 28px; }
+            
+            .grid-2,
+            .grid-3,
+            .grid-4 {
+                grid-template-columns: 1fr;
+            }
+            
+            .app-bar-toolbar {
+                flex-direction: column;
+                gap: var(--spacing-md);
+            }
+            
+            .nav-links {
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+            
+            .tool-nav {
+                flex-wrap: wrap;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- App Bar -->
+    <header class="app-bar">
+        <div class="container">
+            <div class="app-bar-toolbar">
+                <div class="d-flex align-center gap-sm">
+                    <div class="logo">
+                        <span class="material-icons">search</span>
+                    </div>
+                    <h6 class="h6">SearchQuery Studio</h6>
+                </div>
+                <nav class="d-flex gap-xl align-center nav-links">
+                    <a href="#home" class="nav-link active">Home</a>
+                    <a href="#products" class="nav-link">Products</a>
+                    <a href="#documentation" class="nav-link">Documentation</a>
+                    <a href="#tools" class="nav-link">Tools</a>
+                    <a href="#contact" class="nav-link">Contact</a>
+                </nav>
+            </div>
+        </div>
+    </header>
+
+    <!-- Hero Section -->
+    <section id="home" class="hero">
+        <div class="container">
+            <div class="grid grid-2 align-center">
+                <div>
+                    <span class="chip">Search Query Processing</span>
+                    <h1 class="h1">Advanced Query Processing Solutions</h1>
+                    <p class="body1">
+                        Transform your search queries with our cutting-edge processing technology.
+                        Handle linting, tokenization, and translation between platforms using the powerful search-query package.
+                    </p>
+                    <div class="d-flex gap-md">
+                        <button class="btn btn-contained" id="launch-tool-cta">Launch Tool</button>
+                        <a href="https://github.com/geritwagner/search-query" target="_blank" class="btn btn-outlined">
+                            <i class="fab fa-github"></i> GitHub
+                        </a>
+                    </div>
+                </div>
+                <div>
+                    <div class="card">
+                        <div class="d-flex gap-sm">
+                            <div class="dot red"></div>
+                            <div class="dot yellow"></div>
+                            <div class="dot green"></div>
+                        </div>
+                        <pre class="code">
+<span class="code-purple">from</span> <span class="code-blue">search_query</span> <span class="code-purple">import</span> <span class="code-white">SearchFile</span>
+<span class="code-gray"># Initialize processor</span>
+<span class="code-white">search_file </span> <span class="code-purple">=</span> <span class="code-yellow">(</span>
+<div style="margin-top: 0px;">
+    <span class="code-white">filepath</span> <span class="code-purple">=</span> <span class="code-white">"search-file.json"</span><span class="code-yellow">,</span>
+    <span class="code-white">search_string</span> <span class="code-purple">=</span> <span class="code-white">wos_query.to_string()</span><span class="code-yellow">,</span>
+    <span class="code-white">platform</span> <span class="code-purple">=</span> <span class="code-white">"wos"</span><span class="code-yellow">,</span>
+    <span class="code-white">version</span> <span class="code-purple">=</span> <span class="code-white">"1"</span><span class="code-yellow">,</span>
+    <span class="code-white">authors</span> <span class="code-purple">=</span> <span class="code-white">[{"name": "Tom Brady"}]</span><span class="code-yellow">,</span>
+    <span class="code-white"> record_info</span> <span class="code-purple">=</span> <span class="code-white">{}</span><span class="code-yellow">,</span>
+    <span class="code-white">date</span> <span class="code-purple">=</span> <span class="code-white">{}</span><span class="code-yellow">,</span>
+</div>
+<span class="code-yellow">)</span>
+<span class="code-purple">search_file.save()</span>
+                        </pre>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Products Section -->
+    <section id="products" class="section-dark">
+        <div class="container">
+            <div class="text-center">
+                <h3 class="h3">Powerful Features</h3>
+                <p class="body2">Everything you need to process and analyze search queries</p>
+            </div>
+            <div class="grid grid-3">
+                <div class="card">
+                    <div class="icon-container">
+                        <span class="material-icons">check_circle</span>
+                    </div>
+                    <h5 class="h5">Linter Message</h5>
+                    <p class="body1">
+                        Automatically identify and correct query errors with our
+                        advanced linting engine. Get real-time feedback on query
+                        structure and platform-specific rules.
+                    </p>
+                    <div class="feature-highlight">
+                        <p class="code">
+                            <span>Error: Invalid field name</span><br>
+                            <span>Field 'platform' not recognized</span><br>
+                            <span>Suggestion: Use 'platform*[ti]'</span>
+                        </p>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="icon-container icon-container-secondary">
+                        <span class="material-icons">token</span>
+                    </div>
+                    <h5 class="h5">Tokenize Message</h5>
+                    <p class="body1">
+                        Break down complex search queries into meaningful tokens with precision.
+                        Our tokenizer handles multiple platforms and special
+                        syntax seamlessly.
+                    </p>
+                    <div class="feature-highlight-secondary">
+                        <div class="d-flex gap-sm">
+                            <span class="chip-small">platform*[ti]</span>
+                            <span class="chip-small">OR</span>
+                            <span class="chip-small">"digital work"[ti]</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="icon-container icon-container-blue">
+                        <span class="material-icons">translate</span>
+                    </div>
+                    <h5 class="h5">Search-Query Translator</h5>
+                    <p class="body1">
+                        Translate a database/search-platform query into another platform using the search-query package.
+                    </p>
+                    <div class="feature-highlight-blue">
+                        <p class="code">
+                            <span>WoS → PubMed</span><br>
+                            <span>(platform*[ti] OR "digital work"[ti])</span>
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Tools Section -->
+    <section id="tools" class="section-gradient">
+        <div class="container">
+            <div class="text-center">
+                <h3 class="h3">Interactive Query Tools</h3>
+                <p class="body2">Process your search queries with our powerful tools</p>
+            </div>
+            
+            <div class="tool-interface">
+                <div class="tool-header">
+                    <div class="tool-nav">
+                        <button class="tool-nav-btn active" data-tool-url="https://geritwagner.github.io/search-query/gui/translate.html">Translate</button>
+                        <button class="tool-nav-btn" data-tool-url="https://geritwagner.github.io/search-query/gui/lint.html">Lint</button>
+                        <button class="tool-nav-btn" data-tool-url="https://geritwagner.github.io/search-query/gui/tokenizer.html">Tokenize</button>
+                    </div>
+                </div>
+                <div class="tool-content">
+                    <iframe id="tool-iframe" class="tool-iframe" src="https://geritwagner.github.io/search-query/gui/translate.html" frameborder="0"></iframe>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Documentation Section -->
+    <section id="documentation" class="section-dark">
+        <div class="container">
+            <div class="text-center">
+                <h3 class="h3">Documentation & Resources</h3>
+                <p class="body2">Everything you need to get started with Search Query</p>
+            </div>
+            <div class="grid grid-3" style="margin-top: var(--spacing-xl);">
+                <div class="card text-center">
+                    <div class="icon-container">
+                        <i class="fas fa-book"></i>
+                    </div>
+                    <h5 class="h5">Documentation</h5>
+                    <p class="body1">
+                        Complete guide to using the search-query package with examples and API reference.
+                    </p>
+                    <a href="https://github.com/geritwagner/search-query/blob/main/docs/index.md" target="_blank" class="btn btn-outlined btn-full">View Docs</a>
+                </div>
+                <div class="card text-center">
+                    <div class="icon-container icon-container-secondary">
+                        <i class="fab fa-github"></i>
+                    </div>
+                    <h5 class="h5">GitHub Repository</h5>
+                    <p class="body1">
+                        Access the source code, report issues, and contribute to the project.
+                    </p>
+                    <a href="https://github.com/geritwagner/search-query" target="_blank" class="btn btn-outlined btn-full">View on GitHub</a>
+                </div>
+                <div class="card text-center">
+                    <div class="icon-container icon-container-blue">
+                        <i class="fas fa-file-contract"></i>
+                    </div>
+                    <h5 class="h5">License</h5>
+                    <p class="body1">
+                        Review the license terms for using the search-query package in your projects.
+                    </p>
+                    <a href="https://github.com/geritwagner/search-query/blob/main/LICENSE" target="_blank" class="btn btn-outlined btn-full">View License</a>
+                </div>
+            </div>
+            
+            <div class="card" style="margin-top: var(--spacing-xl);">
+                <h5 class="h5">Quick Start Guide</h5>
+                <p class="body1">
+                    Install the Search Query package and start processing queries in minutes:
+                </p>
+                <div class="code-block">
+                    <pre class="code">
+<span class="code-gray"># Install SearchQuery</span>
+<span class="code-green">pip install search-query</span>
+
+<span class="code-gray"># Import and use</span>
+<span class="code-purple">from</span> <span class="code-blue">search_query</span> <span class="code-purple">import</span> <span class="code-white">SearchQuery</span>
+
+<span class="code-gray"># Create a query</span>
+<span class="code-white">query </span><span class="code-purple">=</span> <span class="code-white">SearchQuery(</span><span class="code-yellow">)</span>
+<span class="code-white">query.from_string(</span><span class="code-yellow">"(platform*[ti] OR \"digital work\"[ti]) AND 2020-2025[dp]"</span><span class="code-yellow">,</span> <span class="code-white">platform</span><span class="code-purple">=</span><span class="code-yellow">"wos"</span><span class="code-white">)</span>
+
+<span class="code-gray"># Translate to another platform</span>
+<span class="code-white">translated_query </span><span class="code-purple">=</span> <span class="code-white">query.to_string(</span><span class="code-white">platform</span><span class="code-purple">=</span><span class="code-yellow">"pubmed"</span><span class="code-white">)</span>
+                    </pre>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Contact Section -->
+    <section id="contact" class="section-dark">
+        <div class="container">
+            <div class="text-center">
+                <h3 class="h3">Get In Touch</h3>
+                <p class="body2">Have questions about Search Query? We'd love to hear from you</p>
+            </div>
+            <div class="card" style="max-width: 800px; margin: 0 auto;">
+                <form>
+                    <div class="grid grid-2">
+                        <div class="form-group">
+                            <input type="text" class="form-input" placeholder="First Name">
+                        </div>
+                        <div class="form-group">
+                            <input type="text" class="form-input" placeholder="Last Name">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <input type="email" class="form-input" placeholder="Email Address">
+                    </div>
+                    <div class="form-group">
+                        <input type="text" class="form-input" placeholder="Company">
+                    </div>
+                    <div class="form-group">
+                        <textarea class="form-input form-textarea" placeholder="Message"></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-contained btn-full btn-large">Send Message</button>
+                </form>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="grid" style="grid-template-columns: 1fr 1fr 1fr 1fr;">
+                <div>
+                    <div style="display: flex; flex-direction: column;">
+                        <div class="logo" style="width: 40px; height: 40px;">
+                            <span class="material-icons">search</span>
+                        </div>
+                        <h6 class="h6">SearchQuery Studio</h6>
+                    </div>
+                    <p class="body2">
+                        Advanced search query processing solutions powered by
+                        the search-query package. Transform your queries with precision and
+                        speed.
+                    </p>
+                    <div class="d-flex gap-sm">
+                        <a href="https://github.com/geritwagner/search-query" target="_blank" class="social-icon">
+                            <i class="fab fa-github"></i>
+                        </a>
+                    </div>
+                </div>
+                <div>
+                    <h6 class="h6">Product</h6>
+                    <div style="display: flex; flex-direction: column;">
+                        <a href="#features" class="body2" style="text-decoration: none; color: var(--text-secondary);">Features</a>
+                        <a href="#tools" class="body2" style="text-decoration: none; color: var(--text-secondary);">Tools</a>
+                        <a href="#documentation" class="body2" style="text-decoration: none; color: var(--text-secondary);">Documentation</a>
+                        <a href="https://github.com/geritwagner/search-query" target="_blank" class="body2" style="text-decoration: none; color: var(--text-secondary);">GitHub</a>
+                    </div>
+                </div>
+                <div>
+                    <h6 class="h6">Resources</h6>
+                    <div style="display: flex; flex-direction: column;">
+                        <a href="https://github.com/geritwagner/search-query/blob/main/docs/index.md" target="_blank" class="body2" style="text-decoration: none; color: var(--text-secondary);">Documentation</a>
+                        <a href="https://github.com/geritwagner/search-query/blob/main/LICENSE" target="_blank" class="body2" style="text-decoration: none; color: var(--text-secondary);">License</a>
+                        <a href="https://github.com/geritwagner/search-query/issues" target="_blank" class="body2" style="text-decoration: none; color: var(--text-secondary);">Issues</a>
+                        <a href="https://github.com/geritwagner/search-query" target="_blank" class="body2" style="text-decoration: none; color: var(--text-secondary);">Contribute</a>
+                    </div>
+                </div>
+                <div>
+                    <h6 class="h6">Legal</h6>
+                    <div style="display: flex; flex-direction: column;">
+                        <a href="#privacy" class="body2" style="text-decoration: none; color: var(--text-secondary);">Privacy Policy</a>
+                        <a href="#terms" class="body2" style="text-decoration: none; color: var(--text-secondary);">Terms of Service</a>
+                        <a href="https://github.com/geritwagner/search-query/blob/main/LICENSE" target="_blank" class="body2" style="text-decoration: none; color: var(--text-secondary);">License</a>
+                    </div>
+                </div>
+            </div>
+            <hr class="divider">
+            <div class="d-flex justify-between align-center">
+                <p class="body2">© 2024 SearchQuery Studio. All rights reserved.</p>
+                <div class="d-flex gap-lg">
+                    <a href="#privacy" class="body2" style="text-decoration: none; color: var(--text-muted);">Privacy</a>
+                    <a href="#terms" class="body2" style="text-decoration: none; color: var(--text-muted);">Terms</a>
+                    <a href="https://github.com/geritwagner/search-query/blob/main/LICENSE" target="_blank" class="body2" style="text-decoration: none; color: var(--text-muted);">License</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Tool navigation functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            const toolNavBtns = document.querySelectorAll('.tool-nav-btn');
+            const toolIframe = document.getElementById('tool-iframe');
+            const launchToolCta = document.getElementById('launch-tool-cta');
+            
+            // Tool navigation
+            toolNavBtns.forEach(btn => {
+                btn.addEventListener('click', function() {
+                    // Update active state
+                    toolNavBtns.forEach(b => b.classList.remove('active'));
+                    this.classList.add('active');
+                    
+                    // Update iframe source
+                    const toolUrl = this.getAttribute('data-tool-url');
+                    toolIframe.src = toolUrl;
+                });
+            });
+            
+            // Launch tool CTA
+            if (launchToolCta) {
+                launchToolCta.addEventListener('click', function() {
+                    document.getElementById('tools').scrollIntoView({ 
+                        behavior: 'smooth' 
+                    });
+                });
+            }
+            
+            // Simple form handling
+            const form = document.querySelector('form');
+            if (form) {
+                form.addEventListener('submit', function(e) {
+                    e.preventDefault();
+                    alert('Thank you for your message! We will get back to you soon.');
+                    form.reset();
+                });
+            }
+            
+            // Navigation highlighting
+            const sections = document.querySelectorAll('section');
+            const navLinks = document.querySelectorAll('.nav-link');
+            
+            window.addEventListener('scroll', function() {
+                let current = '';
+                sections.forEach(section => {
+                    const sectionTop = section.offsetTop;
+                    const sectionHeight = section.clientHeight;
+                    if (pageYOffset >= sectionTop - 100) {
+                        current = section.getAttribute('id');
+                    }
+                });
+                
+                navLinks.forEach(link => {
+                    link.classList.remove('active');
+                    if (link.getAttribute('href') === '#' + current) {
+                        link.classList.add('active');
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>
