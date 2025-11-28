@@ -31,7 +31,7 @@
         
         /* --- JSON OUTPUT WINDOW --- */
         pre { background: #1e1e1e; color: #d4d4d4; padding: 20px; border-radius: 10px; overflow-x: auto; font-size: 15px; font-family: 'Consolas', 'Monaco', monospace; border: 1px solid #333; }
-        #output { font-family: 'Consolas', 'Monaco', 'Courier New', monospace; font-size: 0.85rem; background: transparent !important; margin: 0; padding: 0; white-space: pre; }
+        #output { font-family: 'Consolas', 'Monaco', 'Courier New', monospace; font-size: 0.85rem; background: transparent !important; margin: 0; padding: 0; white-space: pre; display: block; }
         .json-actions { position: absolute; top: 15px; right: 15px; display: flex; gap: 8px; z-index: 20; }
         .json-btn { background: transparent !important; border: none !important; border-radius: 4px; color: #d4d4d4; padding: 6px 8px; cursor: pointer; font-size: 14px; transition: all 0.2s ease; backdrop-filter: none; }
         .json-btn:hover { background: rgba(255, 255, 255, 0.1) !important; color: #ffffff; }
@@ -100,7 +100,7 @@
                             <i class="fas fa-download"></i>
                         </button>
                     </div>
-                    <pre><code id="output"></code></pre>
+                    <pre><code id="output" aria-live="polite" aria-atomic="true"></code></pre>
                 </div>
             </details>
             
@@ -119,54 +119,99 @@
         
         // --- 1. THE HIGHLIGHTER (Accepts a Pretty String) ---
         function highlightString(jsonString) {
-            // Escape HTML characters for safety since we are going to InnerHTML
+            // Escape HTML characters for safety since we are going to innerHTML
             jsonString = jsonString.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-            
+
+            // regex borrowed/adjusted to capture JSON tokens (keys, strings, numbers, booleans, null)
             return jsonString.replace(/("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/g, function (match) {
-                let style = 'color: #b5cea8;'; // Numbers = Green
-                
-                if (/^"/.test(match)) {
-                    if (/:$/.test(match)) {
-                        return '<span style="color: #9cdcfe;">' + match.slice(0, -1) + '</span>:'; // Keys = Blue
-                    } else {
-                        style = 'color: #ce9178;'; // Strings = Salmon
-                    }
-                } else if (/true|false/.test(match)) {
-                    style = 'color: #569cd6;'; // Booleans = Blue
-                } else if (/null/.test(match)) {
-                    style = 'color: #569cd6;'; // Null = Blue
+                let cls = '';
+                let inner = match;
+
+                // Keys (strings that end with colon)
+                if (/^".*"\s*:$/s.test(match)) {
+                    // Keep the quotes visible but style the key
+                    return '<span style="color: #9cdcfe;">' + match.replace(/:$/,'') + '</span>:';
                 }
-                
-                return '<span style="' + style + '">' + match + '</span>';
+
+                // Strings (not keys)
+                if (/^"/.test(match)) {
+                    return '<span style="color: #ce9178;">' + match + '</span>';
+                }
+
+                // Booleans & null
+                if (/^(true|false|null)$/.test(match)) {
+                    return '<span style="color: #569cd6;">' + match + '</span>';
+                }
+
+                // Numbers
+                return '<span style="color: #b5cea8;">' + match + '</span>';
             });
         }
 
-        // --- 2. THE DELAYED HIGHLIGHT TRIGGER ---
-        function triggerDelayedHighlight() {
+        // --- 2. ROBUST PARSE + HIGHLIGHT TRIGGER ---
+        function triggerDelayedHighlight(delay = 100) {
             setTimeout(() => {
-                // A. READ FROM DOM
-                const rawText = codeBlock.textContent;
-                if (!rawText) return;
+                // A. READ FROM DOM (textContent to get raw JSON text)
+                let rawText = codeBlock.textContent || '';
+                if (!rawText || !rawText.trim()) return;
+
+                // B. Make parsing robust: handle the cases where the linter's output may be string-encoded JSON
+                let parsed = null;
+                let prettyString = null;
 
                 try {
-                    // B. PARSE & PRETTIFY (Indentation 4 spaces)
-                    const jsonObj = JSON.parse(rawText);
-                    const prettyString = JSON.stringify(jsonObj, undefined, 4);
-                    
-                    // C. HIGHLIGHT
-                    const coloredHtml = highlightString(prettyString);
-                    
-                    // D. WRITE BACK TO DOM
-                    codeBlock.innerHTML = coloredHtml;
-                } catch(e) {
-                    console.error("Highlighting failed, likely invalid JSON in DOM", e);
+                    // Attempt 1: direct parse
+                    parsed = JSON.parse(rawText);
+                } catch (err1) {
+                    // Attempt 2: maybe the string is escaped (e.g. a JSON string that contains JSON)
+                    try {
+                        let firstParse = JSON.parse(rawText);
+                        // If firstParse is a string, parse again
+                        if (typeof firstParse === 'string') {
+                            parsed = JSON.parse(firstParse);
+                        } else {
+                            parsed = firstParse;
+                        }
+                    } catch (err2) {
+                        // Attempt 3: fallback - try to repair common issues: replace single quotes with double quotes for keys/strings (best-effort)
+                        try {
+                            const repaired = rawText.replace(/'/g, '"');
+                            parsed = JSON.parse(repaired);
+                        } catch (err3) {
+                            // Can't parse — show original raw text highlighted as plain string
+                            const escaped = rawText.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+                            codeBlock.innerHTML = '<span style="color: #ce9178;">' + escaped + '</span>';
+                            return;
+                        }
+                    }
                 }
-            }, 50); // Small 50ms delay to ensure DOM is ready
+
+                // C. PRETTIFY
+                try {
+                    prettyString = JSON.stringify(parsed, null, 4);
+                } catch (e) {
+                    // If parsed is not serializable, simply toString it
+                    prettyString = String(parsed);
+                }
+
+                // D. HIGHLIGHT
+                const coloredHtml = highlightString(prettyString);
+
+                // E. WRITE BACK TO DOM
+                codeBlock.innerHTML = coloredHtml;
+
+                // Make sure the details pane is open and keep height updated
+                try { document.getElementById("output-wrap").open = true; } catch (e){/*ignore*/}
+
+                // Notify parent if embedded
+                setTimeout(() => { if (window.parent) window.parent.postMessage({ type: 'setHeight', height: document.body.scrollHeight }, "*"); }, 30);
+            }, delay); // short delay
         }
 
         // --- UTILS ---
         function copyJsonToClipboard() {
-            const jsonText = codeBlock.textContent; 
+            // Use the raw textContent so copied text is real JSON text (not HTML)
+            const jsonText = codeBlock.textContent || "";
             navigator.clipboard.writeText(jsonText).then(() => {
                 const copyBtn = document.getElementById('copy-json');
                 const originalHTML = copyBtn.innerHTML;
@@ -176,11 +221,13 @@
                     copyBtn.innerHTML = originalHTML;
                     copyBtn.classList.remove('copied');
                 }, 2000);
+            }).catch(err => {
+                console.error("Clipboard write failed", err);
             });
         }
 
         function downloadJson() {
-            const jsonText = codeBlock.textContent;
+            const jsonText = codeBlock.textContent || "";
             const blob = new Blob([jsonText], { type: 'application/json' });
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
@@ -207,7 +254,7 @@
         window.appendStatus = function(msg) {
             const cleanMsg = msg.replace(/\u001b\[.*?m/g, '').trim(); 
             if (loadingText) loadingText.textContent = cleanMsg;
-            if (cleanMsg.includes('Done') || cleanMsg.includes('ready') || cleanMsg.includes('Ready')) {
+            if (cleanMsg.includes('Done') || cleanMsg.toLowerCase().includes('ready')) {
                 document.body.classList.remove('loading-active');
                 loader.style.opacity = '0';
                 contentWrapper.style.opacity = '1';
@@ -279,10 +326,13 @@
             }
 
             function resetState() {
+                // Clear the code block and restore button state. Keep details element present.
                 codeBlock.innerHTML = ""; lintBtn.disabled = false; lintBtn.textContent = "Lint";
-                localStorage.removeItem('jsonData'); lintView.innerHTML = "";
+                // localStorage key removal left intact (you used it originally)
+                try { localStorage.removeItem('jsonData'); } catch(e) { /*ignore*/ }
+                lintView.innerHTML = "";
                 messagesTitle.style.display = "none"; lintView.style.display = "none";
-                document.getElementById("output-wrap").open = false; 
+                try { document.getElementById("output-wrap").open = false; } catch (e) {}
             }
             queryInput.addEventListener('input', resetState);
             platformInput.addEventListener('change', resetState);
@@ -305,21 +355,38 @@ json.dumps([m.to_dict() for m in result])
                 // ============================================
                 //  YOUR REQUESTED "DOM READ-WRITE" LOGIC
                 // ============================================
-                
-                // 1. DUMP RAW TEXT TO DOM IMMEDIATELY
-                codeBlock.textContent = resultJson;
 
-                // 2. TRIGGER DELAYED HIGHLIGHTER
-                triggerDelayedHighlight();
+                // 1. DUMP RAW TEXT TO DOM IMMEDIATELY (use textContent so it's safe)
+                try {
+                    codeBlock.textContent = resultJson;
+                } catch (e) {
+                    codeBlock.textContent = String(resultJson);
+                }
+
+                // 2. TRIGGER DELAYED HIGHLIGHTER (robust parse + highlight)
+                triggerDelayedHighlight(120);
                 
                 // ============================================
 
                 // 3. Process Card View
-                const rawMessages = JSON.parse(resultJson);
+                let rawMessages = [];
+                try {
+                    rawMessages = JSON.parse(resultJson);
+                } catch (e) {
+                    // If parsing fails here, attempt the fallback double-parse
+                    try {
+                        const first = JSON.parse(resultJson);
+                        if (typeof first === "string") rawMessages = JSON.parse(first);
+                        else rawMessages = first;
+                    } catch (e2) {
+                        rawMessages = [];
+                    }
+                }
+
                 document.getElementById("output-wrap").open = true;
                 const splitMessages = [];
                 rawMessages.forEach(m => {
-                    const parts = m.message.split("\n").filter(x => x.trim() !== "");
+                    const parts = (m.message || '').split("\n").filter(x => x.trim() !== "");
                     parts.forEach(segment => {
                         splitMessages.push({ icon: m.icon ?? "⚠️", rule_id: m.rule_id, message: segment, query: m.query });
                     });
