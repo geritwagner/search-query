@@ -6,16 +6,10 @@
     <meta name="viewport" content="width=device-width,initial-scale=1" />
     
     <script src="https://cdn.jsdelivr.net/pyodide/v0.26.2/full/pyodide.js"></script>
-
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-okaidia.min.css" rel="stylesheet" />
-    
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-json.min.js"></script>
-
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
     
     <style>
-        /* --- CSS Variables --- */
+        /* --- CORE CSS --- */
         :root {
             --primary: #4f46e5;       
             --primary-dark: #3f35c5;
@@ -85,20 +79,29 @@
         #status-display { margin-top: 1rem; padding: 0.5rem 1rem; background: #fff3e0; border: 1px solid #ffcc80; border-radius: 0.375rem; font-size: 0.875rem; color: #a55a00; font-weight: 500; }
         #output-wrap { margin-top: 1.5rem; position: relative; }
         
-        /* PRISM JS CONTAINER OVERRIDES */
-        pre[class*="language-"] {
-            background: #272822 !important; /* Match Okaidia Theme */
-            border-radius: 8px;
+        /* --- JSON OUTPUT WINDOW --- */
+        pre {
+            background-color: #1e1e1e !important; /* Dark Background */
+            border: 1px solid #333;
+            border-radius: 0.5rem;
             margin: 0;
-            max-height: 400px;
+            max-height: 400px;    
             padding: 20px;
-            border: 1px solid #444;
+            border-radius: 10px;
+            overflow-x: auto;
+            font-size: 15px;
+            overflow: auto;
+            color: #d4d4d4; /* Default Text Color */
+            position: relative;
         }
 
-        code[class*="language-"], pre[class*="language-"] {
+        #output {
             font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
-            font-size: 14px;
-            text-shadow: none !important;
+            font-size: 0.85rem;
+            background: transparent !important;
+            margin: 0;
+            padding: 0;
+            white-space: pre; 
         }
 
         .json-actions { position: absolute; top: 15px; right: 15px; display: flex; gap: 8px; z-index: 20; }
@@ -159,7 +162,7 @@
         </div>
 
         <div style="margin-top: 1.5rem;">
-            <details id="output-wrap" style="margin-bottom: 1rem;" open>
+            <details id="output-wrap" style="margin-bottom: 1rem;">
                 <summary style="font-weight: 600; color: var(--text-secondary); cursor: pointer; padding: 0.5rem 0; position: relative;">
                     Raw Linter Output (JSON)
                 </summary>
@@ -172,7 +175,7 @@
                             <i class="fas fa-download"></i>
                         </button>
                     </div>
-                    <pre class="language-json"><code id="output" class="language-json"></code></pre>
+                    <pre><code id="output"></code></pre>
                 </div>
             </details>
             <h2 id="messages-title" style="display:none; font-size: 1.25rem; font-weight: 600; margin-top: 1rem;">Messages</h2>
@@ -189,34 +192,58 @@
         const contentWrapper = document.getElementById('content-wrapper');
         const statusDisplay = document.getElementById('status-display');
         const codeBlock = document.getElementById('output');
+        
+        // --- 1. THE FORCE-COLOR HIGHLIGHTER ---
+        // Uses Inline Styles to guarantee colors appear regardless of external CSS
+        function syntaxHighlightInline(json) {
+            if (typeof json !== 'string') {
+                json = JSON.stringify(json, undefined, 4);
+            }
+            json = json.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+            
+            return json.replace(/("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/g, function (match) {
+                let style = 'color: #b5cea8;'; // Default Number (Green)
+                
+                if (/^"/.test(match)) {
+                    if (/:$/.test(match)) {
+                        // KEY: Light Blue
+                        return '<span style="color: #9cdcfe;">' + match.slice(0, -1) + '</span>:';
+                    } else {
+                        // STRING: Salmon
+                        style = 'color: #ce9178;';
+                    }
+                } else if (/true|false/.test(match)) {
+                    // BOOLEAN: Blue
+                    style = 'color: #569cd6;';
+                } else if (/null/.test(match)) {
+                    // NULL: Blue
+                    style = 'color: #569cd6;';
+                }
+                return '<span style="' + style + '">' + match + '</span>';
+            });
+        }
 
-        // --- 1. PRISM HIGHLIGHTER LOGIC ---
+        // --- 2. UPDATE LOGIC ---
         function updateHighlight() {
             const stored = localStorage.getItem('jsonData');
 
             if (!stored) {
-                codeBlock.textContent = "// No JSON stored yet. Click the button.";
-                // Trigger Prism
-                Prism.highlightElement(codeBlock);
+                codeBlock.innerHTML = '<span style="color:#6b7280">// No JSON stored yet. Click the button.</span>';
                 return;
             }
 
             try {
                 const parsed = JSON.parse(stored);
-                // Set the raw text
-                codeBlock.textContent = JSON.stringify(parsed, null, 4);
-                
-                // Trigger Prism (This is the Magic Line)
-                Prism.highlightElement(codeBlock);
-                
+                // INJECT INLINE STYLES
+                const highlightedHtml = syntaxHighlightInline(parsed);
+                codeBlock.innerHTML = highlightedHtml;
             } catch (err) {
                 codeBlock.textContent = "// Invalid JSON found. Clearing…";
                 localStorage.removeItem('jsonData');
-                Prism.highlightElement(codeBlock);
             }
         }
 
-        // --- 2. UTILITIES ---
+        // --- 3. UTILITIES ---
         function copyJsonToClipboard() {
             const jsonText = codeBlock.textContent; 
             navigator.clipboard.writeText(jsonText).then(() => {
@@ -252,7 +279,7 @@
             }
         }
 
-        // --- 3. PYODIDE SETUP ---
+        // --- 4. PYODIDE SETUP ---
         const originalAppendStatus = window.appendStatus || function(msg) { 
             if (statusDisplay) statusDisplay.textContent = msg; 
         };
@@ -281,7 +308,7 @@
             setTimeout(sendHeight, 50); 
         };
 
-        // --- 4. INIT ---
+        // --- 5. INIT ---
         document.addEventListener('DOMContentLoaded', () => {
             document.body.classList.add('loading-active');
             contentWrapper.style.opacity = '0';
@@ -295,11 +322,10 @@
             const observer = new MutationObserver(sendHeight);
             observer.observe(document.body, { attributes: true, childList: true, subtree: true });
 
-            // Ensure Prism highlights on load
             updateHighlight();
         });
 
-        // --- 5. MAIN LOGIC ---
+        // --- 6. MAIN APP ---
         (async () => {
             const pyodide = await loadPyodide({ stdout: msg => console.log(msg), stderr: msg => console.error(msg) });
             await pyodide.loadPackage("micropip");
@@ -369,7 +395,29 @@
                 setTimeout(() => { if (window.parent) sendHeight(); }, 80);
             }
 
+            // RESET LOGIC
+            function resetState() {
+                // Clear JSON output
+                codeBlock.innerHTML = "";
+                // Unlock Button
+                lintBtn.disabled = false;
+                lintBtn.textContent = "Lint";
+                // Clear Storage
+                localStorage.removeItem('jsonData');
+                // Clear Messages
+                lintView.innerHTML = "";
+                messagesTitle.style.display = "none";
+                lintView.style.display = "none";
+            }
+
+            queryInput.addEventListener('input', resetState);
+            platformInput.addEventListener('change', resetState);
+
             lintBtn.addEventListener("click", async () => {
+                // LOCK
+                lintBtn.disabled = true;
+                lintBtn.textContent = "Processing...";
+
                 const query = queryInput.value;
                 const platform = platformInput.value;
 
@@ -386,6 +434,7 @@ json.dumps([m.to_dict() for m in result])
                 } catch (e) {
                     console.error(e);
                     alert("Linter error occurred.");
+                    lintBtn.textContent = "Error";
                     return;
                 }
 
@@ -394,7 +443,7 @@ json.dumps([m.to_dict() for m in result])
                 // SAVE
                 localStorage.setItem('jsonData', JSON.stringify(rawMessages));
                 
-                // UPDATE HIGHLIGHT (Prism)
+                // HIGHLIGHT (With Inline Styles)
                 updateHighlight();
                 
                 // RENDER CARDS
@@ -412,6 +461,7 @@ json.dumps([m.to_dict() for m in result])
                 });
 
                 renderLintMessages(splitMessages);
+                lintBtn.textContent = "Done"; // Keep locked until edit
             });
         })();
     </script>
