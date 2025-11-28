@@ -9,9 +9,8 @@
     <script src="https://cdn.jsdelivr.net/pyodide/v0.26.2/full/pyodide.js"></script>
 
     <!-- Highlight.js (Required for JSON coloring) -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/vs2015.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/json.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
     
     <style>
@@ -197,55 +196,49 @@
             <div id="lint-view" style="display:none;"></div>
         </div>
     </div>
-    <script src="script.js"></script><script>
-    const PARENT_ORIGIN = window.location.origin;
-
+    <script src="script.js"></script>
+    <script>
+    const PARENT_ORIGIN = window.location.origin; 
+    
+    // --- DOM ELEMENTS ---
     const loader = document.getElementById('loading-overlay');
     const loadingText = document.getElementById('loading-text');
     const contentWrapper = document.getElementById('content-wrapper');
     const statusDisplay = document.getElementById('status-display');
+    
+    // 1. TARGET THE CORRECT ID (Matches your HTML <code id="output">)
     const codeBlock = document.getElementById('output');
 
-    // --- 1. Highlight Function ---
+    // --- PROTOTYPE PRINCIPLE LOGIC ---
     function updateHighlight() {
         const stored = localStorage.getItem('jsonData');
 
-        // Reset highlight state so highlight.js re-runs correctly
+        // CRITICAL FIX: Highlight.js adds a 'data-highlighted' attribute. 
+        // We MUST remove it, or it will refuse to highlight the new content.
         codeBlock.removeAttribute('data-highlighted');
 
         if (!stored) {
-            codeBlock.textContent = "// No JSON stored yet. Click the button.";
+            codeBlock.textContent = "// No JSON stored yet. Run the linter.";
             hljs.highlightElement(codeBlock);
             return;
         }
 
         try {
             const parsed = JSON.parse(stored);
+            // Render from Storage
             codeBlock.textContent = JSON.stringify(parsed, null, 4);
             hljs.highlightElement(codeBlock);
         } catch (err) {
-            codeBlock.textContent = "// Invalid JSON found. Clearing…";
+            codeBlock.textContent = "// Invalid JSON found in storage. Clearing…";
             localStorage.removeItem('jsonData');
             hljs.highlightElement(codeBlock);
         }
     }
 
-    // --- 2. Helper to Update Text for highlighting (restored from comments) ---
-    function updateJsonOutput(jsonData) {
-        // Convert to Pretty String
-        const formattedJson = JSON.stringify(jsonData, null, 4);
-        
-        // Set text content
-        codeBlock.textContent = formattedJson;
-        
-        // Clear markers and re-highlight
-        codeBlock.removeAttribute('data-highlighted');
-        hljs.highlightElement(codeBlock);
-    }
-
-    // --- 3. Clipboard Logic ---
+    // --- Copy/Download Functions ---
     function copyJsonToClipboard() {
-        const jsonText = codeBlock.textContent;
+        // Read directly from the rendered block
+        const jsonText = codeBlock.textContent; 
         navigator.clipboard.writeText(jsonText).then(() => {
             const copyBtn = document.getElementById('copy-json');
             const originalHTML = copyBtn.innerHTML;
@@ -256,12 +249,11 @@
                 copyBtn.classList.remove('copied');
             }, 2000);
         }).catch(err => {
-            console.error('Failed to copy JSON: ', err);
-            alert('Failed to copy JSON to clipboard');
+            console.error(err);
+            alert('Failed to copy JSON');
         });
     }
 
-    // --- 4. Download Logic ---
     function downloadJson() {
         const jsonText = codeBlock.textContent;
         const blob = new Blob([jsonText], { type: 'application/json' });
@@ -275,7 +267,7 @@
         URL.revokeObjectURL(url);
     }
 
-    // --- 5. Iframe Resizer Logic ---
+    // --- Iframe Height Logic ---
     function sendHeight() {
         if (document.body.classList.contains('loading-active')) return;
         const height = document.body.scrollHeight;
@@ -283,21 +275,22 @@
             window.parent.postMessage({ type: 'setHeight', height: height }, "*");
         }
     }
-
-    // --- 6. Pyodide Setup ---
-    const originalAppendStatus = window.appendStatus || function(msg) {
-        if (statusDisplay) statusDisplay.textContent = msg;
-        console.log("Pyodide Hook:", msg);
+    
+    // --- Pyodide Status Hook ---
+    const originalAppendStatus = window.appendStatus || function(msg) { 
+        if (statusDisplay) statusDisplay.textContent = msg; 
+        console.log("Pyodide Hook:", msg); 
     };
-
+    
     window.appendStatus = function(msg) {
-        const cleanMsg = msg.replace(/\u001b\[.*?m/g, '').trim();
+        const cleanMsg = msg.replace(/\u001b\[.*?m/g, '').trim(); 
         if (loadingText) loadingText.textContent = cleanMsg;
 
         if (cleanMsg.includes('Done') || cleanMsg.includes('ready') || cleanMsg.includes('Ready')) {
             document.body.classList.remove('loading-active');
             loader.style.opacity = '0';
             contentWrapper.style.opacity = '1';
+
             setTimeout(() => {
                 loader.style.display = 'none';
                 document.body.style.overflow = '';
@@ -310,14 +303,14 @@
             contentWrapper.style.opacity = '0';
         }
         originalAppendStatus(msg);
-        setTimeout(sendHeight, 50);
+        setTimeout(sendHeight, 50); 
     };
-
-    // --- 7. Initialization ---
+    
+    // --- Initialization ---
     document.addEventListener('DOMContentLoaded', () => {
         document.body.classList.add('loading-active');
         contentWrapper.style.opacity = '0';
-        loader.style.display = 'flex';
+        loader.style.display = 'flex'; 
         loadingText.textContent = "Initializing Search Query...";
 
         document.getElementById('copy-json').addEventListener('click', copyJsonToClipboard);
@@ -326,12 +319,12 @@
         window.addEventListener('load', sendHeight);
         const observer = new MutationObserver(sendHeight);
         observer.observe(document.body, { attributes: true, childList: true, subtree: true });
-        
-        // Initial highlight check on load
+
+        // APPLY PROTOTYPE PRINCIPLE: Check storage on load
         updateHighlight();
     });
 
-    // --- 8. Pyodide Execution Loop ---
+    // --- Main Logic ---
     (async () => {
         const pyodide = await loadPyodide({ stdout: msg => console.log(msg), stderr: msg => console.error(msg) });
         await pyodide.loadPackage("micropip");
@@ -359,7 +352,7 @@
         }
 
         function renderLintMessages(messages) {
-            lintView.innerHTML = "";
+            lintView.innerHTML = ""; 
             if (messages.length === 0) {
                 messagesTitle.style.display = "none";
                 lintView.style.display = "none";
@@ -368,22 +361,23 @@
             messages.forEach((msg, index) => {
                 const container = document.createElement("div");
                 container.className = "lint-item";
-
+                
                 const titleEl = document.createElement("div");
                 titleEl.className = "lint-title";
                 titleEl.textContent = `${index + 1}. ${msg.icon || "⚠️"} ${msg.rule_id}`;
                 container.appendChild(titleEl);
-
+                
                 const messageEl = document.createElement("div");
                 messageEl.className = "lint-message";
                 messageEl.innerHTML = convertAnsiToHtml(escapeHtml(msg.message));
                 container.appendChild(messageEl);
-
+                
                 if (msg.query) {
                     const queryBlock = document.createElement("pre");
                     queryBlock.className = "lint-query";
                     queryBlock.textContent = msg.query;
                     container.appendChild(queryBlock);
+                    
                     const separator = document.createElement("div");
                     separator.className = "lint-separator";
                     container.appendChild(separator);
@@ -391,21 +385,25 @@
                 lintView.appendChild(container);
             });
 
-            if (messages.length > 0) {
+           if (messages.length > 0) {
                 messagesTitle.style.display = "block";
                 lintView.style.display = "block";
             } else {
                 messagesTitle.style.display = "none";
                 lintView.style.display = "none";
             }
-            setTimeout(() => { if (window.parent) sendHeight(); }, 80);
+
+            setTimeout(() => {
+                if (window.parent) {
+                    window.parent.postMessage({ type: 'setHeight', height: document.body.scrollHeight }, "*");
+                }
+            }, 80);
         }
 
         lintBtn.addEventListener("click", async () => {
             const query = queryInput.value;
             const platform = platformInput.value;
 
-            // Python Code to run
             const lintCode = `
 from search_query_linter import lint
 import json
@@ -414,6 +412,7 @@ json.dumps([m.to_dict() for m in result])
             `;
 
             let resultJson;
+
             try {
                 resultJson = await pyodide.runPythonAsync(lintCode);
             } catch (e) {
@@ -423,14 +422,15 @@ json.dumps([m.to_dict() for m in result])
             }
 
             const rawMessages = JSON.parse(resultJson);
-
-            // SAVE to LocalStorage
+            
+            // --- PROTOTYPE PRINCIPLE ACTION ---
+            // 1. Save to Storage
             localStorage.setItem('jsonData', JSON.stringify(rawMessages));
+            
+            // 2. Update Visuals from Storage
+            updateHighlight();
 
-            // UPDATE UI (This function was missing/commented out in your version)
-            updateJsonOutput(rawMessages);
-
-            // Split multiline messages
+            // 3. Handle the visual Cards (Lint View)
             const splitMessages = [];
             rawMessages.forEach(m => {
                 const parts = m.message.split("\n").filter(x => x.trim() !== "");
@@ -446,6 +446,9 @@ json.dumps([m.to_dict() for m in result])
 
             renderLintMessages(splitMessages);
         });
+        
+        // APPLY PROTOTYPE PRINCIPLE: Check storage on Pyodide ready
+        updateHighlight();
     })();
 </script>
 </body>
