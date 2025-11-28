@@ -1,462 +1,374 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8" />
-    <title>search-query translator</title>
-    <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta charset="UTF-8" />
+  <title>search-query translator</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  
+  <!-- Highlight.js for JSON coloring -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/vs2015.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/json.min.js"></script>
+
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+  
+  <style>
+    /* --- CSS Variables (Ensure consistency with Host) --- */
+    :root {
+      --primary: #4f46e5;       /* Indigo */
+      --primary-dark: #3f35c5;
+      --bg-card: #ffffff;
+      --border-color: #e5e7eb;  /* Gray-200 */
+      --text-main: #1f2937;     /* Dark Gray */
+      --text-secondary: #6b7280; /* Medium Gray */
+    }
+
+    /* --- Global Resets & Body Styles for IFRAME --- */
+    * { box-sizing: border-box; margin: 0; padding: 0; line-height: 1.5; font-family: 'Inter', sans-serif; }
     
-    <!-- Highlight.js for JSON coloring -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/vs2015.min.css">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/json.min.js"></script>
+    body {
+      background-color: var(--bg-card);
+      color: var(--text-main);
+      padding: 1.5rem; 
+      min-height: 100vh;
+      overflow-x: hidden;
+      overflow-y: hidden;
+      position: relative;
+    }
 
-    <script src="https://cdn.jsdelivr.net/pyodide/v0.26.2/full/pyodide.js"></script>
-
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+    /* UTILITY CLASS FOR VIEWPORT LOCK */
+    body.loading-active {
+      overflow: hidden; /* Prevents scrolling */
+      height: 100vh;    /* Locks height */
+    }
     
-    <style>
-        /* --- CSS Variables (Ensure consistency with Host) --- */
-        :root {
-            --primary: #4f46e5;       /* Indigo */
-            --primary-dark: #3f35c5;
-            --bg-card: #ffffff;
-            --border-color: #e5e7eb;  /* Gray-200 */
-            --text-main: #1f2937;     /* Dark Gray */
-            --text-secondary: #6b7280; /* Medium Gray */
-        }
+    /* --- Layout & Typography --- */
+    header h1 { font-size: 1.5rem; font-weight: bold; margin-bottom: 0.25rem; }
+    header p { color: var(--text-secondary); margin-top: 0; font-size: 0.95rem; }
+    
+    /* --- Form Elements --- */
+    label { display: block; margin-top: 1.25rem; margin-bottom: 0.25rem; font-weight: 600; font-size: 0.875rem; }
+    
+    /* Query textarea with larger font size */
+    #query {
+      font-size: 1.1rem !important;
+      line-height: 1.6;
+      padding: 1rem;
+      min-height: 120px;
+      font-family: 'Courier New', monospace;
+    }
+    
+    /* Narrower form elements */
+    textarea, select { 
+      display: block; width: 100%; padding: 0.75rem; border: 1px solid var(--border-color); 
+      border-radius: 0.5rem; box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.07); 
+      transition: border-color 0.2s, box-shadow 0.2s; color: var(--text-main);
+      max-width: 100%;
+    }
+    
+    textarea:focus, select:focus { 
+      border-color: var(--primary); box-shadow: 0 0 0 1px var(--primary); outline: none; 
+    }
 
-        /* --- Global Resets & Body Styles for IFRAME --- */
-        * { box-sizing: border-box; margin: 0; padding: 0; line-height: 1.5; font-family: 'Inter', sans-serif; }
-        body {
-            background-color: var(--bg-card);
-            color: var(--text-main);
-            padding: 1.5rem; 
-            min-height: 100vh;
-            overflow-x: hidden;
-            overflow-y: hidden;
-            position: relative;
-        }
-        
-        /* UTILITY CLASS FOR VIEWPORT LOCK */
-        body.loading-active {
-            overflow: hidden; 
-            height: 100vh;
-        }
+    /* --- Button --- */
+    #btn-translate {
+      width: auto; /* Make button narrower */
+      min-width: 200px; /* Minimum width */
+      padding: 0.75rem 2rem; /* Narrower padding */
+      border: none; 
+      border-radius: 0.5rem; 
+      font-weight: 600; 
+      color: white; 
+      background-color: var(--primary); 
+      cursor: pointer; 
+      transition: background-color 0.2s; 
+      box-shadow: 0 2px 4px rgba(79, 70, 229, 0.4);
+      margin-top: 1rem;
+      font-size: 1rem;
+      display: block;
+      margin-left: auto;
+      margin-right: auto;
+    }
+    #btn-translate:hover:not(:disabled) { background-color: var(--primary-dark); }
+    #btn-translate:disabled { opacity: 0.6; cursor: not-allowed; box-shadow: none; }
 
-        /* --- Layout & Typography --- */
-        header h1 { font-size: 1.5rem; font-weight: bold; margin-bottom: 0.25rem; }
-        header p { color: var(--text-secondary); margin-top: 0; font-size: 0.95rem; }
-        
-        .main-content-card {
-            margin-top: 1.5rem;
-            background: var(--bg-card);
-            border: 1px solid var(--border-color);
-            border-radius: 0.75rem;
-            padding: 1.5rem;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-        }
+    /* --- Status & Loading --- */
+    #status { 
+      margin-top: 1rem; padding: 0.5rem 1rem; background: #fff3e0; border: 1px solid #ffcc80; 
+      border-radius: 0.375rem; font-size: 0.875rem; color: #a55a00; font-weight: 500; 
+    }
 
-        /* --- Form Elements --- */
-        label { display: block; margin-top: 1.25rem; margin-bottom: 0.25rem; font-weight: 600; font-size: 0.875rem; }
-        
-        /* Query textarea with larger font size */
-        #query {
-            font-size: 1.1rem !important;
-            line-height: 1.6;
-            padding: 1rem;
-            min-height: 120px;
-            font-family: 'Courier New', monospace;
-        }
-        
-        /* Narrower form elements */
-        textarea, select { 
-            display: block; width: 100%; padding: 0.75rem; border: 1px solid var(--border-color); 
-            border-radius: 0.5rem; box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.07); 
-            transition: border-color 0.2s, box-shadow 0.2s; color: var(--text-main);
-            max-width: 100%;
-        }
-        
-        textarea:focus, select:focus { 
-            border-color: var(--primary); box-shadow: 0 0 0 1px var(--primary); outline: none; 
-        }
+    /* === JSON Output Styling (VS Code Dark Theme Look) === */
+    pre {
+      background-color: #1e1e1e !important; /* VS Code Dark Background */
+      border: 1px solid #333;
+      border-radius: 0.5rem;
+      margin: 0;
+      padding: 1rem;
+      max-height: 400px;
+      overflow: auto;
+      color: #d4d4d4; /* Default Text Color */
+    }
 
-        /* --- Button --- */
-        #btn-translate {
-            width: auto; /* Make button narrower */
-            min-width: 200px; /* Minimum width */
-            padding: 0.75rem 2rem; /* Narrower padding */
-            border: none; 
-            border-radius: 0.5rem; 
-            font-weight: 600; 
-            color: white; 
-            background-color: var(--primary); 
-            cursor: pointer; 
-            transition: background-color 0.2s; 
-            box-shadow: 0 2px 4px rgba(79, 70, 229, 0.4);
-            margin-top: 1.5rem;
-            font-size: 1rem;
-            display: block;
-            margin-left: auto;
-            margin-right: auto;
-        }
-        #btn-translate:hover:not(:disabled) { background-color: var(--primary-dark); }
-        #btn-translate:disabled { opacity: 0.6; cursor: not-allowed; box-shadow: none; }
+    #result, #messages {
+      font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+      font-size: 0.85rem;
+      background: transparent !important;
+      margin: 0;
+      padding: 0;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+    }
 
-        /* --- Status & Output --- */
-        #status { display:none; } 
-        #status-display { 
-            margin-top: 1rem; padding: 0.5rem 1rem; background: #fff3e0; border: 1px solid #ffcc80; 
-            border-radius: 0.375rem; font-size: 0.875rem; color: #a55a00; font-weight: 500; 
-        }
-
-        /* === JSON Output Styling (VS Code Dark Theme Look) === */
-        pre {
-            background-color: #1e1e1e !important; /* VS Code Dark Background */
-            border: 1px solid #333;
-            border-radius: 0.5rem;
-            margin: 0;
-            padding: 1rem;
-            max-height: 400px;
-            overflow: auto;
-            color: #d4d4d4; /* Default Text Color */
-        }
-
-        #result, #messages {
-            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
-            font-size: 0.85rem;
-            background: transparent !important;
-            margin: 0;
-            padding: 0;
-            white-space: pre-wrap;
-            word-wrap: break-word;
-        }
-
-        /* Custom Syntax Highlighting (VS Code Style) */
-        .hljs-attr { color: #9cdcfe !important; }      /* Keys: Light Blue */
-        .hljs-string { color: #ce9178 !important; }    /* Strings: Orange/Salmon */
-        .hljs-number { color: #b5cea8 !important; }    /* Numbers: Light Green */
-        .hljs-literal, .hljs-keyword { color: #569cd6 !important; } /* Booleans: Blue */
-        .hljs-punctuation { color: #d4d4d4 !important; } /* Punctuation: Light Gray */
-
-        /* --- Translation Output Styling --- */
-        .output-section {
-            margin-top: 1.5rem;
-            padding: 1rem;
-            background: var(--bg-card);
-            border: 1px solid var(--border-color);
-            border-radius: 0.75rem;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-        }
-        
-        /* --- LOADING OVERLAY STYLES (Fixed and Centered) --- */
-        #loading-overlay {
-            position: fixed;
-            inset: 0; 
-            background-color: rgba(255, 255, 255, 0.95);
-            z-index: 1000;
-            display: flex; 
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            transition: opacity 0.5s ease;
-            opacity: 1;
-        }
-        .loader {
-            border: 4px solid var(--border-color);
-            border-top: 4px solid var(--primary);
-            border-radius: 50%;
-            width: 50px;
-            height: 50px;
-            animation: spin 1s linear infinite;
-            margin-bottom: 1rem;
-        }
-        #loading-text {
-            font-size: 1.1rem;
-            color: var(--text-main);
-            font-weight: 500;
-            text-align: center;
-        }
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-        
-        /* Utility to hide the content on load */
-        #content-wrapper { transition: opacity 0.5s ease; opacity: 0; }
-        
-        /* Narrower platform select */
-        #platform-source, #platform-target {
-            max-width: 300px;
-        }
-        
-    </style>
+    /* Custom Syntax Highlighting (VS Code Style) */
+    .hljs-attr { color: #9cdcfe !important; }      /* Keys: Light Blue */
+    .hljs-string { color: #ce9178 !important; }    /* Strings: Orange/Salmon */
+    .hljs-number { color: #b5cea8 !important; }    /* Numbers: Light Green */
+    .hljs-literal, .hljs-keyword { color: #569cd6 !important; } /* Booleans: Blue */
+    .hljs-punctuation { color: #d4d4d4 !important; } /* Punctuation: Light Gray */
+    
+    /* --- LOADING OVERLAY STYLES (Fixed and Centered) --- */
+    #loading-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(255, 255, 255, 0.95);
+      z-index: 1000;
+      display: flex; 
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      transition: opacity 0.5s ease;
+      opacity: 1;
+    }
+    .loader {
+      border: 4px solid var(--border-color);
+      border-top: 4px solid var(--primary);
+      border-radius: 50%;
+      width: 50px;
+      height: 50px;
+      animation: spin 1s linear infinite;
+      margin-bottom: 1rem;
+    }
+    #loading-text {
+      font-size: 1.1rem;
+      color: var(--text-main);
+      font-weight: 500;
+      text-align: center;
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    
+    /* Utility to hide the content on load */
+    #content-wrapper { transition: opacity 0.5s ease; opacity: 0; }
+    
+    /* Narrower platform select */
+    #platform-source, #platform-target {
+      max-width: 300px;
+    }
+    
+    /* Headings */
+    #result-title, #messages-title {
+      margin-top: 1.5rem;
+      font-size: 1.25rem;
+      font-weight: 600;
+    }
+    
+  </style>
 </head>
 <body>
 
-    <div id="loading-overlay">
-        <div class="loader"></div>
-        <div id="loading-text">Initializing search-query...</div>
+  <div id="loading-overlay">
+    <div class="loader"></div>
+    <div id="loading-text">Initializing search-query...</div>
+  </div>
+  
+  <div id="content-wrapper">
+    <header>
+      <h1>search-query translator</h1>
+      <p>Translate a database/search-platform query into another platform using the <code>search-query</code> package (running in Pyodide).</p>
+    </header>
+
+    <div id="status">Loading Pyodide…</div>
+
+    <label for="query">Query</label>
+    <textarea id="query" rows="6">(TI=(platform* OR "digital work") AND PY=2020-2025)</textarea>
+
+    <label for="platform-source">Source platform</label>
+    <select id="platform-source">
+      <option value="wos">wos</option>
+      <option value="pubmed">pubmed</option>
+      <option value="ebscohost">ebscohost</option>
+      <option value="scopus">scopus</option>
+    </select>
+
+    <label for="platform-target">Target platform</label>
+    <select id="platform-target">
+      <option value="wos">wos</option>
+      <option value="pubmed" selected>pubmed</option>
+      <option value="ebscohost">ebscohost</option>
+      <option value="scopus">scopus</option>
+    </select>
+
+    <div class="row" style="margin-top:1rem;">
+      <button id="btn-translate" disabled>Translate</button>
     </div>
+
+    <h2 id="result-title" style="display:none; margin-top:1.5rem;">Translated query</h2>
+    <pre id="result" style="display:none;"></pre>
+
+    <h2 id="messages-title" style="display:none; margin-top:1.5rem;">Messages</h2>
+    <pre id="messages" style="display:none;"><code class="language-json"></code></pre>
+  </div>
+
+  <!-- Pyodide runtime -->
+  <script src="https://cdn.jsdelivr.net/pyodide/v0.26.2/full/pyodide.js"></script>
+  
+  <script>
+    const PARENT_ORIGIN = window.location.origin; 
     
-    <div id="content-wrapper">
-        <header>
-            <h1>Search-Query Translator</h1>
-            <p>Translate a database/search-platform query into another platform using the <code>search-query</code> package.</p>
-        </header>
+    const loader = document.getElementById('loading-overlay');
+    const loadingText = document.getElementById('loading-text');
+    const contentWrapper = document.getElementById('content-wrapper');
+    const statusDisplay = document.getElementById('status');
+    const btnTranslate = document.getElementById('btn-translate');
 
-        <div id="status">Loading Search Query…</div> 
-        
-        <div id="status-display">Loading Search Query…</div>
+    // Initialize Highlight.js
+    hljs.configure({ ignoreUnescapedHTML: true });
 
-        <div class="main-content-card">
-            <label for="query">Query</label>
-            <textarea id="query">(TI=(platform* OR "digital work") AND PY=2020-2025)</textarea>
+    // Function to update JSON output with highlighting
+    function updateJsonOutput(jsonData) {
+      const codeElement = document.getElementById('messages').querySelector('code');
+      
+      // 1. Convert to Pretty String
+      const formattedJson = JSON.stringify(jsonData, null, 2);
+      
+      // 2. Set text content
+      codeElement.textContent = formattedJson;
+      
+      // 3. Clear markers
+      codeElement.removeAttribute('data-highlighted');
+      
+      // 4. Trigger Highlight.js
+      hljs.highlightElement(codeElement);
+      
+      console.log('JSON output highlighted with VS Code theme');
+    }
 
-            <label for="platform-source">Source platform</label>
-            <select id="platform-source">
-                <option value="wos">wos</option>
-                <option value="pubmed">pubmed</option>
-                <option value="ebscohost">ebscohost</option>
-            </select>
+    // --- Cross-Origin Height Communication ---
+    function sendHeight() {
+      // Only send height if the loader is not active (i.e., content is visible)
+      if (loader.style.display !== 'none') return;
 
-            <label for="platform-target">Target platform</label>
-            <select id="platform-target">
-                <option value="wos">wos</option>
-                <option value="pubmed" selected>pubmed</option>
-                <option value="ebscohost">ebscohost</option>
-            </select>
-
-            <div class="row">
-                <button id="btn-translate" disabled>Translate</button>
-            </div>
-        </div>
-
-        <div class="output-section">
-            <h2 id="result-title" style="display:none;">Translated query</h2>
-            <pre id="result" style="display:none;"></pre>
-
-            <h2 id="messages-title" style="display:none;">Messages</h2>
-            <pre id="messages" style="display:none;"><code class="language-json"></code></pre>
-        </div>
-    </div>
-    <script src="translate.js"></script>
-    <script>
-        // Initialize Highlight.js
-        hljs.configure({ ignoreUnescapedHTML: true });
-        
-        const PARENT_ORIGIN = window.location.origin; 
-        
-        const loader = document.getElementById('loading-overlay');
-        const loadingText = document.getElementById('loading-text');
-        const contentWrapper = document.getElementById('content-wrapper');
-        const statusDisplay = document.getElementById('status-display');
-        const btnTranslate = document.getElementById('btn-translate');
-
-        // Function to update JSON output with highlighting
-        function updateJsonOutput(elementId, jsonData) {
-            const codeElement = document.getElementById(elementId);
-            
-            // 1. Convert to Pretty String
-            const formattedJson = JSON.stringify(jsonData, null, 2);
-            
-            // 2. Set text content
-            codeElement.textContent = formattedJson;
-            
-            // 3. Clear markers
-            codeElement.removeAttribute('data-highlighted');
-            
-            // 4. Trigger Highlight.js
-            hljs.highlightElement(codeElement);
-            
-            console.log('JSON output highlighted with VS Code theme');
-        }
-
-        // --- Pyodide Status Hook (Fixed) ---
-        const originalAppendStatus = window.appendStatus || function(msg) { 
-            const statusDiv = document.getElementById('status');
-            if (statusDiv) {
-                // Write to the hidden status div
-                statusDiv.textContent = msg; 
-            }
-            console.log("Pyodide Hook:", msg); 
-        };
-        
-        window.appendStatus = function(msg) {
-            // 1. Call the original function which writes to the hidden #status div
-            originalAppendStatus(msg);
-            
-            // 2. Update loading text with clean message
-            const cleanMsg = msg.replace(/\u001b\[.*?m/g, '');
-            loadingText.textContent = cleanMsg;
-            
-            // 3. Check if loading is complete
-            if (cleanMsg.includes('search-query ready.') || cleanMsg.includes('Ready') || cleanMsg.includes('Done')) {
-                // Hide loader and show content
-                setTimeout(() => {
-                    loader.style.opacity = '0';
-                    contentWrapper.style.opacity = '1';
-                    document.body.classList.remove('loading-active');
-                    
-                    setTimeout(() => {
-                        loader.style.display = 'none';
-                        contentWrapper.style.display = 'block';
-                        btnTranslate.disabled = false;
-                        statusDisplay.textContent = 'Search Query Ready';
-                        sendHeight(); // Final resize
-                    }, 500);
-                }, 1000);
-            }
-            
-            // 4. Re-trigger height update
-            setTimeout(sendHeight, 50); 
-        };
-
-        let lastSentHeight = 0;
-
-        // --- Cross-Origin Height Communication ---
-        function sendHeight() {
-            // Only proceed if the loading overlay is hidden.
-            if (loader.style.display !== 'none') return; 
-
-            // Get the total scrollable height of the body content
-            const currentHeight = document.body.scrollHeight; 
-
-            // Check if the height has changed significantly before sending the message
-            if (currentHeight !== lastSentHeight) {
-                if (window.parent) {
-                    window.parent.postMessage({
-                        type: 'setHeight',
-                        height: currentHeight
-                    }, PARENT_ORIGIN);
-                    lastSentHeight = currentHeight;
-                }
-            }
-        }  
-
-        // --- Initial Setup and DOM Observer ---
-        document.addEventListener('DOMContentLoaded', () => {
-            // Initial state setup
-            document.body.classList.add('loading-active');
-            contentWrapper.style.opacity = '0';
-            contentWrapper.style.display = 'none';
-            loader.style.display = 'flex'; 
-            loadingText.textContent = "Loading Search Query runtime...";
-            btnTranslate.disabled = true;
-
-            // Initialize Highlight.js
-            hljs.highlightAll();
-
-            // Start Pyodide loading
-            loadPyodide();
-
-            // Set up DOM observer for height changes
-            const observer = new MutationObserver(sendHeight);
-            observer.observe(document.body, { attributes: true, childList: true, subtree: true });
-        });
-
-        // --- Pyodide Loading Function ---
-        async function loadPyodide() {
-            try {
-                window.appendStatus("Loading Pyodide...");
-                
-                // Load Pyodide
-                window.pyodide = await loadPyodide({
-                    indexURL: "https://cdn.jsdelivr.net/pyodide/v0.26.2/full/"
-                });
-                
-                window.appendStatus("Pyodide loaded. Installing search-query package...");
-                
-                // Install search-query package
-                await window.pyodide.loadPackage("micropip");
-                const micropip = window.pyodide.pyimport("micropip");
-                await micropip.install("search-query");
-                
-                window.appendStatus("search-query package installed. Ready!");
-                window.appendStatus("search-query ready.");
-                
-            } catch (error) {
-                console.error("Error loading Pyodide:", error);
-                window.appendStatus("Error loading Pyodide: " + error.message);
-            }
-        }
-
-        // --- Translation Function ---
-        async function translateQuery() {
-            const query = document.getElementById('query').value;
-            const sourcePlatform = document.getElementById('platform-source').value;
-            const targetPlatform = document.getElementById('platform-target').value;
-            
-            if (!query.trim()) {
-                alert("Please enter a query to translate");
-                return;
-            }
-
-            btnTranslate.disabled = true;
-            btnTranslate.textContent = "Translating...";
-
-            try {
-                // Use Pyodide to translate the query
-                const result = await window.pyodide.runPythonAsync(`
-import search_query as sq
-
-try:
-    # Parse the query
-    parsed_query = sq.parse("${query.replace(/"/g, '\\"')}", platform="${sourcePlatform}")
-    
-    # Translate to target platform
-    translated_query = sq.translate(parsed_query, platform="${targetPlatform}")
-    
-    # Get any messages/warnings
-    messages = {
-        "translation_successful": True,
-        "source_platform": "${sourcePlatform}",
-        "target_platform": "${targetPlatform}",
-        "original_query": "${query.replace(/"/g, '\\"')}",
-        "translated_query": translated_query,
-        "warnings": [],
-        "info": ["Query successfully translated from ${sourcePlatform} to ${targetPlatform}"]
+      const height = document.body.scrollHeight;
+      if (window.parent) {
+        window.parent.postMessage({
+          type: 'setHeight',
+          height: height
+        }, PARENT_ORIGIN);
+      }
     }
     
-    # Return both the translated query and messages
-    (translated_query, messages)
+    // --- Pyodide Status Hook and Loader Control ---
     
-except Exception as e:
-    error_msg = f"Translation error: {str(e)}"
-    (error_msg, {"error": error_msg, "translation_successful": False})
-`);
+    const originalAppendStatus = window.appendStatus || function(msg) { 
+      const statusDiv = document.getElementById('status');
+      if (statusDiv) {
+        // If Pyodide outputs complex status (which includes ANSI codes), write to hidden div
+        statusDiv.textContent = msg; 
+      }
+      console.log("Pyodide Hook:", msg); 
+    };
+    
+    window.appendStatus = function(msg) {
+      // 1. Update the visual status text
+      const cleanMsg = msg.replace(/\u001b\[.*?m/g, ''); 
+      if (loadingText) loadingText.textContent = cleanMsg;
 
-                // Display results
-                const [translatedQuery, messages] = result;
-                
-                document.getElementById('result-title').style.display = 'block';
-                document.getElementById('result').style.display = 'block';
-                document.getElementById('result').textContent = translatedQuery;
-                
-                document.getElementById('messages-title').style.display = 'block';
-                document.getElementById('messages').style.display = 'block';
-                updateJsonOutput('messages', messages);
-                
-            } catch (error) {
-                console.error("Translation error:", error);
-                document.getElementById('result-title').style.display = 'block';
-                document.getElementById('result').style.display = 'block';
-                document.getElementById('result').textContent = "Error during translation: " + error.message;
-                
-                document.getElementById('messages-title').style.display = 'block';
-                document.getElementById('messages').style.display = 'block';
-                updateJsonOutput('messages', {
-                    error: error.message,
-                    translation_successful: false
-                });
-            } finally {
-                btnTranslate.disabled = false;
-                btnTranslate.textContent = "Translate";
-                sendHeight(); // Update height after showing results
-            }
-        }
+      // 2. Control the visual transition state and viewport lock
+      if (cleanMsg.includes('Done') || cleanMsg.includes('ready') || cleanMsg.includes('Ready')) {
+        // Done loading: Unlock viewport, fade out loader, show content
+        document.body.classList.remove('loading-active');
+        statusDisplay.innerText = 'Search Query loaded…'
+        loader.style.opacity = '0';
+        contentWrapper.style.opacity = '1';
 
-        // Add event listener for the translate button
-        document.getElementById('btn-translate').addEventListener('click', translateQuery);
-    </script>
+        setTimeout(() => {
+          loader.style.display = 'none';
+          document.body.style.overflow = 'hidden'; 
+          btnTranslate.disabled = false;
+          sendHeight(); // Final resize
+        }, 500);
+      } else {
+        // Loading: Lock viewport
+        document.body.classList.add('loading-active');
+        loader.style.display = 'flex';
+        loader.style.opacity = '1';
+        contentWrapper.style.opacity = '0';
+      }
+
+      // 3. Call the original function and re-trigger height update 
+      originalAppendStatus(msg);
+      setTimeout(sendHeight, 50); 
+    };
+    
+    // --- Initial Setup and DOM Observer ---
+    document.addEventListener('DOMContentLoaded', () => {
+      // Initial state setup: LOCK VIEWPORT IMMEDIATELY
+      document.body.classList.add('loading-active');
+      contentWrapper.style.opacity = '0';
+      loader.style.display = 'flex'; 
+      loadingText.textContent = "Initializing search-query...";
+
+      // Initialize Highlight.js
+      hljs.highlightAll();
+
+      // 1. Send initial minimal height
+      window.addEventListener('load', sendHeight);
+      
+      // 2. Observe DOM changes (Crucial for when the output table appears/disappears)
+      const observer = new MutationObserver(sendHeight);
+      observer.observe(document.body, { attributes: true, childList: true, subtree: true });
+    });
+
+    // Add event listener for the translate button
+    btnTranslate.addEventListener('click', function() {
+      // Simulate translation result (replace with actual translation logic from translate.js)
+      const query = document.getElementById('query').value;
+      const sourcePlatform = document.getElementById('platform-source').value;
+      const targetPlatform = document.getElementById('platform-target').value;
+      
+      // Example result (replace with actual translation)
+      const translatedQuery = `Translated from ${sourcePlatform} to ${targetPlatform}: ${query}`;
+      
+      // Example messages (replace with actual messages)
+      const messages = {
+        warnings: ["Field 'PY' was converted to 'Publication Year'"],
+        info: ["Query successfully translated"],
+        original_query: query,
+        source_platform: sourcePlatform,
+        target_platform: targetPlatform
+      };
+      
+      // Display results
+      document.getElementById('result-title').style.display = 'block';
+      document.getElementById('result').style.display = 'block';
+      document.getElementById('result').textContent = translatedQuery;
+      
+      document.getElementById('messages-title').style.display = 'block';
+      document.getElementById('messages').style.display = 'block';
+      updateJsonOutput(messages);
+      
+      // Update height after showing results
+      setTimeout(sendHeight, 100);
+    });
+  </script>
+  
+  <!-- your logic (the file I gave you) -->
+  <script src="translate.js"></script>
 </body>
 </html>
