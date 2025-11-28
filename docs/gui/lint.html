@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width,initial-scale=1" />
     
     <script src="https://cdn.jsdelivr.net/pyodide/v0.26.2/full/pyodide.js"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
 
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
@@ -86,7 +86,24 @@
             border-radius: 0.375rem; font-size: 0.875rem; color: #a55a00; font-weight: 500; 
         }
         #output-wrap { margin-top: 1.5rem; }
-        #output { background-color: #f3f4f6; padding: 1rem; border-radius: 0.5rem; font-size: 0.85rem; }
+        
+        /* JSON Output Styling */
+        #output {
+            background-color: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 0.5rem;
+            padding: 1rem;
+            font-size: 0.85rem;
+            max-height: 400px;
+            overflow: auto;
+            margin-top: 0.5rem;
+        }
+        
+        /* Highlight.js overrides for better visibility */
+        .hljs {
+            background: #f8f9fa !important;
+            padding: 0 !important;
+        }
         
         /* --- LINTER MESSAGE SEPARATION (CRITICAL FIX) --- */
         #lint-view { 
@@ -252,7 +269,7 @@
                 <summary style="font-weight: 600; color: var(--text-secondary); cursor: pointer; padding: 0.5rem 0;">
                     Raw Linter Output (JSON)
                 </summary>
-                <pre id="output" class="json-highlight"></pre>
+                <pre id="output"><code class="language-json">// JSON output will appear here after linting</code></pre>
             </details>
         
 
@@ -271,10 +288,12 @@
         const loadingText = document.getElementById('loading-text');
         const contentWrapper = document.getElementById('content-wrapper');
         const statusDisplay = document.getElementById('status-display');
-        setTimeout(() => {
-            hljs.highlightAll();
-        }, 200);
-      // --- Cross-Origin Height Communication ---
+        const outputElement = document.getElementById('output');
+
+        // Initialize Highlight.js
+        hljs.highlightAll();
+
+        // --- Cross-Origin Height Communication ---
         function sendHeight() {
             if (document.body.classList.contains('loading-active')) return;
 
@@ -342,6 +361,14 @@
             const observer = new MutationObserver(sendHeight);
             observer.observe(document.body, { attributes: true, childList: true, subtree: true });
         });
+
+        // Function to update JSON output with proper formatting and highlighting
+        function updateJsonOutput(jsonData) {
+            const formattedJson = JSON.stringify(jsonData, null, 2);
+            outputElement.innerHTML = `<code class="language-json">${formattedJson}</code>`;
+            hljs.highlightElement(outputElement.querySelector('code'));
+        }
+
 (async () => {
     const pyodide = await loadPyodide({ stdout: msg => console.log(msg), stderr: msg => console.error(msg) });
     await pyodide.loadPackage("micropip");
@@ -498,6 +525,9 @@ json.dumps([m.to_dict() for m in result])
         }
 
         const rawMessages = JSON.parse(resultJson);
+
+        // Update JSON output with proper highlighting
+        updateJsonOutput(rawMessages);
 
         // Split multiline messages into separate entries
         const splitMessages = [];
