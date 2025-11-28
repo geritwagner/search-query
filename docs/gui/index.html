@@ -304,6 +304,12 @@
 
         const BASE_PATH = 'https://geritwagner.github.io/search-query/gui/'; 
         
+        // Storage keys
+        const STORAGE_KEYS = {
+            TOOL_URL: 'selectedToolUrl',
+            TOOL_NAME: 'selectedToolName'
+        };
+
         /* --- UI/VISUAL CONTROLS --- */
 
         function toggleSidebar(forceClose = false) {
@@ -321,25 +327,48 @@
             }
         }
 
-        function loadToolIntoIframe(toolUrl) {
+        function loadToolIntoIframe(toolUrl, toolName = '') {
             console.log('Loading tool:', toolUrl);
+            
+            // Update iframe source
             if (DOM.toolIframe.src !== toolUrl) {
                 DOM.toolIframe.src = toolUrl;
             }
             
             // Update active state in sidebar
-            DOM.sidebarToolLinks.forEach(link => {
-                link.classList.remove('active');
-                if (link.getAttribute('data-tool-url') === toolUrl.replace(BASE_PATH, '')) {
-                    link.classList.add('active');
-                }
-            });
+            updateActiveSidebarItem(toolName || toolUrl.replace(BASE_PATH, ''));
             
             // Ensure iframe is visible and scroll to it
             DOM.interactiveToolWrap.style.display = 'block';
             setTimeout(() => {
                 DOM.toolIframe.scrollIntoView({ behavior: 'smooth', block: 'start' });
             }, 100);
+        }
+
+        function updateActiveSidebarItem(activeTool) {
+            DOM.sidebarToolLinks.forEach(link => {
+                link.classList.remove('active');
+                const toolUrl = link.getAttribute('data-tool-url');
+                if (toolUrl && toolUrl === activeTool) {
+                    link.classList.add('active');
+                }
+            });
+        }
+
+        function saveSelectedTool(toolUrl, toolName) {
+            localStorage.setItem(STORAGE_KEYS.TOOL_URL, toolUrl);
+            localStorage.setItem(STORAGE_KEYS.TOOL_NAME, toolName);
+        }
+
+        function getSelectedTool() {
+            const toolUrl = localStorage.getItem(STORAGE_KEYS.TOOL_URL);
+            const toolName = localStorage.getItem(STORAGE_KEYS.TOOL_NAME);
+            return { toolUrl, toolName };
+        }
+
+        function clearSelectedTool() {
+            localStorage.removeItem(STORAGE_KEYS.TOOL_URL);
+            localStorage.removeItem(STORAGE_KEYS.TOOL_NAME);
         }
         
         /* --- IFRAME RESIZE LISTENER --- */
@@ -362,43 +391,50 @@
             window.addEventListener('message', handleIframeResize, false);
             
             const initialToolUrl = BASE_PATH + 'translate.html';
+            const initialToolName = 'translate.html';
             
-            // --- LocalStorage Check and Initial Launch ---
-            const storedUrl = localStorage.getItem('toolToLaunch');
+            // Check if there's a stored tool selection
+            const { toolUrl: storedUrl, toolName: storedName } = getSelectedTool();
             
-            // Clear storage immediately after retrieval
-            localStorage.removeItem('toolToLaunch');
+            // Clear storage after retrieval (so it doesn't persist across multiple sessions)
+            clearSelectedTool();
 
-            // 1. If a URL was stored (meaning user clicked a sidebar link), load that tool
-            if (storedUrl) {
-                loadToolIntoIframe(storedUrl);
+            // Load the appropriate tool
+            if (storedUrl && storedName) {
+                console.log('Loading stored tool:', storedUrl, storedName);
+                loadToolIntoIframe(storedUrl, storedName);
             } else {
-                // Load default tool into iframe
-                loadToolIntoIframe(initialToolUrl);
+                // Load default tool
+                console.log('Loading default tool');
+                loadToolIntoIframe(initialToolUrl, initialToolName);
             }
 
-            // 2. Mobile Menu Toggles
+            // Mobile Menu Toggles
             DOM.menuToggle.addEventListener('click', () => toggleSidebar());
             DOM.backdrop.addEventListener('click', () => toggleSidebar(true));
             document.getElementById('close-menu').addEventListener('click', () => toggleSidebar(true));
 
-            // 3. Sidebar Navigation Handler - FIXED VERSION
+            // Sidebar Navigation Handler
             const handleToolSwitch = (e) => {
                 const link = e.target.closest('[data-tool-url]');
                 if (link) {
                     e.preventDefault();
                     const relativeUrl = link.getAttribute('data-tool-url');
                     const fullUrl = BASE_PATH + relativeUrl;
+                    const toolName = relativeUrl;
                     
-                    console.log('Tool switch clicked:', fullUrl);
+                    console.log('Tool switch clicked:', fullUrl, toolName);
+                    
+                    // Save selection to localStorage
+                    saveSelectedTool(fullUrl, toolName);
                     
                     // Close mobile sidebar if open
                     if (window.innerWidth < 1024) {
                         toggleSidebar(true);
                     }
                     
-                    // Load the tool directly without page reload
-                    loadToolIntoIframe(fullUrl);
+                    // Reload the page to ensure clean state
+                    window.location.reload();
                 }
             };
             
