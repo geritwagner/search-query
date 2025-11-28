@@ -12,7 +12,14 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/vs2015.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/json.min.js"></script>
+     <!-- Highlight.js CSS -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css">
 
+    <!-- Highlight.js Library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+
+    <!-- Auto-init Highlight.js -->
+    <script>hljs.highlightAll();</script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
     
     <style>
@@ -298,7 +305,7 @@
         <div style="margin-top: 1.5rem;">
             <details id="output-wrap" style="margin-bottom: 1rem;">
                 <summary style="font-weight: 600; color: var(--text-secondary); cursor: pointer; padding: 0.5rem 0;">Raw Linter Output (JSON)</summary>
-                <pre><code id="output" class="language-json">Waiting for input...</code></pre>
+                 <pre><code class="language-json" id="output" ></code></pre>
             </details>
             <h2 id="messages-title" style="display:none; font-size: 1.25rem; font-weight: 600; margin-top: 1rem;">Messages</h2>
             <div id="lint-view" style="display:none;"></div>
@@ -494,6 +501,7 @@
     }
 
     lintBtn.addEventListener("click", async () => {
+        
         const query = queryInput.value;
         const platform = platformInput.value;
 
@@ -534,6 +542,7 @@ json.dumps([m.to_dict() for m in result])
         });
 
         renderLintMessages(splitMessages);
+        hljs.highlightAll();
     });
 })();
 </script>
