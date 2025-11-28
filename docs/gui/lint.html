@@ -89,7 +89,7 @@
         
         /* JSON Output Styling */
         #output {
-            background-color: #f8f9fa;
+            background-color: #fffacd !important;
             border: 1px solid #e9ecef;
             border-radius: 0.5rem;
             padding: 1rem;
@@ -101,7 +101,7 @@
         
         /* Highlight.js overrides for better visibility */
         .hljs {
-            background: #f8f9fa !important;
+            background: #fffacd !important;
             padding: 0 !important;
         }
         
@@ -269,7 +269,7 @@
                 <summary style="font-weight: 600; color: var(--text-secondary); cursor: pointer; padding: 0.5rem 0;">
                     Raw Linter Output (JSON)
                 </summary>
-                <pre id="output"><code class="language-json">// JSON output will appear here after linting</code></pre>
+                <pre id="output" class="json-highlight" style="background-color: #fffacd;"><code class="language-json">// JSON output will appear here after linting</code></pre>
             </details>
         
 
@@ -365,8 +365,9 @@
         // Function to update JSON output with proper formatting and highlighting
         function updateJsonOutput(jsonData) {
             const formattedJson = JSON.stringify(jsonData, null, 2);
-            outputElement.innerHTML = `<code class="language-json">${formattedJson}</code>`;
-            hljs.highlightElement(outputElement.querySelector('code'));
+            const codeElement = outputElement.querySelector('code');
+            codeElement.textContent = formattedJson;
+            hljs.highlightElement(codeElement);
         }
 
 (async () => {
