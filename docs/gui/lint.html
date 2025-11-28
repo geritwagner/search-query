@@ -360,137 +360,15 @@
     </div>
         <script src="script.js"></script>
 <script>
-const PARENT_ORIGIN = window.location.origin;
-
-const loader = document.getElementById('loading-overlay');
-const loadingText = document.getElementById('loading-text');
-const contentWrapper = document.getElementById('content-wrapper');
-const statusDisplay = document.getElementById('status-display');
-const codeBlock = document.getElementById('output');
-
-function updateHighlight() {
-    const stored = localStorage.getItem('jsonData');
-    if (!stored) {
-        codeBlock.textContent = "// No JSON stored yet. Click the button.";
-        hljs.highlightElement(codeBlock);
-        return;
-    }
-    try {
-        const parsed = JSON.parse(stored);
-        codeBlock.textContent = JSON.stringify(parsed, null, 4);
-        hljs.highlightElement(codeBlock);
-    } catch (err) {
-        codeBlock.textContent = "// Invalid JSON found. Clearing…";
-        localStorage.removeItem('jsonData');
-        hljs.highlightElement(codeBlock);
-    }
-}
-
-// Update JSON Output with Highlight.js
-function updateJsonOutput(jsonData) {
-    const codeElement = document.getElementById('output');
-    codeElement.textContent = JSON.stringify(jsonData, null, 4);
-    hljs.highlightElement(codeElement);
-}
-
-// Copy JSON to clipboard
-function copyJsonToClipboard() {
-    const jsonText = codeBlock.textContent;
-    navigator.clipboard.writeText(jsonText).then(() => {
-        const copyBtn = document.getElementById('copy-json');
-        const originalHTML = copyBtn.innerHTML;
-        copyBtn.innerHTML = '<i class="fas fa-check"></i>';
-        copyBtn.classList.add('copied');
-        setTimeout(() => {
-            copyBtn.innerHTML = originalHTML;
-            copyBtn.classList.remove('copied');
-        }, 2000);
-    }).catch(err => {
-        console.error('Failed to copy JSON: ', err);
-        alert('Failed to copy JSON to clipboard');
-    });
-}
-
-// Download JSON
-function downloadJson() {
-    const jsonText = codeBlock.textContent;
-    const blob = new Blob([jsonText], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'linter-output.json';
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-}
-
-        // --- Cross-Origin Height Communication ---
-function sendHeight() {
-    if (document.body.classList.contains('loading-active')) return;
-
-    const height = document.body.scrollHeight;
-    if (window.parent) {
-        window.parent.postMessage({
-            type: 'setHeight',
-            height: height
-        }, PARENT_ORIGIN);
-    }
-}
-
-// Handle Pyodide status and loader
-const originalAppendStatus = window.appendStatus || function(msg) { console.log(msg); };
-window.appendStatus = function(msg) {
-    const cleanMsg = msg.replace(/\u001b\[.*?m/g, '').trim();
-    if (loadingText) loadingText.textContent = cleanMsg;
-
-    if (/done|ready/i.test(cleanMsg)) {
-        document.body.classList.remove('loading-active');
-        loader.style.opacity = '0';
-        contentWrapper.style.opacity = '1';
-        setTimeout(() => {
-            loader.style.display = 'none';
-            document.body.style.overflow = '';
-            sendHeight();
-        }, 500);
-    } else {
-        document.body.classList.add('loading-active');
-        loader.style.display = 'flex';
-        loader.style.opacity = '1';
-        contentWrapper.style.opacity = '0';
-    }
-    originalAppendStatus(msg);
-    setTimeout(sendHeight, 50);
-};
-
-// DOMContentLoaded: initialize buttons and observer
-document.addEventListener('DOMContentLoaded', () => {
-    document.body.classList.add('loading-active');
-    contentWrapper.style.opacity = '0';
-    loader.style.display = 'flex';
-    loadingText.textContent = "Initializing Search Query...";
-
-    document.getElementById('copy-json').addEventListener('click', copyJsonToClipboard);
-    document.getElementById('download-json').addEventListener('click', downloadJson);
-
-    window.addEventListener('load', sendHeight);
-
-    const observer = new MutationObserver(sendHeight);
-    observer.observe(document.body, { attributes: true, childList: true, subtree: true });
-});
-
-// Main Pyodide and Linter logic
-(async () => {
-    const pyodide = await loadPyodide({ stdout: console.log, stderr: console.error });
-    await pyodide.loadPackage("micropip");
-    const micropip = pyodide.pyimport("micropip");
-    await micropip.install("https://files.pythonhosted.org/packages/50/43/5f6b2e8d83aa1e8324f47b24bf7d44dd7c60dd07fe6b5c72e3568ea6e0b0/search_query_linter-0.1.1-py3-none-any.whl");
-
-    const lintBtn = document.getElementById("btn-lint");
-    const queryInput = document.getElementById("query");
-    const platformInput = document.getElementById("platform");
-    const lintView = document.getElementById("lint-view");
-    const messagesTitle = document.getElementById("messages-title");
+document.addEventListener('DOMContentLoaded', async () => {
+    const codeBlock = document.getElementById('output');
+    const copyBtn = document.getElementById('copy-json');
+    const downloadBtn = document.getElementById('download-json');
+    const queryInput = document.getElementById('query');
+    const platformInput = document.getElementById('platform');
+    const lintBtn = document.getElementById('btn-lint');
+    const lintView = document.getElementById('lint-view');
+    const messagesTitle = document.getElementById('messages-title');
 
     lintBtn.disabled = false;
 
@@ -543,9 +421,57 @@ document.addEventListener('DOMContentLoaded', () => {
 
         messagesTitle.style.display = "block";
         lintView.style.display = "block";
-
-        setTimeout(sendHeight, 80);
     }
+
+    // Highlight JSON output
+    function highlightJson(jsonData) {
+        const jsonString = JSON.stringify(jsonData, null, 4);
+        codeBlock.textContent = jsonString;
+        codeBlock.className = "language-json"; // ensure Highlight.js sees it
+        hljs.highlightElement(codeBlock);       // trigger highlight
+    }
+
+    copyBtn.addEventListener('click', () => {
+        navigator.clipboard.writeText(codeBlock.textContent)
+            .then(() => {
+                copyBtn.innerHTML = '<i class="fas fa-check"></i>';
+                copyBtn.classList.add('copied');
+                setTimeout(() => {
+                    copyBtn.innerHTML = '<i class="far fa-copy"></i>';
+                    copyBtn.classList.remove('copied');
+                }, 2000);
+            });
+    });
+
+    downloadBtn.addEventListener('click', () => {
+        const blob = new Blob([codeBlock.textContent], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'linter-output.json';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    });
+            // --- Cross-Origin Height Communication ---
+        function sendHeight() {
+            if (document.body.classList.contains('loading-active')) return;
+
+            const height = document.body.scrollHeight;
+            if (window.parent) {
+                window.parent.postMessage({
+                    type: 'setHeight',
+                    height: height
+                }, PARENT_ORIGIN);
+            }
+        }
+
+    // Pyodide and linter
+    const pyodide = await loadPyodide({ stdout: console.log, stderr: console.error });
+    await pyodide.loadPackage("micropip");
+    const micropip = pyodide.pyimport("micropip");
+    await micropip.install("https://files.pythonhosted.org/packages/50/43/5f6b2e8d83aa1e8324f47b24bf7d44dd7c60dd07fe6b5c72e3568ea6e0b0/search_query_linter-0.1.1-py3-none-any.whl");
 
     lintBtn.addEventListener("click", async () => {
         const query = queryInput.value;
@@ -562,17 +488,15 @@ json.dumps([m.to_dict() for m in result])
         try {
             resultJson = await pyodide.runPythonAsync(lintCode);
         } catch (e) {
-            console.error(e);
             alert("Linter error occurred.");
+            console.error(e);
             return;
         }
 
         const rawMessages = JSON.parse(resultJson);
-        localStorage.setItem('jsonData', JSON.stringify(rawMessages));
-        updateJsonOutput(rawMessages);
-        updateHighlight();
+        highlightJson(rawMessages);
 
-        // Split multiline messages into separate entries
+        // Split multiline messages
         const splitMessages = [];
         rawMessages.forEach(m => {
             m.message.split("\n").filter(line => line.trim() !== "").forEach(segment => {
@@ -588,9 +512,10 @@ json.dumps([m.to_dict() for m in result])
         renderLintMessages(splitMessages);
     });
 
-    // First load highlight
-    updateHighlight();
-})();
+    // Initial highlight if any previous JSON stored
+    const stored = localStorage.getItem('jsonData');
+    if (stored) highlightJson(JSON.parse(stored));
+});
 </script>
 
 </body>
