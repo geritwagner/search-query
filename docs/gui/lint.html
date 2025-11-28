@@ -266,10 +266,12 @@
 
         <div style="margin-top: 1.5rem;">
             <details id="output-wrap" style="margin-bottom: 1rem;">
-                <summary style="font-weight: 600; color: var(--text-secondary); cursor: pointer; padding: 0.5rem 0;">
-                    Raw Linter Output (JSON)
-                </summary>
-                <pre id="output" class="json-highlight" style="background-color: #fffacd;"><code class="language-json">// JSON output will appear here after linting</code></pre>
+            <summary style="font-weight: 600; color: var(--text-secondary); cursor: pointer; padding: 0.5rem 0;">
+                Raw Linter Output (JSON)
+            </summary>
+            <pre style="background-color: #fffacd;">
+                <code id="output" class="language-json"></code>
+            </pre>
             </details>
         
 
@@ -289,6 +291,15 @@
         const contentWrapper = document.getElementById('content-wrapper');
         const statusDisplay = document.getElementById('status-display');
         const outputElement = document.getElementById('output');
+        
+        function highlightJSON() {
+            const code = document.getElementById('output');
+            if (!code) return;
+            hljs.highlightElement(code);
+        }
+        
+        // Run once after a slight delay so JS has inserted JSON
+        setTimeout(highlightJSON, 150);
 
         // Initialize Highlight.js
         hljs.highlightAll();
