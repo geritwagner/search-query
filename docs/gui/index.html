@@ -67,6 +67,7 @@
         .main-container { max-width: 76rem; margin: 0 auto; padding: 2.5rem 1.5rem; }
 
         @media (min-width: 1024px) {
+            
             #mobile-header { display: none; }
             #sidebar { transform: translateX(0); width: var(--sidebar-width); position: fixed; padding-top: 2rem; }
             #main-content { padding-left: var(--sidebar-width); padding-top: 2rem; }
@@ -80,10 +81,13 @@
         
         /* --- Mobile Specific Styles --- */
         #close-menu { /* Mobile X button */
-            display: block !important; 
+            display: block !important;
         }
         @media (min-width: 1024px) {
             #close-menu { display: none !important; }
+            header{
+                display: none;
+            }
         }
 
         /* --- Logo and Branding --- */
@@ -205,7 +209,7 @@
         <button id="menu-toggle" class="p-2">
             <i class="fas fa-bars text-xl"></i>
         </button>
-        <h1 class="text-xl font-bold ml-4">
+        <h1 class="text-xl font-bold ml-4" style="padding-top: 25px;">
             <div class="logo-container">
                 <div class="logo-icon">SQ</div>
                 <span class="logo-text">Search-Query</span>
@@ -230,26 +234,26 @@
             
             <div style="padding: 1rem 0; font-size: 0.75rem; font-weight: bold; color: var(--text-body); text-transform: uppercase;">Features</div>
             <a href="#tool-area" data-tool-url="lint.html" class="sidebar-tool-link">
-                <i class="fas fa-tasks w-5 mr-3"></i> Lint
+                <i class="fas fa-tasks w-5 mr-3"></i> <p style="display: inline-block; margin: 0 0 0 0; padding-left: 10px;">Lint</p>
             </a>
             <a href="#tool-area" data-tool-url="translate.html" class="sidebar-tool-link">
-                <i class="fas fa-language w-5 mr-3"></i> Translate
+                <i class="fas fa-language w-5 mr-3"></i>  <p style="display: inline-block; margin: 0 0 0 0; padding-left: 10px;">Translate</p>
             </a>
             
             <div style="padding: 1rem 0; font-size: 0.75rem; font-weight: bold; color: var(--text-body); text-transform: uppercase;">Debug</div>
             <a href="#tool-area" data-tool-url="tokenizer.html" class="sidebar-tool-link">
-                <i class="fas fa-microchip w-5 mr-3"></i> Tokenize
+                <i class="fas fa-microchip w-5 mr-3"></i>  <p style="display: inline-block; margin: 0 0 0 0; padding-left: 10px;">Tokenize</p>
             </a>
             
             <div style="padding: 1rem 0; font-size: 0.75rem; font-weight: bold; color: var(--text-body); text-transform: uppercase;">Resources</div>
             <a href="https://github.com/geritwagner/search-query" target="_blank" class="sidebar-tool-link">
-                <i class="fab fa-github w-5 mr-3"></i> GitHub
+                <i class="fab fa-github w-5 mr-3"></i><p style="display: inline-block; margin: 0 0 0 0; padding-left: 10px;">GitHub</p>
             </a>
             <a href="https://github.com/geritwagner/search-query/blob/main/docs/index.md" target="_blank" class="sidebar-tool-link">
-                <i class="fas fa-book w-5 mr-3"></i> Documentation
+                <i class="fas fa-book w-5 mr-3"></i> <p style="display: inline-block; margin: 0 0 0 0; padding-left: 10px;">Documentation</p>
             </a>
             <a href="https://github.com/geritwagner/search-query/blob/main/LICENSE" target="_blank" class="sidebar-tool-link">
-                <i class="fas fa-file-contract w-5 mr-3"></i> License
+                <i class="fas fa-file-contract w-5 mr-3"></i> <p style="display: inline-block; margin: 0 0 0 0; padding-left: 10px;">License</p>
             </a>
         </div>
         
