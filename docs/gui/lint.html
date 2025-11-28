@@ -79,7 +79,7 @@
         #status-display { margin-top: 1rem; padding: 0.5rem 1rem; background: #fff3e0; border: 1px solid #ffcc80; border-radius: 0.375rem; font-size: 0.875rem; color: #a55a00; font-weight: 500; }
         #output-wrap { margin-top: 1.5rem; position: relative; }
         
-        /* --- JSON OUTPUT WINDOW (STYLES FROM YOUR SNIPPET) --- */
+        /* --- JSON OUTPUT WINDOW --- */
         pre {
             background: #1e1e1e; /* VS Code Dark BG */
             color: #d4d4d4;      /* Default Text Color */
@@ -191,9 +191,9 @@
         const codeBlock = document.getElementById('output');
         
         // ===============================================
-        //  1. THE MANUAL REGEX HIGHLIGHTER (Your Method)
+        //  1. THE MANUAL REGEX HIGHLIGHTER
         // ===============================================
-       function syntaxHighlightInline(jsonObj) {
+        function syntaxHighlightInline(jsonObj) {
             // Convert object to string if it isn't already
             let json = JSON.stringify(jsonObj, undefined, 4);
             
@@ -201,10 +201,6 @@
             json = json.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
             
             // The Regex Magic
-            // 1. Strings (including keys)
-            // 2. Booleans (true/false)
-            // 3. Null
-            // 4. Numbers
             return json.replace(/("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/g, function (match) {
                 let style = 'color: #b5cea8;'; // Default: Number (Light Green)
                 
@@ -231,9 +227,7 @@
         // --- 2. UPDATE LOGIC ---
         function updateHighlight(jsonObj) {
             // Render directly to InnerHTML using your method
-            console.log('first: ' + jsonObj);
             const highlightedHtml = syntaxHighlightInline(jsonObj);
-            console.log('second: ' + highlightedHtml);
             codeBlock.innerHTML = highlightedHtml;
         }
 
@@ -428,8 +422,10 @@ json.dumps([m.to_dict() for m in result])
                     return;
                 }
 
-                // 2. PARSE THE RESULT
-                const rawMessages = document.getElementById('output').textContent//JSON.parse(resultJson);
+                // ============================================
+                //  FIX IS HERE: PARSE THE PYTHON STRING FIRST
+                // ============================================
+                const rawMessages = JSON.parse(resultJson);
                 
                 // 3. HIGHLIGHT AND INJECT (USING YOUR REGEX METHOD)
                 updateHighlight(rawMessages);
@@ -452,6 +448,7 @@ json.dumps([m.to_dict() for m in result])
                 });
 
                 renderLintMessages(splitMessages);
+                console.log(splitMessages)
                 lintBtn.textContent = "Done";
             });
         })();
