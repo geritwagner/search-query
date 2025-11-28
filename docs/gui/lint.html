@@ -101,10 +101,17 @@
         
         /* Highlight.js overrides for better visibility */
         .hljs {
-            background: #fffacd !important;
+            background: transparent !important;
             padding: 0 !important;
         }
         
+        /* Custom JSON highlighting colors */
+        .hljs-attr { color: #22863a !important; } /* Green for keys */
+        .hljs-string { color: #032f62 !important; } /* Blue for strings */
+        .hljs-number { color: #005cc5 !important; } /* Dark blue for numbers */
+        .hljs-literal { color: #d73a49 !important; } /* Red for true/false/null */
+        .hljs-punctuation { color: #24292e !important; } /* Black for punctuation */
+
         /* --- LINTER MESSAGE SEPARATION (CRITICAL FIX) --- */
         #lint-view { 
             margin-top: 0.5rem; 
@@ -266,12 +273,10 @@
 
         <div style="margin-top: 1.5rem;">
             <details id="output-wrap" style="margin-bottom: 1rem;">
-            <summary style="font-weight: 600; color: var(--text-secondary); cursor: pointer; padding: 0.5rem 0;">
-                Raw Linter Output (JSON)
-            </summary>
-            <pre style="background-color: #fffacd;">
-                <code id="output" class="language-json"></code>
-            </pre>
+                <summary style="font-weight: 600; color: var(--text-secondary); cursor: pointer; padding: 0.5rem 0;">
+                    Raw Linter Output (JSON)
+                </summary>
+                <pre id="output" style="background-color: #fffacd;"><code class="language-json">// Run the linter to see JSON output</code></pre>
             </details>
         
 
@@ -291,15 +296,6 @@
         const contentWrapper = document.getElementById('content-wrapper');
         const statusDisplay = document.getElementById('status-display');
         const outputElement = document.getElementById('output');
-        
-        function highlightJSON() {
-            const code = document.getElementById('output');
-            if (!code) return;
-            hljs.highlightElement(code);
-        }
-        
-        // Run once after a slight delay so JS has inserted JSON
-        setTimeout(highlightJSON, 150);
 
         // Initialize Highlight.js
         hljs.highlightAll();
@@ -378,7 +374,11 @@
             const formattedJson = JSON.stringify(jsonData, null, 2);
             const codeElement = outputElement.querySelector('code');
             codeElement.textContent = formattedJson;
+            
+            // Force re-highlighting
             hljs.highlightElement(codeElement);
+            
+            console.log('JSON output updated and highlighted');
         }
 
 (async () => {
