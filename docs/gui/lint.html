@@ -229,9 +229,9 @@
 
         // --- 2. UPDATE LOGIC ---
 
-        function updateHighlight(json1) {
+        function updateHighlight(jsonObj) {
             // 3. Render directly to InnerHTML
-            const highlightedHtml = syntaxHighlightInline(json1);
+            const highlightedHtml = syntaxHighlightInline(jsonObj);
             codeBlock.innerHTML = highlightedHtml;
         }
         // --- 3. UTILITIES ---
@@ -435,7 +435,7 @@ json.dumps([m.to_dict() for m in result])
                 //localStorage.setItem('jsonData', JSON.stringify(rawMessages));
                 
                 // HIGHLIGHT (With Inline Styles)
-                updateHighlight(json1 = rawMessages);
+                updateHighlight(rawMessages);
                 
                 // RENDER CARDS
                 const splitMessages = [];
