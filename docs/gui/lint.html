@@ -480,7 +480,9 @@ json.dumps([m.to_dict() for m in result])
         }
 
         const rawMessages = JSON.parse(resultJson);
-
+        // --- NEW: Update JSON Output with Highlighting ---
+        console.log(rawMessages)
+        updateJsonOutput(rawMessages);
         // Split multiline messages into separate entries
         const splitMessages = [];
         rawMessages.forEach(m => {
