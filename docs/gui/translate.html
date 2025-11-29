@@ -5,7 +5,6 @@
   <title>search-query translator</title>
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   
-  <!-- Highlight.js for JSON coloring -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/vs2015.min.css">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/json.min.js"></script>
@@ -21,8 +20,6 @@
       --border-color: #e5e7eb;  /* Gray-200 */
       --text-main: #1f2937;     /* Dark Gray */
       --text-secondary: #6b7280; /* Medium Gray */
-      --success-green: #10b981; /* Emerald */
-      --code-bg: #1a1a1a;       /* Dark background for code */
     }
 
     /* --- Global Resets & Body Styles for IFRAME --- */
@@ -63,14 +60,12 @@
       border-radius: 0.5rem;
       box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.07);
       transition: border-color 0.2s, box-shadow 0.2s;
-      background-color: #f8f9fa;
     }
     
     #query:focus {
       border-color: var(--primary);
       box-shadow: 0 0 0 1px var(--primary);
       outline: none;
-      background-color: white;
     }
     
     /* Narrower form elements */
@@ -118,102 +113,47 @@
       white-space: pre-wrap;
     }
 
-    /* === ENHANCED CODE OUTPUT STYLING === */
-    .code-container {
-      position: relative;
-      margin-top: 1rem;
+    /* === JSON Output Styling (VS Code Dark Theme Look) === */
+    pre {
+      background-color: #1e1e1e !important; /* VS Code Dark Background */
+      border: 1px solid #333;
       border-radius: 0.5rem;
-      overflow: hidden;
-      border: 2px solid #e5e7eb;
-    }
-
-    .code-header {
-      background: #2d2d2d;
-      padding: 0.75rem 1rem;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      border-bottom: 1px solid #404040;
-    }
-
-    .code-title {
-      color: #ffffff;
-      font-weight: 600;
-      font-size: 0.9rem;
       margin: 0;
+      padding: 1rem;
+      max-height: 400px;
+      overflow: auto;
+      color: #d4d4d4; /* Default Text Color */
     }
 
-    .copy-btn {
-      background: transparent;
-      border: 1px solid #555;
-      border-radius: 0.375rem;
-      color: #d4d4d4;
-      padding: 0.375rem 0.75rem;
-      cursor: pointer;
-      font-size: 0.8rem;
-      transition: all 0.2s ease;
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-    }
-
-    .copy-btn:hover {
-      background: rgba(255, 255, 255, 0.1);
-      border-color: #777;
-    }
-
-    .copy-btn.copied {
-      background: var(--success-green);
-      border-color: var(--success-green);
-      color: white;
-    }
-
-    /* Translated Query Styling */
-    #translated-query-container {
-      background: var(--code-bg);
-      border-left: 4px solid var(--success-green);
-    }
-
-    #translated-query {
+    #result {
       font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
-      font-size: 1.1rem;
-      font-weight: 600;
-      color: #4ade80; /* Bright green for visibility */
-      padding: 1.5rem;
-      margin: 0;
+      font-size: 0.9rem;
+      background: #f3f4f6;
+      padding: 1rem;
+      /* Added padding-right to accommodate the copy button so text doesn't overlap */
+      padding-right: 3rem; 
+      border: 1px solid var(--border-color);
+      border-radius: 0.5rem;
       white-space: pre-wrap;
       word-wrap: break-word;
-      background: transparent !important;
-      line-height: 1.6;
-    }
-
-    /* Messages Styling */
-    #messages-container {
-      background: var(--code-bg);
-      border-left: 4px solid var(--primary);
+      margin-top: 0.5rem;
     }
 
     #messages {
       font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
-      font-size: 0.9rem;
+      font-size: 0.85rem;
       background: transparent !important;
       margin: 0;
-      padding: 1.5rem;
+      padding: 0;
       white-space: pre-wrap;
       word-wrap: break-word;
-      color: #d4d4d4;
     }
 
-    /* Enhanced Highlight.js Styling */
-    pre code.hljs {
-      background: transparent !important;
-      padding: 0 !important;
-    }
-
-    .hljs-attr { color: #9cdcfe !important; font-weight: 600; }      /* Keys: Light Blue */
-    .hljs-string { color: #ce9178 !important; font-weight: 500; }    /* Strings: Orange/Salmon */
-    .hljs-number { color: #b5cea8 !important; font-weight: 600; }    /* Numbers: Light Green */
-    .hljs-literal, .hljs-keyword { color: #569cd6 !important; font-weight: 600; } /* Booleans: Blue */
+    /* Custom Syntax Highlighting (VS Code Style) */
+    .hljs-attr { color: #9cdcfe !important; }      /* Keys: Light Blue */
+    .hljs-string { color: #ce9178 !important; }    /* Strings: Orange/Salmon */
+    .hljs-number { color: #b5cea8 !important; }    /* Numbers: Light Green */
+    .hljs-literal, .hljs-keyword { color: #569cd6 !important; } /* Booleans: Blue */
     .hljs-punctuation { color: #d4d4d4 !important; } /* Punctuation: Light Gray */
     
     /* --- LOADING OVERLAY STYLES (Fixed and Centered) --- */
@@ -257,29 +197,29 @@
       margin-top: 1.5rem;
       font-size: 1.25rem;
       font-weight: 600;
-      color: var(--text-main);
     }
 
-    /* Success badge for translated query */
-    .success-badge {
-      background: var(--success-green);
-      color: white;
-      padding: 0.25rem 0.75rem;
-      border-radius: 1rem;
-      font-size: 0.75rem;
-      font-weight: 600;
-      margin-left: 0.5rem;
-    }
-
-    /* Info message styling */
-    .info-message {
-      background: #dbeafe;
-      border: 1px solid #93c5fd;
+    /* --- Copy Button Styles --- */
+    #btn-copy {
+      position: absolute;
+      top: 0.6rem;
+      right: 0.6rem;
+      background: #ffffff;
+      border: 1px solid var(--border-color);
+      color: var(--text-secondary);
+      padding: 0.4rem 0.6rem;
       border-radius: 0.375rem;
-      padding: 1rem;
-      margin-top: 1rem;
-      color: #1e40af;
-      font-size: 0.9rem;
+      cursor: pointer;
+      font-size: 1rem;
+      transition: all 0.2s ease;
+      z-index: 10;
+      display: none; /* Hidden by default until result is shown */
+      box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+    }
+    #btn-copy:hover {
+      border-color: var(--primary);
+      color: var(--primary);
+      background: #f9fafb;
     }
     
   </style>
@@ -323,37 +263,18 @@
       <button id="btn-translate" disabled>Translate</button>
     </div>
 
-    <!-- Translated Query with Copy Button -->
-    <h2 id="result-title" style="display:none; margin-top:1.5rem;">
-      Translated Query
-      <span class="success-badge">SUCCESS</span>
-    </h2>
-    <div id="translated-query-container" class="code-container" style="display:none;">
-      <div class="code-header">
-        <span class="code-title">Translated Query Result</span>
-        <button class="copy-btn" id="copy-query" title="Copy translated query">
-          <i class="far fa-copy"></i>
-          Copy
+    <h2 id="result-title" style="display:none; margin-top:1.5rem;">Translated query</h2>
+    <div style="position: relative;">
+        <button id="btn-copy" title="Copy result to clipboard">
+            <i class="fa-regular fa-copy"></i>
         </button>
-      </div>
-      <pre id="translated-query"></pre>
+        <pre id="result" style="display:none;"></pre>
     </div>
 
-    <!-- Messages with Copy Button -->
-    <h2 id="messages-title" style="display:none; margin-top:1.5rem;">Translation Messages</h2>
-    <div id="messages-container" class="code-container" style="display:none;">
-      <div class="code-header">
-        <span class="code-title">Translation Details & Messages</span>
-        <button class="copy-btn" id="copy-messages" title="Copy messages">
-          <i class="far fa-copy"></i>
-          Copy
-        </button>
-      </div>
-      <pre id="messages"><code class="language-json"></code></pre>
-    </div>
+    <h2 id="messages-title" style="display:none; margin-top:1.5rem;">Messages</h2>
+    <pre id="messages" style="display:none;"><code class="language-json"></code></pre>
   </div>
 
-  <!-- Pyodide runtime -->
   <script src="https://cdn.jsdelivr.net/pyodide/v0.26.2/full/pyodide.js"></script>
   
   <script>
@@ -363,60 +284,12 @@
     const loader = document.getElementById('loading-overlay');
     const loadingText = document.getElementById('loading-text');
     const contentWrapper = document.getElementById('content-wrapper');
-    const statusDisplay = document.getElementById('status-display');
+    const statusDisplay = document.getElementById('status-display'); // Now using status-display
     const btnTranslate = document.getElementById('btn-translate');
-    const translatedQueryContainer = document.getElementById('translated-query-container');
-    const messagesContainer = document.getElementById('messages-container');
-    const resultTitle = document.getElementById('result-title');
-    const messagesTitle = document.getElementById('messages-title');
-
-    // Copy functionality
-    function setupCopyButtons() {
-      // Copy translated query
-      const copyQueryBtn = document.getElementById('copy-query');
-      if (copyQueryBtn) {
-        copyQueryBtn.addEventListener('click', function() {
-          const queryText = document.getElementById('translated-query').textContent;
-          copyToClipboard(queryText, this);
-        });
-      }
-
-      // Copy messages
-      const copyMessagesBtn = document.getElementById('copy-messages');
-      if (copyMessagesBtn) {
-        copyMessagesBtn.addEventListener('click', function() {
-          const messagesText = document.getElementById('messages').textContent;
-          copyToClipboard(messagesText, this);
-        });
-      }
-    }
-
-    function copyToClipboard(text, button) {
-      navigator.clipboard.writeText(text).then(() => {
-        const originalHTML = button.innerHTML;
-        button.innerHTML = '<i class="fas fa-check"></i> Copied!';
-        button.classList.add('copied');
-        setTimeout(() => {
-          button.innerHTML = originalHTML;
-          button.classList.remove('copied');
-        }, 2000);
-      }).catch(err => {
-        console.error('Failed to copy: ', err);
-        button.innerHTML = '<i class="fas fa-times"></i> Error';
-        setTimeout(() => {
-          button.innerHTML = '<i class="far fa-copy"></i> Copy';
-        }, 2000);
-      });
-    }
 
     // Function to update JSON output with highlighting
     function updateJsonOutput(jsonData) {
       const codeElement = document.getElementById('messages').querySelector('code');
-      
-      if (!codeElement) {
-        console.error('Code element not found for messages');
-        return;
-      }
       
       // 1. Convert to Pretty String
       const formattedJson = JSON.stringify(jsonData, null, 2);
@@ -433,44 +306,12 @@
       console.log('JSON output highlighted with VS Code theme');
     }
 
-    // Function to show translated results
-    function showTranslatedResults(translatedQuery, messages) {
-      console.log('Showing translated results:', { translatedQuery, messages });
-      
-      // Show translated query
-      const translatedQueryElement = document.getElementById('translated-query');
-      if (translatedQueryElement) {
-        translatedQueryElement.textContent = translatedQuery || 'No translation available';
-        resultTitle.style.display = 'block';
-        translatedQueryContainer.style.display = 'block';
-      }
-
-      // Show messages if available
-      const messagesElement = document.getElementById('messages');
-      if (messagesElement && messages && Object.keys(messages).length > 0) {
-        updateJsonOutput(messages);
-        messagesTitle.style.display = 'block';
-        messagesContainer.style.display = 'block';
-      } else {
-        // Show info message if no messages
-        if (messagesElement) {
-          messagesElement.textContent = 'No translation messages or warnings.';
-          messagesTitle.style.display = 'block';
-          messagesContainer.style.display = 'block';
-        }
-      }
-
-      // Setup copy buttons
-      setupCopyButtons();
-      
-      // Update height
-      sendHeight();
-    }
-
     // --- Cross-Origin Height Communication ---
     function sendHeight() {
+      // Only send height if the loader is not active (i.e., content is visible)
+      if (loader.style.display !== 'none') return;
+
       const height = document.body.scrollHeight;
-      console.log('Sending height:', height);
       if (window.parent) {
         window.parent.postMessage({
           type: 'setHeight',
@@ -484,6 +325,7 @@
     const originalAppendStatus = window.appendStatus || function(msg) { 
       const statusDiv = document.getElementById('status');
       if (statusDiv) {
+        // If Pyodide outputs complex status (which includes ANSI codes), write to hidden div
         statusDiv.textContent = msg; 
       }
       console.log("Pyodide Hook:", msg); 
@@ -562,64 +404,68 @@
       // Initialize Highlight.js
       hljs.highlightAll();
 
-      // Setup copy buttons
-      setupCopyButtons();
-
       // 1. Send initial minimal height
       window.addEventListener('load', sendHeight);
       
       // 2. Observe DOM changes (Crucial for when the output table appears/disappears)
       const observer = new MutationObserver(sendHeight);
       observer.observe(document.body, { attributes: true, childList: true, subtree: true });
+      
+      // --- NEW LOGIC FOR COPY BUTTON ---
+      const resultPre = document.getElementById('result');
+      const btnCopy = document.getElementById('btn-copy');
+
+      // 1. Sync button visibility with result visibility
+      const resultObserver = new MutationObserver(() => {
+         if (resultPre.style.display !== 'none') {
+             btnCopy.style.display = 'block';
+         } else {
+             btnCopy.style.display = 'none';
+         }
+      });
+      resultObserver.observe(resultPre, { attributes: true, attributeFilter: ['style'] });
+
+      // 2. Handle Copy Action
+      btnCopy.addEventListener('click', () => {
+          const textToCopy = resultPre.innerText;
+          navigator.clipboard.writeText(textToCopy).then(() => {
+              // Feedback: Change icon to checkmark
+              const originalContent = btnCopy.innerHTML;
+              btnCopy.innerHTML = '<i class="fa-solid fa-check" style="color: #10b981;"></i>';
+              
+              setTimeout(() => {
+                  btnCopy.innerHTML = '<i class="fa-regular fa-copy"></i>';
+              }, 2000);
+          }).catch(err => {
+              console.error('Failed to copy text: ', err);
+          });
+      });
     });
 
-    // Make the showTranslatedResults function available globally for translate.js
-    window.showTranslatedResults = showTranslatedResults;
-
-    // Add event listener for translate button to test functionality
+    // Add event listener for the translate button to handle JSON highlighting
     btnTranslate.addEventListener('click', function() {
-      console.log('Translate button clicked');
-      
-      // Show loading state
-      btnTranslate.disabled = true;
-      btnTranslate.textContent = 'Translating...';
-      
-      // Simulate translation (this will be replaced by actual Pyodide translation)
+      // This will be handled by the translate.js functionality
+      // We'll add a small delay to ensure the JSON is rendered before highlighting
       setTimeout(() => {
-        const query = document.getElementById('query').value;
-        const sourcePlatform = document.getElementById('platform-source').value;
-        const targetPlatform = document.getElementById('platform-target').value;
-        
-        console.log('Translation parameters:', { query, sourcePlatform, targetPlatform });
-        
-        // Call the translation function from translate.js
-        if (window.runTranslation) {
-          window.runTranslation(query, sourcePlatform, targetPlatform);
-        } else {
-          // Fallback if translate.js is not loaded
-          console.warn('translate.js not loaded, using fallback');
-          const translatedQuery = `[${targetPlatform.toUpperCase()}] ${query}`;
-          const messages = {
-            translation: {
-              source: sourcePlatform,
-              target: targetPlatform,
-              status: "success",
-              timestamp: new Date().toISOString()
-            },
-            warnings: [],
-            notes: ["This is a fallback translation. Install the search-query package for proper translation."]
-          };
-          showTranslatedResults(translatedQuery, messages);
+        const messagesElement = document.getElementById('messages');
+        if (messagesElement.style.display !== 'none') {
+          const codeElement = messagesElement.querySelector('code');
+          if (codeElement && codeElement.textContent.trim() !== '') {
+            try {
+              const jsonData = JSON.parse(codeElement.textContent);
+              updateJsonOutput(jsonData);
+            } catch (e) {
+              // If it's not valid JSON, just highlight as is
+              codeElement.removeAttribute('data-highlighted');
+              hljs.highlightElement(codeElement);
+            }
+          }
         }
-        
-        btnTranslate.disabled = false;
-        btnTranslate.textContent = 'Translate';
-      }, 1000);
+        sendHeight(); // Update height after showing results
+      }, 100);
     });
-
   </script>
   
-  <!-- your logic (the file I gave you) -->
   <script src="translate.js"></script>
 </body>
 </html>
