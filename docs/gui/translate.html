@@ -1,532 +1,556 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8" />
-    <title>Search-Query Linter</title>
-    <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta charset="UTF-8" />
+  <title>search-query translator</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/vs2015.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/json.min.js"></script>
+
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+  
+  <style>
+    /* --- CSS Variables (Ensure consistency with Host) --- */
+    :root {
+      --primary: #4f46e5;       /* Indigo */
+      --primary-dark: #3f35c5;
+      --bg-card: #ffffff;
+      --border-color: #e5e7eb;  /* Gray-200 */
+      --text-main: #1f2937;     /* Dark Gray */
+      --text-secondary: #6b7280; /* Medium Gray */
+    }
+
+    /* --- Global Resets & Body Styles for IFRAME --- */
+    * { box-sizing: border-box; margin: 0; padding: 0; line-height: 1.5; font-family: 'Inter', sans-serif; }
     
-    <script src="https://cdn.jsdelivr.net/pyodide/v0.26.2/full/pyodide.js"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+    body {
+      background-color: var(--bg-card);
+      color: var(--text-main);
+      padding: 1.5rem; 
+      min-height: 100vh;
+      overflow-x: hidden;
+      overflow-y: hidden;
+      position: relative;
+    }
+
+    /* UTILITY CLASS FOR VIEWPORT LOCK */
+    body.loading-active {
+      overflow: hidden; /* Prevents scrolling */
+      height: 100vh;    /* Locks height */
+    }
     
-    <style>
-        /* --- CORE CSS --- */
-        :root {
-            --primary: #4f46e5;       
-            --primary-dark: #3f35c5;
-            --bg-card: #ffffff;
-            --border-color: #e5e7eb;  
-            --text-main: #1f2937;     
-            --text-secondary: #6b7280; 
-            --error-red: #dc2626;     
-            --warning-yellow: #d97706; 
-        }
+    /* --- Layout & Typography --- */
+    header h1 { font-size: 1.5rem; font-weight: bold; margin-bottom: 0.25rem; }
+    header p { color: var(--text-secondary); margin-top: 0; font-size: 0.95rem; }
+    
+    /* --- Form Elements --- */
+    label { display: block; margin-top: 1.25rem; margin-bottom: 0.25rem; font-weight: 600; font-size: 0.875rem; }
+    
+    /* Query textarea with larger font size */
+    #query {
+      font-size: 1.1rem !important;
+      line-height: 1.6;
+      padding: 1rem;
+      min-height: 120px;
+      font-family: 'Courier New', monospace;
+      width: 100%;
+      border: 1px solid var(--border-color);
+      border-radius: 0.5rem;
+      box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.07);
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    
+    #query:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 1px var(--primary);
+      outline: none;
+    }
+    
+    /* Narrower form elements */
+    select { 
+      display: block; width: 100%; padding: 0.75rem; border: 1px solid var(--border-color); 
+      border-radius: 0.5rem; box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.07); 
+      transition: border-color 0.2s, box-shadow 0.2s; color: var(--text-main);
+      max-width: 300px;
+    }
+    
+    select:focus { 
+      border-color: var(--primary); box-shadow: 0 0 0 1px var(--primary); outline: none; 
+    }
 
-        * { box-sizing: border-box; margin: 0; padding: 0; line-height: 1.5; font-family: 'Inter', sans-serif; }
-        body {
-            background-color: var(--bg-card);
-            color: var(--text-main);
-            padding: 1.5rem; 
-            min-height: 100vh;
-            overflow-x: hidden;
-            overflow-y: hidden; 
-            position: relative;
-        }
-        
-        body.loading-active { overflow: hidden; height: 100vh; }
+    /* --- Button --- */
+    #btn-translate {
+      width: auto; /* Make button narrower */
+      min-width: 200px; /* Minimum width */
+      padding: 0.75rem 2rem; /* Narrower padding */
+      border: none; 
+      border-radius: 0.5rem; 
+      font-weight: 600; 
+      color: white; 
+      background-color: var(--primary); 
+      cursor: pointer; 
+      transition: background-color 0.2s; 
+      box-shadow: 0 2px 4px rgba(79, 70, 229, 0.4);
+      margin-top: 1rem;
+      font-size: 1rem;
+      display: block;
+      margin-left: auto;
+      margin-right: auto;
+    }
+    #btn-translate:hover:not(:disabled) { background-color: var(--primary-dark); }
+    #btn-translate:disabled { opacity: 0.6; cursor: not-allowed; box-shadow: none; }
 
-        header h1 { font-size: 1.5rem; font-weight: bold; margin-bottom: 0.25rem; }
-        header p { color: var(--text-secondary); margin-top: 0; font-size: 0.95rem; }
-        
-        .main-content-card {
-            margin-top: 1.5rem;
-            background: var(--bg-card);
-            border: 1px solid var(--border-color);
-            border-radius: 0.75rem;
-            padding: 1.5rem;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-        }
+    /* --- Status & Loading --- */
+    #status { 
+      display: none; /* Hidden as per original setup */
+    }
 
-        label { display: block; margin-top: 1.25rem; margin-bottom: 0.25rem; font-weight: 600; font-size: 0.875rem; }
-        
-        #query {
-            font-size: 1.1rem !important;
-            line-height: 1.6;
-            padding: 1rem;
-            min-height: 120px;
-            font-family: 'Courier New', monospace;
-        }
-        
-        textarea, select { 
-            display: block; width: 100%; padding: 0.75rem; border: 1px solid var(--border-color); 
-            border-radius: 0.5rem; box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.07); 
-            transition: border-color 0.2s, box-shadow 0.2s; color: var(--text-main);
-            max-width: 100%;
-        }
-        
-        textarea:focus, select:focus { 
-            border-color: var(--primary); box-shadow: 0 0 0 1px var(--primary); outline: none; 
-        }
+    #status-display { 
+      margin-top: 1rem; padding: 0.5rem 1rem; background: #fff3e0; border: 1px solid #ffcc80; 
+      border-radius: 0.375rem; font-size: 0.875rem; color: #a55a00; font-weight: 500; 
+      white-space: pre-wrap;
+    }
 
-        #btn-lint {
-            width: auto; min-width: 200px; padding: 0.75rem 2rem; border: none; border-radius: 0.5rem; font-weight: 600; color: white; background-color: var(--primary); cursor: pointer; transition: background-color 0.2s; box-shadow: 0 2px 4px rgba(79, 70, 229, 0.4); margin-top: 1.5rem; font-size: 1rem; display: block; margin-left: auto; margin-right: auto;
-        }
-        #btn-lint:hover:not(:disabled) { background-color: var(--primary-dark); }
-        #btn-lint:disabled { opacity: 0.6; cursor: not-allowed; box-shadow: none; }
+    /* === JSON Output Styling (VS Code Dark Theme Look) === */
+    pre {
+      background-color: #1e1e1e !important; /* VS Code Dark Background */
+      border: 1px solid #333;
+      border-radius: 0.5rem;
+      margin: 0;
+      padding: 1rem;
+      max-height: 400px;
+      overflow: auto;
+      color: #d4d4d4; /* Default Text Color */
+    }
 
-        #platform { max-width: 300px; }
+    #result {
+      font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+      font-size: 0.9rem;
+      background: #f3f4f6;
+      padding: 1rem;
+      /* Added padding-right to accommodate the copy button so text doesn't overlap */
+      padding-right: 3rem; 
+      border: 1px solid var(--border-color);
+      border-radius: 0.5rem;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+      margin-top: 0.5rem;
+    }
 
-        #status { display:none; } 
-        #status-display { margin-top: 1rem; padding: 0.5rem 1rem; background: #fff3e0; border: 1px solid #ffcc80; border-radius: 0.375rem; font-size: 0.875rem; color: #a55a00; font-weight: 500; }
-        #output-wrap { margin-top: 1.5rem; position: relative; }
-        
-        /* --- JSON OUTPUT WINDOW --- */
-              pre {
-            background:#1e2228; /* VS Code Dark BG */
-            color: #d4d4d4;      /* Default Text Color */
-            padding: 20px;
-            border-radius: 10px;
-            overflow-x: auto;
-            font-size: 15px;
-            font-family: 'Consolas', 'Monaco', monospace;
-            border: 1px solid #333;
-        }
+    #messages {
+      font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+      font-size: 0.85rem;
+      background: transparent !important;
+      margin: 0;
+      padding: 0;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+    }
 
-        #output {
-            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
-            font-size: 0.85rem;
-            background: transparent !important;
-            margin: 0;
-            padding: 0;
-            white-space: pre; 
-        }
+    /* Custom Syntax Highlighting (VS Code Style) */
+    .hljs-attr { color: #9cdcfe !important; }      /* Keys: Light Blue */
+    .hljs-string { color: #ce9178 !important; }    /* Strings: Orange/Salmon */
+    .hljs-number { color: #b5cea8 !important; }    /* Numbers: Light Green */
+    .hljs-literal, .hljs-keyword { color: #569cd6 !important; } /* Booleans: Blue */
+    .hljs-punctuation { color: #d4d4d4 !important; } /* Punctuation: Light Gray */
+    
+    /* --- LOADING OVERLAY STYLES (Fixed and Centered) --- */
+    #loading-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(255, 255, 255, 0.95);
+      z-index: 1000;
+      display: flex; 
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      transition: opacity 0.5s ease;
+      opacity: 1;
+    }
+    .loader {
+      border: 4px solid var(--border-color);
+      border-top: 4px solid var(--primary);
+      border-radius: 50%;
+      width: 50px;
+      height: 50px;
+      animation: spin 1s linear infinite;
+      margin-bottom: 1rem;
+    }
+    #loading-text {
+      font-size: 1.1rem;
+      color: var(--text-main);
+      font-weight: 500;
+      text-align: center;
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    
+    /* Headings */
+    #result-title, #messages-title {
+      margin-top: 1.5rem;
+      font-size: 1.25rem;
+      font-weight: 600;
+    }
 
-        .json-actions { position: absolute; top: 15px; right: 15px; display: flex; gap: 8px; z-index: 20; }
-        .json-btn { background: transparent !important; border: none !important; border-radius: 4px; color: #d4d4d4; padding: 6px 8px; cursor: pointer; font-size: 14px; transition: all 0.2s ease; backdrop-filter: none; }
-        .json-btn:hover { background: rgba(255, 255, 255, 0.1) !important; color: #ffffff; }
-        .json-btn.copied { color: #4CAF50 !important; }
-
-        #lint-view { padding: 1rem; margin-bottom: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); background: #1e2228; border-radius: 10px;}
-        #lint-view .ansi-red { color: var(--error-red); font-weight: 600; }
-        #lint-view .ansi-yellow { color: var(--warning-yellow); font-weight: 600; }
-        #lint-view .lint-title { font-weight: 700; font-size: 1rem; margin-bottom: 0.5rem;}
-       
-        #loading-overlay { position: fixed; inset: 0; background-color: rgba(255, 255, 255, 0.95); z-index: 1000; display: flex; flex-direction: column; justify-content: center; align-items: center; transition: opacity 0.5s ease; opacity: 1; }
-        .loader { border: 4px solid var(--border-color); border-top: 4px solid var(--primary); border-radius: 50%; width: 50px; height: 50px; animation: spin 1s linear infinite; margin-bottom: 1rem; }
-        #loading-text { font-size: 1.1rem; color: var(--text-main); font-weight: 500; text-align: center; }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        #content-wrapper { transition: opacity 0.5s ease; opacity: 0; }
-        
-        .lint-item { border-top: 1px solid #e5e7eb; margin-top: 16px; padding-top: 8px; background-color: inherit; }
-        .lint-message { font-size: 0.95rem; color: #374151; white-space: pre-wrap; margin-bottom: 4px; }
-        .lint-separator { border-top: 1px solid #e5e7eb; margin: 8px 0; }
-          /* Lint card (styles that will target the fragment you gave) */
-        #lint-container { margin-top: 18px; }
-        .lint-card {
-            background: #1e2228;
-            padding: 14px;
-            border-radius: 10px;
-            border: 1px solid #2a2a2a;
-            box-shadow: 0 6px 18px rgba(0,0,0,0.35);
-        }
-        .lint-title { color: #ff7474; font-weight: 700; margin-bottom: px; font-size: 1rem; }
-        .lint-meta { color: #cfcfcf; margin-bottom: 8px; }
-        .lint-details { color: #d3c48c; margin-bottom: 10px; white-space: pre-wrap; }
-        .lint-links a { color: #4fc1ff; text-decoration: none; margin-right: 8px; font-weight: 600; }
-        .lint-links a:hover { text-decoration: underline; }
-        .lint-report { color: #ffb74d !important; }
-        .lint-links-spacer { display:inline-block; width:8px; }
-
-        .lint-query {
-            background: #0f0f0f;
-            color: #fff;
-            padding: 10px;
-            border-radius: 8px;
-            border: 1px solid #2b2b2b;
-            margin-top: 25px;
-            margin-bottom: 45px;
-            overflow-x: auto;
-            font-family: Consolas, monospace;
-            font-size: 13px;
-        }
-        .lint-hl-0 { color: #ff6b6b; font-weight:700; }
-        .lint-hl-1 { color: #ffd86b; font-weight:700; } /* bonus if more highlights needed */
-
-
-    </style>
+    /* --- Copy Button Styles --- */
+    #btn-copy {
+      position: absolute;
+      top: 0.6rem;
+      right: 0.6rem;
+      background: #ffffff;
+      border: 1px solid var(--border-color);
+      color: var(--text-secondary);
+      padding: 0.4rem 0.6rem;
+      border-radius: 0.375rem;
+      cursor: pointer;
+      font-size: 1rem;
+      transition: all 0.2s ease;
+      z-index: 10;
+      display: none; /* Hidden by default until result is shown */
+      box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+    }
+    #btn-copy:hover {
+      border-color: var(--primary);
+      color: var(--primary);
+      background: #f9fafb;
+    }
+    
+    /* --- JSON Output Action Buttons --- */
+    .json-actions {
+      position: absolute;
+      top: 0.6rem;
+      right: 0.6rem;
+      display: flex;
+      gap: 8px;
+      z-index: 10;
+    }
+    
+    .json-btn {
+      background: #2d2d30;
+      border: 1px solid #3e3e42;
+      color: #d4d4d4;
+      padding: 0.4rem 0.6rem;
+      border-radius: 0.375rem;
+      cursor: pointer;
+      font-size: 1rem;
+      transition: all 0.2s ease;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+    }
+    
+    .json-btn:hover {
+      background: #3c3c3f;
+      color: #ffffff;
+    }
+    
+    .json-btn.copied {
+      color: #4CAF50 !important;
+    }
+    
+  </style>
 </head>
-
 <body>
 
-    <div id="loading-overlay">
-        <div class="loader"></div>
-        <div id="loading-text">Initializing Search Query...</div>
+  <div id="loading-overlay">
+    <div class="loader"></div>
+    <div id="loading-text">Initializing search-query...</div>
+  </div>
+  
+  <div id="content-wrapper">
+    <header>
+      <h1>search-query translator</h1>
+      <p>Translate a database/search-platform query into another platform using the <code>search-query</code> package (running in Pyodide).</p>
+    </header>
+
+    <div id="status">Loading Pyodide…</div>
+    <div id="status-display">Loading Search Query…</div>
+
+    <label for="query">Query</label>
+    <textarea id="query" rows="6">(TI=(platform* OR "digital work") AND PY=2020-2025)</textarea>
+
+    <label for="platform-source">Source platform</label>
+    <select id="platform-source">
+      <option value="wos">wos</option>
+      <option value="pubmed">pubmed</option>
+      <option value="ebscohost">ebscohost</option>
+      <option value="scopus">scopus</option>
+    </select>
+
+    <label for="platform-target">Target platform</label>
+    <select id="platform-target">
+      <option value="wos">wos</option>
+      <option value="pubmed" selected>pubmed</option>
+      <option value="ebscohost">ebscohost</option>
+      <option value="scopus">scopus</option>
+    </select>
+
+    <div class="row" style="margin-top:1rem;">
+      <button id="btn-translate" disabled>Translate</button>
     </div>
+
+    <h2 id="result-title" style="display:none; margin-top:1.5rem;">Translated query</h2>
+    <div style="position: relative;">
+        <button id="btn-copy" title="Copy result to clipboard">
+            <i class="fa-regular fa-copy"></i>
+        </button>
+        <pre id="result" style="display:none;"></pre>
+    </div>
+
+    <h2 id="messages-title" style="display:none; margin-top:1.5rem;">Messages</h2>
+    <div style="position: relative;">
+      <div class="json-actions" style="display: none;">
+        <button class="json-btn" id="copy-json" title="Copy JSON to clipboard">
+          <i class="far fa-copy"></i>
+        </button>
+        <button class="json-btn" id="download-json" title="Download JSON">
+          <i class="fas fa-download"></i>
+        </button>
+      </div>
+      <pre style="display: none;"><code id="messages" class="language-json"></code></pre>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/pyodide/v0.26.2/full/pyodide.js"></script>
+  
+  <script>
+    // Initialize Highlight.js
+    hljs.configure({ ignoreUnescapedHTML: true });
+
+    const loader = document.getElementById('loading-overlay');
+    const loadingText = document.getElementById('loading-text');
+    const contentWrapper = document.getElementById('content-wrapper');
+    const statusDisplay = document.getElementById('status-display'); // Now using status-display
+    const btnTranslate = document.getElementById('btn-translate');
+
+    // Function to update JSON output with highlighting
+    function updateJsonOutput(jsonData) {
+      const codeElement = document.getElementById('messages').querySelector('code');
+      
+      // 1. Convert to Pretty String
+      const formattedJson = JSON.stringify(jsonData, null, 2);
+      
+      // 2. Set text content
+      codeElement.textContent = formattedJson;
+      
+      // 3. Clear markers
+      codeElement.removeAttribute('data-highlighted');
+      
+      // 4. Trigger Highlight.js
+      hljs.highlightElement(codeElement);
+      
+      console.log('JSON output highlighted with VS Code theme');
+    }
+
+    // --- JSON Copy and Download Functions ---
+    function copyJsonToClipboard() {
+      const jsonText = document.getElementById('messages').querySelector('code').textContent;
+      navigator.clipboard.writeText(jsonText).then(() => {
+        const copyBtn = document.getElementById('copy-json');
+        const originalHTML = copyBtn.innerHTML;
+        copyBtn.innerHTML = '<i class="fas fa-check"></i>';
+        copyBtn.classList.add('copied');
+        setTimeout(() => {
+          copyBtn.innerHTML = originalHTML;
+          copyBtn.classList.remove('copied');
+        }, 2000);
+      });
+    }
+
+    function downloadJson() {
+      const jsonText = document.getElementById('messages').querySelector('code').textContent;
+      const blob = new Blob([jsonText], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'translation-output.json';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
+
+    // --- Cross-Origin Height Communication ---
+    function sendHeight() {
+      // Only send height if the loader is not active (i.e., content is visible)
+      if (loader.style.display !== 'none') return;
+
+      const height = document.body.scrollHeight;
+      if (window.parent) {
+        window.parent.postMessage({
+          type: 'setHeight',
+          height: height
+        }, window.location.origin);
+      }
+    }
     
-    <div id="content-wrapper">
-        <header>
-            <h1>Search-Query Linter</h1>
-            <p>Paste a query, select a platform, and run the linter in your browser.</p>
-        </header>
+    // --- Pyodide Status Hook and Loader Control ---
+    
+    const originalAppendStatus = window.appendStatus || function(msg) { 
+      const statusDiv = document.getElementById('status');
+      if (statusDiv) {
+        // If Pyodide outputs complex status (which includes ANSI codes), write to hidden div
+        statusDiv.textContent = msg; 
+      }
+      console.log("Pyodide Hook:", msg); 
+    };
+    
+    window.appendStatus = function(msg) {
+      // 1. Update the visual status text in status-display
+      const cleanMsg = msg.replace(/\u001b\[.*?m/g, ''); 
+      if (loadingText) loadingText.textContent = cleanMsg;
+      statusDisplay.textContent = cleanMsg;
 
-        <div id="status">Loading Search Query…</div> 
-        <div id="status-display">Loading Search Query…</div>
+      // 2. Control the visual transition state and viewport lock
+      if (cleanMsg.includes('Done') || cleanMsg.includes('ready') || cleanMsg.includes('Ready')) {
+        // Done loading: Unlock viewport, fade out loader, show content
+        document.body.classList.remove('loading-active');
+        statusDisplay.innerText = 'Search Query loaded…';
+        loader.style.opacity = '0';
+        contentWrapper.style.opacity = '1';
 
-        <div class="main-content-card">
-            <label for="query">Query</label>
-            <textarea id="query">(TI=(platform* OR "digital work") AND PY=2020-2025)</textarea>
+        setTimeout(() => {
+          loader.style.display = 'none';
+          document.body.style.overflow = 'hidden'; 
+          btnTranslate.disabled = false;
+          sendHeight(); // Final resize
+        }, 500);
+      } else {
+        // Loading: Lock viewport
+        document.body.classList.add('loading-active');
+        loader.style.display = 'flex';
+        loader.style.opacity = '1';
+        contentWrapper.style.opacity = '0';
+      }
 
-            <label for="platform">Platform</label>
-            <select id="platform">
-                <option value="wos">WoS</option>
-                <option value="pubmed">PubMed</option>
-                <option value="ebscohost">EBSCOhost</option>
-            </select>
+      // 3. Call the original function and re-trigger height update 
+      originalAppendStatus(msg);
+      setTimeout(sendHeight, 50); 
+    };
+    
+    // --- Append module with interval stopped after ready ---
+    const appendInterval = setInterval(() => {
+      const statusText = document.getElementById('status');
+      const lines = statusText.innerText.split("\n");
+      const lastLine = lines[lines.length - 1].trim();
 
-            <div class="row">
-                <button id="btn-lint" disabled>Lint</button>
-            </div>
-        </div>
+      loadingText.innerText = lastLine || "Loading…";
+      statusDisplay.innerText = lastLine || "Loading…";
 
-        <div style="margin-top: 1.5rem;">
-            <details id="output-wrap" style="margin-bottom: 1rem;">
-                <summary style="font-weight: 600; color: var(--text-secondary); cursor: pointer; padding: 0.5rem 0; position: relative;">
-                    Raw Linter Output (JSON)
-                </summary>
-                <div style="position: relative;">
-                    <div class="json-actions">
-                        <button class="json-btn" id="copy-json" title="Copy JSON">
-                            <i class="far fa-copy"></i>
-                        </button>
-                        <button class="json-btn" id="download-json" title="Download JSON">
-                            <i class="fas fa-download"></i>
-                        </button>
-                    </div>
-                    <pre id="pre"><code style="font-size: 16px; font-family: 'Consolas', 'Monaco', monospace;" id="output"></code></pre>
-                </div>
-            </details>
-            <h2 id="messages-title" style="display:none; font-size: 1.25rem; font-weight: 600; margin-top: 1rem;">Messages</h2>
-            <div id="lint-view" style="display:none;"></div>
-        </div>
-    </div>
-    <script src="script.js"></script>
-    <script>
-        const PARENT_ORIGIN = window.location.origin;
+      if (lastLine.includes("search-query ready.")) {
+        loader.style.display = 'none';
+        contentWrapper.style.display = 'block';
+        contentWrapper.style.opacity = '1';
+        statusText.innerText = 'Search Query Ready';
+        statusDisplay.innerText = 'Search Query Ready';
+        
+        // Enable the translate button
+        btnTranslate.disabled = false;
+        
+        // Stop the interval to prevent unnecessary height updates
+        clearInterval(appendInterval);
 
-        const loader = document.getElementById('loading-overlay');
-        const loadingText = document.getElementById('loading-text');
-        const contentWrapper = document.getElementById('content-wrapper');
-        const statusDisplay = document.getElementById('status-display');
-        const codeBlock = document.getElementById('output');
-/*        function addLineNumbers(text) {
-            const lines = text.split("\n");
-            return lines
-                .map((line, i) => `<span style="color:#666;">${String(i+1).padStart(1,'0')} </span> ${line}`)
-                .join("\n");
+        // Send final height once
+        sendHeight();
+      }
+    }, 100);
+
+    // --- Initial Setup and DOM Observer ---
+    document.addEventListener('DOMContentLoaded', () => {
+      // Initial state setup: LOCK VIEWPORT IMMEDIATELY
+      document.body.classList.add('loading-active');
+      contentWrapper.style.opacity = '0';
+      contentWrapper.style.display = 'none';
+      loader.style.display = 'flex'; 
+      loadingText.textContent = "Initializing search-query...";
+      btnTranslate.disabled = true;
+
+      // Initialize Highlight.js
+      hljs.highlightAll();
+
+      // 1. Send initial minimal height
+      window.addEventListener('load', sendHeight);
+      
+      // 2. Observe DOM changes (Crucial for when the output table appears/disappears)
+      const observer = new MutationObserver(sendHeight);
+      observer.observe(document.body, { attributes: true, childList: true, subtree: true });
+      
+      // --- NEW LOGIC FOR COPY BUTTON ---
+      const resultPre = document.getElementById('result');
+      const btnCopy = document.getElementById('btn-copy');
+      const messagesPre = document.getElementById('messages').parentElement;
+      const jsonActions = document.querySelector('.json-actions');
+
+      // 1. Sync button visibility with result visibility
+      const resultObserver = new MutationObserver(() => {
+         if (resultPre.style.display !== 'none') {
+             btnCopy.style.display = 'block';
+         } else {
+             btnCopy.style.display = 'none';
+         }
+      });
+      resultObserver.observe(resultPre, { attributes: true, attributeFilter: ['style'] });
+
+      // 2. Handle Copy Action for translated query
+      btnCopy.addEventListener('click', () => {
+          const textToCopy = resultPre.innerText;
+          navigator.clipboard.writeText(textToCopy).then(() => {
+              // Feedback: Change icon to checkmark
+              const originalContent = btnCopy.innerHTML;
+              btnCopy.innerHTML = '<i class="fa-solid fa-check" style="color: #10b981;"></i>';
+              
+              setTimeout(() => {
+                  btnCopy.innerHTML = '<i class="fa-regular fa-copy"></i>';
+              }, 2000);
+          }).catch(err => {
+              console.error('Failed to copy text: ', err);
+          });
+      });
+
+      // 3. Sync JSON actions visibility with messages visibility
+      const messagesObserver = new MutationObserver(() => {
+        if (messagesPre.style.display !== 'none') {
+          jsonActions.style.display = 'flex';
+        } else {
+          jsonActions.style.display = 'none';
         }
+      });
+      messagesObserver.observe(messagesPre, { attributes: true, attributeFilter: ['style'] });
 
-        // --- 1. THE FORCE-COLOR HIGHLIGHTER ---
-        // Uses Inline Styles to guarantee colors appear regardless of external CSS
-        function syntaxHighlightInline(jsonObj) {
-            // Convert object to string if it isn't already
-            let json = JSON.stringify(jsonObj, undefined, 4);
-            
-            // Escape HTML characters (security)
-            json = json.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-            
-            // The Regex Magic
-            // 1. Strings (including keys)
-            // 2. Booleans (true/false)
-            // 3. Null
-            // 4. Numbers
-            return json.replace(/("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/g, function (match) {
-                let style = 'color: #b5cea8;'; // Default: Number (Light Green)
-                
-                if (/^"/.test(match)) {
-                    if (/:$/.test(match)) {
-                        // KEY DETECTED (ends with :) -> Light Blue
-                        return '<span style="color: #9cdcfe;">' + match.slice(0, -1) + '</span>:';
-                    } else {
-                        // STRING DETECTED -> Salmon/Orange
-                        style = 'color: #ce9178;';
-                    }
-                } else if (/true|false/.test(match)) {
-                    // BOOLEAN -> Blue
-                    style = 'color: #569cd6;';
-                } else if (/null/.test(match)) {
-                    // NULL -> Blue
-                    style = 'color: #569cd6;';
-                }
-                
-                return '<span style="' + style + '">' + match + '</span>';
-            });
-            return addLineNumbers(json); // Attach line numbers here
-        }
+      // 4. Add event listeners for JSON actions
+      document.getElementById('copy-json').addEventListener('click', copyJsonToClipboard);
+      document.getElementById('download-json').addEventListener('click', downloadJson);
+    });
 
-
-        // --- 2. UPDATE LOGIC ---
-
-        function updateHighlight() {
-            // 3. Render directly to InnerHTML
-            const highlightedHtml = syntaxHighlightInline(JSON.parse(document.getElementById('output').innerText));
-            codeBlock1.innerHTML = highlightedHtml;
-            document.getElementById('pre').style.display = 'none';
-        }
-        function highlightMessages(text) {
-            let lines = text.trim().split("\n");
-
-            return lines
-                .map((line, i) => {
-                    let colored = line;
-
-                    // ICONS
-                    colored = colored.replace("🚨", `<span style="color:#ff5555;">🚨</span>`);
-                    colored = colored.replace("🐞", `<span style="color:#ffaa00;">🐞</span>`);
-
-                    // ERROR LABELS
-                    colored = colored.replace(/invalid-syntax/gi, `<span style="color:#ff5555;">invalid-syntax</span>`);
-                    colored = colored.replace(/invalid-token-sequence/gi, `<span style="color:#ff5555;">invalid-token-sequence</span>`);
-
-                    // ERROR CODES (PARSE_XXXX)
-                    colored = colored.replace(/\(PARSE_[0-9]+\)/g, m => `<span style="color:#4fc1ff;">${m}</span>`);
-
-                    // "More info"
-                    colored = colored.replace(/More info/gi, `<span style="color:#00aaff;">More info</span>`);
-
-                    return `<span class="ln">${String(i+1).padStart(2,"0")}</span>  ${colored}`;
-                })
-                .join("\n");
-        }
-
-        document.getElementById('btn-lint').addEventListener('click', function(){
-            updateHighlight()
-            document.getElementById("messages").innerHTML = highlightMessages(rawMessages);
-            setTimeout(()=>{
-                document.getElementById('pre1').style.display = 'block';
-                console.log(codeBlock1.innerText)
-                updateHighlight()
-            }, 1000)
-
-        })
-*/
-        // --- 3. UTILITIES ---
-        function copyJsonToClipboard() {
-            const jsonText = codeBlock.textContent; 
-            navigator.clipboard.writeText(jsonText).then(() => {
-                const copyBtn = document.getElementById('copy-json');
-                const originalHTML = copyBtn.innerHTML;
-                copyBtn.innerHTML = '<i class="fas fa-check"></i>';
-                copyBtn.classList.add('copied');
-                setTimeout(() => {
-                    copyBtn.innerHTML = originalHTML;
-                    copyBtn.classList.remove('copied');
-                }, 2000);
-            });
-        }
-
-        function downloadJson() {
-            const jsonText = codeBlock.textContent;
-            const blob = new Blob([jsonText], { type: 'application/json' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = 'linter-output.json';
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
-        }
-
-        function sendHeight() {
-            if (document.body.classList.contains('loading-active')) return;
-            const height = document.body.scrollHeight;
-            if (window.parent) {
-                window.parent.postMessage({ type: 'setHeight', height: height }, "*");
+    // Add event listener for the translate button to handle JSON highlighting
+    btnTranslate.addEventListener('click', function() {
+      // This will be handled by the translate.js functionality
+      // We'll add a small delay to ensure the JSON is rendered before highlighting
+      setTimeout(() => {
+        const messagesElement = document.getElementById('messages');
+        if (messagesElement.style.display !== 'none') {
+          const codeElement = messagesElement.querySelector('code');
+          if (codeElement && codeElement.textContent.trim() !== '') {
+            try {
+              const jsonData = JSON.parse(codeElement.textContent);
+              updateJsonOutput(jsonData);
+            } catch (e) {
+              // If it's not valid JSON, just highlight as is
+              codeElement.removeAttribute('data-highlighted');
+              hljs.highlightElement(codeElement);
             }
+          }
         }
-
-        // --- 4. PYODIDE SETUP ---
-        const originalAppendStatus = window.appendStatus || function(msg) { 
-            if (statusDisplay) statusDisplay.textContent = msg; 
-        };
-
-        window.appendStatus = function(msg) {
-            const cleanMsg = msg.replace(/\u001b\[.*?m/g, '').trim(); 
-            if (loadingText) loadingText.textContent = cleanMsg;
-
-            if (cleanMsg.includes('Done') || cleanMsg.includes('ready') || cleanMsg.includes('Ready')) {
-                document.body.classList.remove('loading-active');
-                loader.style.opacity = '0';
-                contentWrapper.style.opacity = '1';
-
-                setTimeout(() => {
-                    loader.style.display = 'none';
-                    document.body.style.overflow = '';
-                    sendHeight();
-                }, 500);
-            } else {
-                document.body.classList.add('loading-active');
-                loader.style.display = 'flex';
-                loader.style.opacity = '1';
-                contentWrapper.style.opacity = '0';
-            }
-            originalAppendStatus(msg);
-            setTimeout(sendHeight, 50); 
-        };
-
-        // --- 5. INIT ---
-        document.addEventListener('DOMContentLoaded', () => {
-            document.body.classList.add('loading-active');
-            contentWrapper.style.opacity = '0';
-            loader.style.display = 'flex'; 
-            loadingText.textContent = "Initializing Search Query...";
-
-            document.getElementById('copy-json').addEventListener('click', copyJsonToClipboard);
-            document.getElementById('download-json').addEventListener('click', downloadJson);
-
-            window.addEventListener('load', sendHeight);
-            const observer = new MutationObserver(sendHeight);
-            observer.observe(document.body, { attributes: true, childList: true, subtree: true });
-
-
-        });
-
-        // --- 6. MAIN APP ---
-        (async () => {
-            const pyodide = await loadPyodide({ stdout: msg => console.log(msg), stderr: msg => console.error(msg) });
-            await pyodide.loadPackage("micropip");
-            const micropip = pyodide.pyimport("micropip");
-
-            await micropip.install("https://files.pythonhosted.org/packages/50/43/5f6b2e8d83aa1e8324f47b24bf7d44dd7c60dd07fe6b5c72e3568ea6e0b0/search_query_linter-0.1.1-py3-none-any.whl");
-
-            const lintBtn = document.getElementById("btn-lint");
-            const queryInput = document.getElementById("query");
-            const platformInput = document.getElementById("platform");
-            const lintView = document.getElementById("lint-view");
-            const messagesTitle = document.getElementById("messages-title");
-
-            lintBtn.disabled = false;
-
-            function escapeHtml(str) {
-                return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-            }
-
-            function convertAnsiToHtml(text) {
-                return text
-                    .replace(/\x1b\[31m/g, '<span class="ansi-red">')
-                    .replace(/\x1b\[33m/g, '<span class="ansi-yellow">')
-                    .replace(/\x1b\[0m/g, '</span>');
-            }
-
-            function renderLintMessages(messages) {
-                lintView.innerHTML = ""; 
-                if (messages.length === 0) {
-                    messagesTitle.style.display = "none";
-                    lintView.style.display = "none";
-                    return;
-                }
-                messages.forEach((msg, index) => {
-                    const container = document.createElement("div");
-                    container.className = "lint-item";
-                    
-                    const titleEl = document.createElement("div");
-                    titleEl.className = "lint-title";
-                    titleEl.textContent = `${index + 1}. ${msg.icon || "⚠️"} ${msg.rule_id}`;
-                    container.appendChild(titleEl);
-                    
-                    const messageEl = document.createElement("div");
-                    messageEl.className = "lint-message";
-                    messageEl.innerHTML = convertAnsiToHtml(escapeHtml(msg.message));
-                    container.appendChild(messageEl);
-                    
-                    if (msg.query) {
-                        const queryBlock = document.createElement("pre");
-                        queryBlock.className = "lint-query";
-                        queryBlock.textContent = msg.query;
-                        container.appendChild(queryBlock);
-                        const separator = document.createElement("div");
-                        separator.className = "lint-separator";
-                        container.appendChild(separator);
-                    }
-                    lintView.appendChild(container);
-                });
-
-                if (messages.length > 0) {
-                    messagesTitle.style.display = "block";
-                    lintView.style.display = "block";
-                } else {
-                    messagesTitle.style.display = "none";
-                    lintView.style.display = "none";
-                }
-                setTimeout(() => { if (window.parent) sendHeight(); }, 80);
-            }
-
-            // RESET LOGIC
-            function resetState() {
-                // Clear JSON output
-                codeBlock.innerHTML = "";
-                // Unlock Button
-                lintBtn.disabled = false;
-                lintBtn.textContent = "Lint";
-                // Clear Storage
-                localStorage.removeItem('jsonData');
-                // Clear Messages
-                lintView.innerHTML = "";
-                messagesTitle.style.display = "none";
-                lintView.style.display = "none";
-            }
-
-            queryInput.addEventListener('input', resetState);
-            platformInput.addEventListener('change', resetState);
-
-            lintBtn.addEventListener("click", async () => {
-                // LOCK
-                lintBtn.disabled = true;
-                lintBtn.textContent = "Processing...";
-
-                const query = queryInput.value;
-                const platform = platformInput.value;
-
-                const lintCode = `
-from search_query_linter import lint
-import json
-result = lint(${JSON.stringify(query)}, platform="${platform}")
-json.dumps([m.to_dict() for m in result])
-                `;
-
-                let resultJson;
-                try {
-                    resultJson = await pyodide.runPythonAsync(lintCode);
-                } catch (e) {
-                    console.error(e);
-                    alert("Linter error occurred.");
-                    lintBtn.textContent = "Error";
-                    return;
-                }
-
-                const rawMessages = JSON.parse(resultJson);
-                
-                // SAVE
-                //localStorage.setItem('jsonData', JSON.stringify(rawMessages));
-            
-                
-                // RENDER CARDS
-                const splitMessages = [];
-                rawMessages.forEach(m => {
-                    const parts = m.message.split("\n").filter(x => x.trim() !== "");
-                    parts.forEach(segment => {
-                        splitMessages.push({
-                            icon: m.icon ?? "⚠️",
-                            rule_id: m.rule_id,
-                            message: segment,
-                            query: m.query
-                        });
-                    });
-                });
-
-                renderLintMessages(splitMessages);
-                lintBtn.textContent = "Done"; // Keep locked until edit
-            });
-        })();
-    </script>
+        sendHeight(); // Update height after showing results
+      }, 100);
+    });
+  </script>
+  
+  <script src="translate.js"></script>
 </body>
 </html>
