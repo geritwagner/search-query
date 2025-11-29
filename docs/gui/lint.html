@@ -268,7 +268,6 @@
         // --- 2. UPDATE LOGIC ---
 
         function updateHighlight() {
-            document.getElementById('pre1').style.display = 'block';
             // 3. Render directly to InnerHTML
             const highlightedHtml = syntaxHighlightInline(JSON.parse(document.getElementById('output').innerText));
             codeBlock1.innerHTML = highlightedHtml;
@@ -304,6 +303,7 @@
             updateHighlight()
             document.getElementById("messages").innerHTML = highlightMessages(rawMessages);
             setTimeout(()=>{
+                document.getElementById('pre1').style.display = 'block';
                 console.log(codeBlock1.innerText)
                 updateHighlight()
             }, 1000)
