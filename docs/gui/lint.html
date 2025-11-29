@@ -256,101 +256,110 @@ const statusDisplay = document.getElementById('status-display');
 const codeBlock = document.getElementById('output');
 const codeBlock1 = document.getElementById('output1');
 
-/* ------------------------------
-   FORCE-COLOR HIGHLIGHTER
---------------------------------*/
+        /* ------------------------------
+           FORCE-COLOR HIGHLIGHTER
+        --------------------------------*/
+        /* Add LINE NUMBERS to a JSON string */
+        function addLineNumbers(text) {
+            const lines = text.split("\n");
+            return lines
+                .map((line, i) => `<span style="color:#666;">${String(i+1).padStart(1,'0')} </span> ${line}`)
+                .join("\n");
+        }
 
-// --- 2. THE MANUAL REGEX HIGHLIGHTER ---
-function syntaxHighlightInline(jsonObj) {
-    // Convert object to string if it isn't already
-    let json = JSON.stringify(jsonObj, undefined, 4);
-    
-    // Escape HTML characters (security)
-    json = json.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-    
-    // The Regex Magic
-    // 1. Strings (including keys)
-    // 2. Booleans (true/false)
-    // 3. Null
-    // 4. Numbers
-    return json.replace(/("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/g, function (match) {
-        let style = 'color: #b5cea8;'; // Default: Number (Light Green)
+        // --- 2. THE MANUAL REGEX HIGHLIGHTER ---
+        function syntaxHighlightInline(jsonObj) {
+            // Convert object to string if it isn't already
+            let json = JSON.stringify(jsonObj, undefined, 4);
+            
+            // Escape HTML characters (security)
+            json = json.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+            
+            // The Regex Magic
+            // 1. Strings (including keys)
+            // 2. Booleans (true/false)
+            // 3. Null
+            // 4. Numbers
+            return json.replace(/("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/g, function (match) {
+                let style = 'color: #b5cea8;'; // Default: Number (Light Green)
+                
+                if (/^"/.test(match)) {
+                    if (/:$/.test(match)) {
+                        // KEY DETECTED (ends with :) -> Light Blue
+                        return '<span style="color: #9cdcfe;">' + match.slice(0, -1) + '</span>:';
+                    } else {
+                        // STRING DETECTED -> Salmon/Orange
+                        style = 'color: #ce9178;';
+                    }
+                } else if (/true|false/.test(match)) {
+                    // BOOLEAN -> Blue
+                    style = 'color: #569cd6;';
+                } else if (/null/.test(match)) {
+                    // NULL -> Blue
+                    style = 'color: #569cd6;';
+                }
+                
+                return '<span style="' + style + '">' + match + '</span>';
+            });
+            return addLineNumbers(json); // Attach line numbers here
+
+        }
         
-        if (/^"/.test(match)) {
-            if (/:$/.test(match)) {
-                // KEY DETECTED (ends with :) -> Light Blue
-                return '<span style="color: #9cdcfe;">' + match.slice(0, -1) + '</span>:';
-            } else {
-                // STRING DETECTED -> Salmon/Orange
-                style = 'color: #ce9178;';
+        /* ----------------------------------
+           UPDATE HIGHLIGHT + LOCALSTORAGE
+        -----------------------------------*/
+        function updateHighlight() {
+            // 3. Render directly to InnerHTML
+            const highlightedHtml = syntaxHighlightInline(JSON.parse(codeBlock.innerText));
+            codeBlock1.innerHTML = highlightedHtml;
+            document.getElementById('pre').style.display = 'none';
+        }
+        
+        /* ----------------------------------
+           QUERY HIGHLIGHTING FUNCTIONALITY
+        -----------------------------------*/
+        function highlightQueryPositions(originalQuery, positions, isFatal = false) {
+            if (!positions || positions.length === 0) {
+                return originalQuery;
             }
-        } else if (/true|false/.test(match)) {
-            // BOOLEAN -> Blue
-            style = 'color: #569cd6;';
-        } else if (/null/.test(match)) {
-            // NULL -> Blue
-            style = 'color: #569cd6;';
+        
+            let highlightedQuery = '';
+            let lastIndex = 0;
+            
+            // Sort positions by start index to process them in order
+            const sortedPositions = positions.flat().sort((a, b) => a[0] - b[0]);
+            
+            sortedPositions.forEach(([start, end], index) => {
+                // Add the text before the highlight
+                if (start > lastIndex) {
+                    highlightedQuery += originalQuery.substring(lastIndex, start);
+                }
+                
+                // Add the highlighted text
+                const highlightedText = originalQuery.substring(start, end);
+                const highlightClass = isFatal ? 'query-error' : 'query-warning';
+                highlightedQuery += `<span class="query-highlight ${highlightClass}" title="Position ${start}-${end}">${highlightedText}</span>`;
+                
+                lastIndex = end;
+            });
+            
+            // Add any remaining text after the last highlight
+            if (lastIndex < originalQuery.length) {
+                highlightedQuery += originalQuery.substring(lastIndex);
+            }
+            
+            return highlightedQuery || originalQuery;
         }
         
-        return '<span style="' + style + '">' + match + '</span>';
-    });
-}
-
-/* ----------------------------------
-   UPDATE HIGHLIGHT + LOCALSTORAGE
------------------------------------*/
-function updateHighlight() {
-    // 3. Render directly to InnerHTML
-    const highlightedHtml = syntaxHighlightInline(JSON.parse(codeBlock.innerText));
-    codeBlock1.innerHTML = highlightedHtml;
-    document.getElementById('pre').style.display = 'none';
-}
-
-/* ----------------------------------
-   QUERY HIGHLIGHTING FUNCTIONALITY
------------------------------------*/
-function highlightQueryPositions(originalQuery, positions, isFatal = false) {
-    if (!positions || positions.length === 0) {
-        return originalQuery;
-    }
-
-    let highlightedQuery = '';
-    let lastIndex = 0;
-    
-    // Sort positions by start index to process them in order
-    const sortedPositions = positions.flat().sort((a, b) => a[0] - b[0]);
-    
-    sortedPositions.forEach(([start, end], index) => {
-        // Add the text before the highlight
-        if (start > lastIndex) {
-            highlightedQuery += originalQuery.substring(lastIndex, start);
-        }
+        /* ----------------------------------
+           LINT BUTTON
+        -----------------------------------*/
+        document.getElementById('btn-lint').addEventListener('click', function () {
+            setTimeout(() => {
+                updateHighlight()
+            }, 100)
+        });
         
-        // Add the highlighted text
-        const highlightedText = originalQuery.substring(start, end);
-        const highlightClass = isFatal ? 'query-error' : 'query-warning';
-        highlightedQuery += `<span class="query-highlight ${highlightClass}" title="Position ${start}-${end}">${highlightedText}</span>`;
-        
-        lastIndex = end;
-    });
-    
-    // Add any remaining text after the last highlight
-    if (lastIndex < originalQuery.length) {
-        highlightedQuery += originalQuery.substring(lastIndex);
-    }
-    
-    return highlightedQuery || originalQuery;
-}
-
-/* ----------------------------------
-   LINT BUTTON
------------------------------------*/
-document.getElementById('btn-lint').addEventListener('click', function () {
-    setTimeout(() => {
-        updateHighlight()
-    }, 100)
-});
-
         // --- 3. UTILITIES ---
         function copyJsonToClipboard() {
             const jsonText = codeBlock.textContent; 
