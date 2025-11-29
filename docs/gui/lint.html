@@ -80,7 +80,7 @@
         #output-wrap { margin-top: 1.5rem; position: relative; }
         
         /* --- JSON OUTPUT WINDOW --- */
-        pre {
+              pre {
             background: #1e1e1e; /* VS Code Dark BG */
             color: #d4d4d4;      /* Default Text Color */
             padding: 20px;
@@ -172,7 +172,8 @@
                             <i class="fas fa-download"></i>
                         </button>
                     </div>
-                    <pre><code id="output"></code></pre>
+                    <pre style="visibility: hidden;"><code id="output"></code></pre>
+                    <pre><code id="output1"></code></pre>
                 </div>
             </details>
             <h2 id="messages-title" style="display:none; font-size: 1.25rem; font-weight: 600; margin-top: 1rem;">Messages</h2>
@@ -182,15 +183,15 @@
     <script src="script.js"></script>
     <script>
         const PARENT_ORIGIN = window.location.origin;
+
         const loader = document.getElementById('loading-overlay');
         const loadingText = document.getElementById('loading-text');
         const contentWrapper = document.getElementById('content-wrapper');
         const statusDisplay = document.getElementById('status-display');
         const codeBlock = document.getElementById('output');
-
-        /* ------------------------------
-           FORCE-COLOR HIGHLIGHTER
-        ---------------------------------*/
+        const codeBlock1 = document.getElementById('output1');
+        // --- 1. THE FORCE-COLOR HIGHLIGHTER ---
+        // Uses Inline Styles to guarantee colors appear regardless of external CSS
         function syntaxHighlightInline(jsonObj) {
             // Convert object to string if it isn't already
             let json = JSON.stringify(jsonObj, undefined, 4);
@@ -199,6 +200,10 @@
             json = json.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
             
             // The Regex Magic
+            // 1. Strings (including keys)
+            // 2. Booleans (true/false)
+            // 3. Null
+            // 4. Numbers
             return json.replace(/("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/g, function (match) {
                 let style = 'color: #b5cea8;'; // Default: Number (Light Green)
                 
@@ -222,18 +227,25 @@
             });
         }
 
-        /* ----------------------------------
-           UPDATE HIGHLIGHT
-        -----------------------------------*/
-        function updateHighlight(jsonData) {
-            const highlightedHtml = syntaxHighlightInline(jsonData);
-            codeBlock.innerHTML = highlightedHtml;
-        }
 
-        // --- UTILITIES ---
+        // --- 2. UPDATE LOGIC ---
+
+        function updateHighlight() {
+            // 3. Render directly to InnerHTML
+            const highlightedHtml = syntaxHighlightInline(document.getElementById('output').innerText);
+            codeBlock1.innerHTML = highlightedHtml;
+        }
+        document.getElementById('btn-lint').addEventListener('click', function(){
+            setTimeout(()=>{
+                console.log(codeBlock1.innerText)
+                updateHighlight()
+            }, 1000)
+
+        })
+
+        // --- 3. UTILITIES ---
         function copyJsonToClipboard() {
-            // Get raw text without HTML tags for copying
-            const jsonText = codeBlock.textContent || codeBlock.innerText;
+            const jsonText = codeBlock.textContent; 
             navigator.clipboard.writeText(jsonText).then(() => {
                 const copyBtn = document.getElementById('copy-json');
                 const originalHTML = copyBtn.innerHTML;
@@ -247,7 +259,7 @@
         }
 
         function downloadJson() {
-            const jsonText = codeBlock.textContent || codeBlock.innerText;
+            const jsonText = codeBlock.textContent;
             const blob = new Blob([jsonText], { type: 'application/json' });
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
@@ -267,7 +279,7 @@
             }
         }
 
-        // --- PYODIDE SETUP ---
+        // --- 4. PYODIDE SETUP ---
         const originalAppendStatus = window.appendStatus || function(msg) { 
             if (statusDisplay) statusDisplay.textContent = msg; 
         };
@@ -296,7 +308,7 @@
             setTimeout(sendHeight, 50); 
         };
 
-        // --- INIT ---
+        // --- 5. INIT ---
         document.addEventListener('DOMContentLoaded', () => {
             document.body.classList.add('loading-active');
             contentWrapper.style.opacity = '0';
@@ -309,9 +321,11 @@
             window.addEventListener('load', sendHeight);
             const observer = new MutationObserver(sendHeight);
             observer.observe(document.body, { attributes: true, childList: true, subtree: true });
+
+
         });
 
-        // --- MAIN APP ---
+        // --- 6. MAIN APP ---
         (async () => {
             const pyodide = await loadPyodide({ stdout: msg => console.log(msg), stderr: msg => console.error(msg) });
             await pyodide.loadPackage("micropip");
@@ -388,11 +402,12 @@
                 // Unlock Button
                 lintBtn.disabled = false;
                 lintBtn.textContent = "Lint";
+                // Clear Storage
+                localStorage.removeItem('jsonData');
                 // Clear Messages
                 lintView.innerHTML = "";
                 messagesTitle.style.display = "none";
                 lintView.style.display = "none";
-                document.getElementById("output-wrap").open = false;
             }
 
             queryInput.addEventListener('input', resetState);
@@ -420,11 +435,13 @@ json.dumps([m.to_dict() for m in result])
                     console.error(e);
                     alert("Linter error occurred.");
                     lintBtn.textContent = "Error";
-                    lintBtn.disabled = false;
                     return;
                 }
 
                 const rawMessages = JSON.parse(resultJson);
+                
+                // SAVE
+                //localStorage.setItem('jsonData', JSON.stringify(rawMessages));
                 
                 // HIGHLIGHT (With Inline Styles)
                 updateHighlight(rawMessages);
@@ -444,11 +461,7 @@ json.dumps([m.to_dict() for m in result])
                 });
 
                 renderLintMessages(splitMessages);
-                document.getElementById("output-wrap").open = true;
-                lintBtn.textContent = "Done";
-                
-                // Update height after everything is rendered
-                setTimeout(sendHeight, 100);
+                lintBtn.textContent = "Done"; // Keep locked until edit
             });
         })();
     </script>
