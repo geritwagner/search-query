@@ -129,7 +129,7 @@
     #result {
       font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
       font-size: 0.9rem;
-      background: #f3f4f6;
+      background:  #1e2228;;
       padding: 1rem;
       border: 1px solid var(--border-color);
       border-radius: 0.5rem;
@@ -141,7 +141,7 @@
     #messages {
       font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
       font-size: 0.85rem;
-      background: transparent !important;
+      background: #1e2228 !important;
       margin: 0;
       padding: 0;
       white-space: pre-wrap;
@@ -190,7 +190,11 @@
       0% { transform: rotate(0deg); }
       100% { transform: rotate(360deg); }
     }
-    
+    .json-actions { position: absolute; top: 15px; right: 15px; display: flex; gap: 8px; z-index: 20; }
+    .json-btn { background: transparent !important; border: none !important; border-radius: 4px; color: #d4d4d4; padding: 6px 8px; cursor: pointer; font-size: 14px; transition: all 0.2s ease; backdrop-filter: none; }
+    .json-btn:hover { background: rgba(255, 255, 255, 0.1) !important; color: #ffffff; }
+    .json-btn.copied { color: #4CAF50 !important; }
+
     /* Headings */
     #result-title, #messages-title {
       margin-top: 1.5rem;
@@ -241,9 +245,20 @@
 
     <h2 id="result-title" style="display:none; margin-top:1.5rem;">Translated query</h2>
     <pre id="result" style="display:none;"></pre>
+    <div style="position: relative;">
+        <div class="json-actions">
+            <button class="json-btn" id="copy-json" title="Copy JSON">
+                <i class="far fa-copy"></i>
+            </button>
+            <button class="json-btn" id="download-json" title="Download JSON">
+                <i class="fas fa-download"></i>
+            </button>
+        </div>
+    </div>
+
 
     <h2 id="messages-title" style="display:none; margin-top:1.5rem;">Messages</h2>
-    <pre id="messages" style="display:none;"><code class="language-json"></code></pre>
+    <div id="messages" style="display:none;"></div>
   </div>
 
   <!-- Pyodide runtime -->
@@ -277,6 +292,32 @@
       
       console.log('JSON output highlighted with VS Code theme');
     }
+    function copyJsonToClipboard() {
+      const jsonText = codeBlock.textContent; 
+      navigator.clipboard.writeText(jsonText).then(() => {
+          const copyBtn = document.getElementById('copy-json');
+          const originalHTML = copyBtn.innerHTML;
+          copyBtn.innerHTML = '<i class="fas fa-check"></i>';
+          copyBtn.classList.add('copied');
+          setTimeout(() => {
+              copyBtn.innerHTML = originalHTML;
+              copyBtn.classList.remove('copied');
+          }, 2000);
+      });
+  }
+
+  function downloadJson() {
+      const jsonText = codeBlock.textContent;
+      const blob = new Blob([jsonText], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'linter-output.json';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+  }
 
     // --- Cross-Origin Height Communication ---
     function sendHeight() {
@@ -369,7 +410,9 @@
       document.body.classList.add('loading-active');
       contentWrapper.style.opacity = '0';
       contentWrapper.style.display = 'none';
-      loader.style.display = 'flex'; 
+      loader.style.display = 'flex';
+      document.getElementById('copy-json').addEventListener('click', copyJsonToClipboard);
+      document.getElementById('download-json').addEventListener('click', downloadJson);
       loadingText.textContent = "Initializing search-query...";
       btnTranslate.disabled = true;
 
@@ -384,28 +427,6 @@
       observer.observe(document.body, { attributes: true, childList: true, subtree: true });
     });
 
-    // Add event listener for the translate button to handle JSON highlighting
-    btnTranslate.addEventListener('click', function() {
-      // This will be handled by the translate.js functionality
-      // We'll add a small delay to ensure the JSON is rendered before highlighting
-      setTimeout(() => {
-        const messagesElement = document.getElementById('messages');
-        if (messagesElement.style.display !== 'none') {
-          const codeElement = messagesElement.querySelector('code');
-          if (codeElement && codeElement.textContent.trim() !== '') {
-            try {
-              const jsonData = JSON.parse(codeElement.textContent);
-              updateJsonOutput(jsonData);
-            } catch (e) {
-              // If it's not valid JSON, just highlight as is
-              codeElement.removeAttribute('data-highlighted');
-              hljs.highlightElement(codeElement);
-            }
-          }
-        }
-        sendHeight(); // Update height after showing results
-      }, 100);
-    });
   </script>
   
   <!-- your logic (the file I gave you) -->
