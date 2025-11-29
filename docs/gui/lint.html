@@ -88,9 +88,10 @@
             padding: 20px;
             border-radius: 10px;
             overflow-x: auto;
-            font-size: 15px;
+            font-size: 14px;
             font-family: 'Consolas', 'Monaco', monospace;
             border: 1px solid #333;
+            line-height: 1.5;
         }
 
         #output {
@@ -100,6 +101,18 @@
             margin: 0;
             padding: 0;
             white-space: pre; 
+        }
+        
+        /* Line Number Styling */
+        .line-number {
+            display: inline-block;
+            width: 30px;
+            text-align: right;
+            margin-right: 15px;
+            color: #6e7681;
+            user-select: none;
+            border-right: 1px solid #444;
+            padding-right: 8px;
         }
 
         .json-actions { position: absolute; top: 15px; right: 15px; display: flex; gap: 8px; z-index: 20; }
@@ -237,8 +250,8 @@
                             <i class="fas fa-download"></i>
                         </button>
                     </div>
-                    <pre style="font-size: 15px; font-family: 'Consolas', 'Monaco', monospace;" id="pre"><code id="output" style="font-size: 15px; font-family: 'Consolas', 'Monaco', monospace;"></code></pre>
-                    <pre style="font-size: 15px; font-family: 'Consolas', 'Monaco', monospace;"><code style="font-size: 15px; font-family: 'Consolas', 'Monaco', monospace;" id="output1"></code></pre>
+                    <pre style="display:none;" id="pre"><code id="output"></code></pre>
+                    <pre><code id="output1"></code></pre>
                 </div>
             </details>
             <h2 id="messages-title" style="display:none; font-size: 1.25rem; font-weight: 600; margin-top: 1rem;">Messages</h2>
@@ -262,8 +275,15 @@ const codeBlock1 = document.getElementById('output1');
         /* Add LINE NUMBERS to a JSON string */
         function addLineNumbers(text) {
             const lines = text.split("\n");
+            // Determine max padding based on total lines
+            const padLen = String(lines.length).length; 
+            
             return lines
-                .map((line, i) => `<span style="color:#666;">${String(i+1).padStart(1,'0')} </span> ${line}`)
+                .map((line, i) => {
+                    // Create a span for the number with non-selectable class
+                    const lineNum = `<span class="line-number">${String(i+1).padStart(padLen, ' ')}</span>`;
+                    return `${lineNum}${line}`;
+                })
                 .join("\n");
         }
 
@@ -276,11 +296,7 @@ const codeBlock1 = document.getElementById('output1');
             json = json.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
             
             // The Regex Magic
-            // 1. Strings (including keys)
-            // 2. Booleans (true/false)
-            // 3. Null
-            // 4. Numbers
-            return json.replace(/("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/g, function (match) {
+            json = json.replace(/("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/g, function (match) {
                 let style = 'color: #b5cea8;'; // Default: Number (Light Green)
                 
                 if (/^"/.test(match)) {
@@ -301,18 +317,25 @@ const codeBlock1 = document.getElementById('output1');
                 
                 return '<span style="' + style + '">' + match + '</span>';
             });
+            
             return addLineNumbers(json); // Attach line numbers here
-
         }
         
         /* ----------------------------------
            UPDATE HIGHLIGHT + LOCALSTORAGE
         -----------------------------------*/
         function updateHighlight() {
-            // 3. Render directly to InnerHTML
-            const highlightedHtml = syntaxHighlightInline(JSON.parse(codeBlock.innerText));
-            codeBlock1.innerHTML = highlightedHtml;
-            document.getElementById('pre').style.display = 'none';
+            // Ensure we have content in the raw block first
+            if(!codeBlock.innerText.trim()) return;
+
+            try {
+                const jsonObj = JSON.parse(codeBlock.innerText);
+                const highlightedHtml = syntaxHighlightInline(jsonObj);
+                codeBlock1.innerHTML = highlightedHtml;
+            } catch (e) {
+                console.error("JSON Highlight Error", e);
+                codeBlock1.innerText = codeBlock.innerText; // Fallback
+            }
         }
         
         /* ----------------------------------
@@ -350,15 +373,6 @@ const codeBlock1 = document.getElementById('output1');
             
             return highlightedQuery || originalQuery;
         }
-        
-        /* ----------------------------------
-           LINT BUTTON
-        -----------------------------------*/
-        document.getElementById('btn-lint').addEventListener('click', function () {
-            setTimeout(() => {
-                updateHighlight()
-            }, 100)
-        });
         
         // --- 3. UTILITIES ---
         function copyJsonToClipboard() {
@@ -589,6 +603,7 @@ const codeBlock1 = document.getElementById('output1');
             function resetState() {
                 // Clear JSON output
                 codeBlock.innerHTML = "";
+                codeBlock1.innerHTML = ""; // Clear highlighted block too
                 // Unlock Button
                 lintBtn.disabled = false;
                 lintBtn.textContent = "Lint";
@@ -630,8 +645,12 @@ json.dumps([m.to_dict() for m in result])
 
                 const rawMessages = JSON.parse(resultJson);
                 
-                // SAVE
-                //localStorage.setItem('jsonData', JSON.stringify(rawMessages));
+                // --- FIX: INSTANT HIGHLIGHTING & POPULATION ---
+                // 1. Populate the raw codeBlock with formatted JSON string
+                codeBlock.innerText = JSON.stringify(rawMessages, null, 4);
+                
+                // 2. Trigger the syntax highlight immediately
+                updateHighlight();
                 
                 // RENDER CARDS with highlighted queries
                 const splitMessages = [];
