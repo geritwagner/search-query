@@ -115,7 +115,7 @@
 
     /* === JSON Output Styling (VS Code Dark Theme Look) === */
     pre {
-      background-color: #1e1e1e !important; /* VS Code Dark Background */
+      background-color: #1e2228; !important; /* VS Code Dark Background */
       border: 1px solid #333;
       border-radius: 0.5rem;
       margin: 0;
@@ -128,7 +128,7 @@
     #result {
       font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
       font-size: 0.9rem;
-      background: #f3f4f6;
+      background: #1e2228;;
       padding: 1rem;
       /* Added padding-right to accommodate the copy button so text doesn't overlap */
       padding-right: 3rem; 
@@ -497,21 +497,37 @@
       resultObserver.observe(resultPre, { attributes: true, attributeFilter: ['style'] });
 
       // 2. Handle Copy Action for translated query
-      btnCopy.addEventListener('click', () => {
-          const textToCopy = resultPre.innerText;
-          navigator.clipboard.writeText(textToCopy).then(() => {
-              // Feedback: Change icon to checkmark
-              const originalContent = btnCopy.innerHTML;
-              btnCopy.innerHTML = '<i class="fa-solid fa-check" style="color: #10b981;"></i>';
-              
-              setTimeout(() => {
-                  btnCopy.innerHTML = '<i class="fa-regular fa-copy"></i>';
-              }, 2000);
-          }).catch(err => {
-              console.error('Failed to copy text: ', err);
-          });
+// Add event listener for the translate button to handle JSON highlighting
+      btnTranslate.addEventListener('click', function() {
+        // Show the JSON output and buttons
+        const messagesElement = document.getElementById('messages');
+        const jsonActions = document.querySelector('.json-actions');
+        const messagesPre = messagesElement.parentElement;
+        
+        // Show the elements
+        messagesPre.style.display = 'block';
+        messagesElement.style.display = 'block';
+        jsonActions.style.display = 'flex';
+        
+        // This will be handled by the translate.js functionality
+        // We'll add a small delay to ensure the JSON is rendered before highlighting
+        setTimeout(() => {
+          if (messagesElement.style.display !== 'none') {
+            const codeElement = messagesElement.querySelector('code');
+            if (codeElement && codeElement.textContent.trim() !== '') {
+              try {
+                const jsonData = JSON.parse(codeElement.textContent);
+                updateJsonOutput(jsonData);
+              } catch (e) {
+                // If it's not valid JSON, just highlight as is
+                codeElement.removeAttribute('data-highlighted');
+                hljs.highlightElement(codeElement);
+              }
+            }
+          }
+          sendHeight(); // Update height after showing results
+        }, 100);
       });
-
       // 3. Sync JSON actions visibility with messages visibility
       const messagesObserver = new MutationObserver(() => {
         if (messagesPre.style.display !== 'none') {
