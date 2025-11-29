@@ -303,34 +303,31 @@
     </div>
 
     <h2 id="messages-title" style="display:none; margin-top:1.5rem;">Messages</h2>
-    <div style="position: relative;">
-      <div class="json-actions" style="display: none;">
-        <button class="json-btn" id="copy-json" title="Copy JSON to clipboard">
-          <i class="far fa-copy"></i>
-        </button>
-        <button class="json-btn" id="download-json" title="Download JSON">
-          <i class="fas fa-download"></i>
-        </button>
-      </div>
-      <pre style="display: none;"><code id="messages" class="language-json"></code></pre>
-    </div>
+  <div style="position: relative;">
+  <div class="json-actions" style="display: none;">
+    <button class="json-btn" id="copy-json" title="Copy JSON to clipboard">
+      <i class="far fa-copy"></i>
+    </button>
+    <button class="json-btn" id="download-json" title="Download JSON">
+      <i class="fas fa-download"></i>
+    </button>
   </div>
+  <pre style="display: none;"><code id="messages" class="language-json"></code></pre>
+</div>
 
-  <script src="https://cdn.jsdelivr.net/pyodide/v0.26.2/full/pyodide.js"></script>
-  
-  <script>
+<script>
     // Initialize Highlight.js
     hljs.configure({ ignoreUnescapedHTML: true });
 
     const loader = document.getElementById('loading-overlay');
     const loadingText = document.getElementById('loading-text');
     const contentWrapper = document.getElementById('content-wrapper');
-    const statusDisplay = document.getElementById('status-display'); // Now using status-display
+    const statusDisplay = document.getElementById('status-display');
     const btnTranslate = document.getElementById('btn-translate');
 
     // Function to update JSON output with highlighting
     function updateJsonOutput(jsonData) {
-      const codeElement = document.getElementById('messages').querySelector('code');
+      const codeElement = document.getElementById('messages');
       
       // 1. Convert to Pretty String
       const formattedJson = JSON.stringify(jsonData, null, 2);
@@ -349,7 +346,7 @@
 
     // --- JSON Copy and Download Functions ---
     function copyJsonToClipboard() {
-      const jsonText = document.getElementById('messages').querySelector('code').textContent;
+      const jsonText = document.getElementById('messages').textContent;
       navigator.clipboard.writeText(jsonText).then(() => {
         const copyBtn = document.getElementById('copy-json');
         const originalHTML = copyBtn.innerHTML;
@@ -363,7 +360,7 @@
     }
 
     function downloadJson() {
-      const jsonText = document.getElementById('messages').querySelector('code').textContent;
+      const jsonText = document.getElementById('messages').textContent;
       const blob = new Blob([jsonText], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -497,37 +494,21 @@
       resultObserver.observe(resultPre, { attributes: true, attributeFilter: ['style'] });
 
       // 2. Handle Copy Action for translated query
-// Add event listener for the translate button to handle JSON highlighting
-      btnTranslate.addEventListener('click', function() {
-        // Show the JSON output and buttons
-        const messagesElement = document.getElementById('messages');
-        const jsonActions = document.querySelector('.json-actions');
-        const messagesPre = messagesElement.parentElement;
-        
-        // Show the elements
-        messagesPre.style.display = 'block';
-        messagesElement.style.display = 'block';
-        jsonActions.style.display = 'flex';
-        
-        // This will be handled by the translate.js functionality
-        // We'll add a small delay to ensure the JSON is rendered before highlighting
-        setTimeout(() => {
-          if (messagesElement.style.display !== 'none') {
-            const codeElement = messagesElement.querySelector('code');
-            if (codeElement && codeElement.textContent.trim() !== '') {
-              try {
-                const jsonData = JSON.parse(codeElement.textContent);
-                updateJsonOutput(jsonData);
-              } catch (e) {
-                // If it's not valid JSON, just highlight as is
-                codeElement.removeAttribute('data-highlighted');
-                hljs.highlightElement(codeElement);
-              }
-            }
-          }
-          sendHeight(); // Update height after showing results
-        }, 100);
+      btnCopy.addEventListener('click', () => {
+          const textToCopy = resultPre.innerText;
+          navigator.clipboard.writeText(textToCopy).then(() => {
+              // Feedback: Change icon to checkmark
+              const originalContent = btnCopy.innerHTML;
+              btnCopy.innerHTML = '<i class="fa-solid fa-check" style="color: #10b981;"></i>';
+              
+              setTimeout(() => {
+                  btnCopy.innerHTML = '<i class="fa-regular fa-copy"></i>';
+              }, 2000);
+          }).catch(err => {
+              console.error('Failed to copy text: ', err);
+          });
       });
+
       // 3. Sync JSON actions visibility with messages visibility
       const messagesObserver = new MutationObserver(() => {
         if (messagesPre.style.display !== 'none') {
@@ -543,14 +524,26 @@
       document.getElementById('download-json').addEventListener('click', downloadJson);
     });
 
-    // Add event listener for the translate button to handle JSON highlighting
+    // SINGLE translate button event listener
     btnTranslate.addEventListener('click', function() {
+      // Show the JSON output and buttons
+      const messagesElement = document.getElementById('messages');
+      const jsonActions = document.querySelector('.json-actions');
+      const messagesPre = messagesElement.parentElement;
+      
+      // Show the elements
+      messagesPre.style.display = 'block';
+      messagesElement.style.display = 'block';
+      jsonActions.style.display = 'flex';
+      
+      // Show messages title
+      document.getElementById('messages-title').style.display = 'block';
+      
       // This will be handled by the translate.js functionality
       // We'll add a small delay to ensure the JSON is rendered before highlighting
       setTimeout(() => {
-        const messagesElement = document.getElementById('messages');
         if (messagesElement.style.display !== 'none') {
-          const codeElement = messagesElement.querySelector('code');
+          const codeElement = messagesElement;
           if (codeElement && codeElement.textContent.trim() !== '') {
             try {
               const jsonData = JSON.parse(codeElement.textContent);
@@ -565,8 +558,7 @@
         sendHeight(); // Update height after showing results
       }, 100);
     });
-  </script>
-  
+  </script> 
   <script src="translate.js"></script>
 </body>
 </html>
