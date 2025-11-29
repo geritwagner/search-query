@@ -81,16 +81,17 @@
         
         /* --- JSON OUTPUT WINDOW --- */
               pre {
-            background:#1e2228; /* VS Code Dark BG */
-            color: #d4d4d4;      /* Default Text Color */
-            padding: 20px;
-            border-radius: 10px;
-            overflow-x: auto;
-            font-size: 15px;
-            font-family: 'Consolas', 'Monaco', monospace;
-            border: 1px solid #333;
-        }
-
+                    background-color: #f6f8fa;   /* GitHub code block background */
+                    color: #24292e;              /* Default GitHub text color */
+                    font-family: Consolas, "Liberation Mono", Menlo, monospace;
+                    font-size: 14px;
+                    padding: 12px 16px;
+                    border-radius: 6px;
+                    border: 1px solid #d0d7de;   /* Light GitHub-style border */
+                    display: block;
+                    overflow-x: auto;
+                    line-height: 1.5;        }
+                
         #output {
             font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
             font-size: 0.85rem;
@@ -105,7 +106,22 @@
         .json-btn:hover { background: rgba(255, 255, 255, 0.1) !important; color: #ffffff; }
         .json-btn.copied { color: #4CAF50 !important; }
 
-        #lint-view { padding: 1rem; margin-bottom: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); background: #1e2228; border-radius: 10px;}
+        #lint-view { 
+            padding: 1rem; 
+            margin-bottom: 10px; 
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            background-color: #f6f8fa;   /* GitHub code block background */
+            color: #24292e;              /* Default GitHub text color */
+            font-family: Consolas, "Liberation Mono", Menlo, monospace;
+            font-size: 14px;
+            padding: 12px 16px;
+            border-radius: 6px;
+            border: 1px solid #d0d7de;   /* Light GitHub-style border */
+            display: block;
+            overflow-x: auto;
+            line-height: 1.5;        
+        }
+
         #lint-view .ansi-red { color: var(--error-red); font-weight: 600; }
         #lint-view .ansi-yellow { color: var(--warning-yellow); font-weight: 600; }
         #lint-view .lint-title { font-weight: 700; font-size: 1rem; margin-bottom: 0.5rem;}
@@ -122,11 +138,19 @@
           /* Lint card (styles that will target the fragment you gave) */
         #lint-container { margin-top: 18px; }
         .lint-card {
-            background: #1e2228;
             padding: 14px;
-            border-radius: 10px;
-            border: 1px solid #2a2a2a;
             box-shadow: 0 6px 18px rgba(0,0,0,0.35);
+            background-color: #f6f8fa;   /* GitHub code block background */
+            color: #24292e;              /* Default GitHub text color */
+            font-family: Consolas, "Liberation Mono", Menlo, monospace;
+            font-size: 14px;
+            padding: 12px 16px;
+            border-radius: 6px;
+            border: 1px solid #d0d7de;   /* Light GitHub-style border */
+            display: block;
+            overflow-x: auto;
+            line-height: 1.5;        }
+
         }
         .lint-title { color: #ff7474; font-weight: 700; margin-bottom: px; font-size: 1rem; }
         .lint-meta { color: #cfcfcf; margin-bottom: 8px; }
