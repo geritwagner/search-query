@@ -201,8 +201,8 @@
                             <i class="fas fa-download"></i>
                         </button>
                     </div>
-                    <pre id="pre"><code id="output"></code></pre>
-                    <pre><code style="font-size: 16px; font-family: 'Consolas', 'Monaco', monospace;" id="output1"></code></pre>
+                    <pre id="pre"><code style="font-size: 16px; font-family: 'Consolas', 'Monaco', monospace;" id="output"></code></pre>
+                    <pre id="pre1" style="display: none;"><code style="font-size: 16px; font-family: 'Consolas', 'Monaco', monospace;" id="output1"></code></pre>
                 </div>
             </details>
             <h2 id="messages-title" style="display:none; font-size: 1.25rem; font-weight: 600; margin-top: 1rem;">Messages</h2>
@@ -268,6 +268,7 @@
         // --- 2. UPDATE LOGIC ---
 
         function updateHighlight() {
+            document.getElementById('pre1').style.display = 'block';
             // 3. Render directly to InnerHTML
             const highlightedHtml = syntaxHighlightInline(JSON.parse(document.getElementById('output').innerText));
             codeBlock1.innerHTML = highlightedHtml;
