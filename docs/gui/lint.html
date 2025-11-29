@@ -105,7 +105,7 @@
         .json-btn:hover { background: rgba(255, 255, 255, 0.1) !important; color: #ffffff; }
         .json-btn.copied { color: #4CAF50 !important; }
 
-        #lint-view { padding: 1rem; margin-bottom: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); background-color: var(--bg-card); }
+        #lint-view { padding: 1rem; margin-bottom: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); background: #1e2228; }
         #lint-view .ansi-red { color: var(--error-red); font-weight: 600; }
         #lint-view .ansi-yellow { color: var(--warning-yellow); font-weight: 600; }
         #lint-view .lint-title { font-weight: 700; font-size: 1rem; margin-bottom: 0.5rem;}
@@ -122,7 +122,7 @@
           /* Lint card (styles that will target the fragment you gave) */
         #lint-container { margin-top: 18px; }
         .lint-card {
-            background: linear-gradient(180deg,#121212,#151515);
+            background: #1e2228;
             padding: 14px;
             border-radius: 10px;
             border: 1px solid #2a2a2a;
@@ -202,7 +202,6 @@
                         </button>
                     </div>
                     <pre id="pre"><code style="font-size: 16px; font-family: 'Consolas', 'Monaco', monospace;" id="output"></code></pre>
-                    <pre id="pre1" style="display: none;"><code style="font-size: 16px; font-family: 'Consolas', 'Monaco', monospace;" id="output1"></code></pre>
                 </div>
             </details>
             <h2 id="messages-title" style="display:none; font-size: 1.25rem; font-weight: 600; margin-top: 1rem;">Messages</h2>
@@ -218,8 +217,7 @@
         const contentWrapper = document.getElementById('content-wrapper');
         const statusDisplay = document.getElementById('status-display');
         const codeBlock = document.getElementById('output');
-        const codeBlock1 = document.getElementById('output1');
-        function addLineNumbers(text) {
+/*        function addLineNumbers(text) {
             const lines = text.split("\n");
             return lines
                 .map((line, i) => `<span style="color:#666;">${String(i+1).padStart(1,'0')} </span> ${line}`)
@@ -309,7 +307,7 @@
             }, 1000)
 
         })
-
+*/
         // --- 3. UTILITIES ---
         function copyJsonToClipboard() {
             const jsonText = codeBlock.textContent; 
