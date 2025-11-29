@@ -172,7 +172,7 @@
                             <i class="fas fa-download"></i>
                         </button>
                     </div>
-                    <pre style="visibility: hidden;"><code id="output"></code></pre>
+                    <pre id="pre"><code id="output"></code></pre>
                     <pre><code id="output1"></code></pre>
                 </div>
             </details>
@@ -234,6 +234,7 @@
             // 3. Render directly to InnerHTML
             const highlightedHtml = syntaxHighlightInline(document.getElementById('output').innerText);
             codeBlock1.innerHTML = highlightedHtml;
+            document.getElementById('pre').style.display = 'none';
         }
         document.getElementById('btn-lint').addEventListener('click', function(){
             setTimeout(()=>{
@@ -442,9 +443,7 @@ json.dumps([m.to_dict() for m in result])
                 
                 // SAVE
                 //localStorage.setItem('jsonData', JSON.stringify(rawMessages));
-                
-                // HIGHLIGHT (With Inline Styles)
-                updateHighlight(rawMessages);
+            
                 
                 // RENDER CARDS
                 const splitMessages = [];
