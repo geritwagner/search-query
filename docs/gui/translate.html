@@ -5,10 +5,6 @@
   <title>search-query translator</title>
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/vs2015.min.css">
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/json.min.js"></script>
-
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
   
   <style>
@@ -113,16 +109,16 @@
       white-space: pre-wrap;
     }
 
-    /* === JSON Output Styling (VS Code Dark Theme Look) === */
+    /* === MANUAL JSON OUTPUT STYLING (VS Code Dark Theme Look) === */
     pre {
-      background-color: #1e1e1e !important; /* VS Code Dark Background */
+      background: #1e1e1e; /* VS Code Dark BG */
+      color: #d4d4d4;      /* Default Text Color */
+      padding: 20px;
+      border-radius: 10px;
+      overflow-x: auto;
+      font-size: 15px;
+      font-family: 'Consolas', 'Monaco', monospace;
       border: 1px solid #333;
-      border-radius: 0.5rem;
-      margin: 0;
-      padding: 1rem;
-      max-height: 400px;
-      overflow: auto;
-      color: #d4d4d4; /* Default Text Color */
     }
 
     #result {
@@ -130,7 +126,6 @@
       font-size: 0.9rem;
       background: #f3f4f6;
       padding: 1rem;
-      /* Added padding-right to accommodate the copy button so text doesn't overlap */
       padding-right: 3rem; 
       border: 1px solid var(--border-color);
       border-radius: 0.5rem;
@@ -139,23 +134,15 @@
       margin-top: 0.5rem;
     }
 
-    #messages {
+    #messages, #messages1 {
       font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
       font-size: 0.85rem;
       background: transparent !important;
       margin: 0;
       padding: 0;
-      white-space: pre-wrap;
-      word-wrap: break-word;
+      white-space: pre; 
     }
 
-    /* Custom Syntax Highlighting (VS Code Style) */
-    .hljs-attr { color: #9cdcfe !important; }      /* Keys: Light Blue */
-    .hljs-string { color: #ce9178 !important; }    /* Strings: Orange/Salmon */
-    .hljs-number { color: #b5cea8 !important; }    /* Numbers: Light Green */
-    .hljs-literal, .hljs-keyword { color: #569cd6 !important; } /* Booleans: Blue */
-    .hljs-punctuation { color: #d4d4d4 !important; } /* Punctuation: Light Gray */
-    
     /* --- LOADING OVERLAY STYLES (Fixed and Centered) --- */
     #loading-overlay {
       position: fixed;
@@ -213,13 +200,41 @@
       font-size: 1rem;
       transition: all 0.2s ease;
       z-index: 10;
-      display: none; /* Hidden by default until result is shown */
+      display: none;
       box-shadow: 0 1px 2px rgba(0,0,0,0.05);
     }
     #btn-copy:hover {
       border-color: var(--primary);
       color: var(--primary);
       background: #f9fafb;
+    }
+
+    /* JSON Actions */
+    .json-actions { 
+      position: absolute; 
+      top: 15px; 
+      right: 15px; 
+      display: flex; 
+      gap: 8px; 
+      z-index: 20; 
+    }
+    .json-btn { 
+      background: transparent !important; 
+      border: none !important; 
+      border-radius: 4px; 
+      color: #d4d4d4; 
+      padding: 6px 8px; 
+      cursor: pointer; 
+      font-size: 14px; 
+      transition: all 0.2s ease; 
+      backdrop-filter: none; 
+    }
+    .json-btn:hover { 
+      background: rgba(255, 255, 255, 0.1) !important; 
+      color: #ffffff; 
+    }
+    .json-btn.copied { 
+      color: #4CAF50 !important; 
     }
     
   </style>
@@ -272,43 +287,103 @@
     </div>
 
     <h2 id="messages-title" style="display:none; margin-top:1.5rem;">Messages</h2>
-    <pre id="messages" style="display:none;"><code class="language-json"></code></pre>
+    <div style="position: relative;">
+      <div class="json-actions">
+        <button class="json-btn" id="copy-json" title="Copy JSON">
+          <i class="far fa-copy"></i>
+        </button>
+        <button class="json-btn" id="download-json" title="Download JSON">
+          <i class="fas fa-download"></i>
+        </button>
+      </div>
+      <pre style="font-size: 15px; font-family: 'Consolas', 'Monaco', monospace;" id="messages-pre"><code id="messages" style="font-size: 15px; font-family: 'Consolas', 'Monaco', monospace;"></code></pre>
+      <pre style="font-size: 15px; font-family: 'Consolas', 'Monaco', monospace;"><code id="messages1" style="font-size: 15px; font-family: 'Consolas', 'Monaco', monospace;"></code></pre>
+    </div>
   </div>
 
   <script src="https://cdn.jsdelivr.net/pyodide/v0.26.2/full/pyodide.js"></script>
   
   <script>
-    // Initialize Highlight.js
-    hljs.configure({ ignoreUnescapedHTML: true });
-
     const loader = document.getElementById('loading-overlay');
     const loadingText = document.getElementById('loading-text');
     const contentWrapper = document.getElementById('content-wrapper');
-    const statusDisplay = document.getElementById('status-display'); // Now using status-display
+    const statusDisplay = document.getElementById('status-display');
     const btnTranslate = document.getElementById('btn-translate');
+    const messagesBlock = document.getElementById('messages');
+    const messagesBlock1 = document.getElementById('messages1');
 
-    // Function to update JSON output with highlighting
+    /* ------------------------------
+       MANUAL JSON HIGHLIGHTER (Same as your example)
+    ---------------------------------*/
+    
+    /* Add LINE NUMBERS to a JSON string */
+    function addLineNumbers(text) {
+        const lines = text.split("\n");
+        return lines
+            .map((line, i) => `<span style="color:#666;">${String(i+1).padStart(1,'0')} </span> ${line}`)
+            .join("\n");
+    }
+
+    /* --- Manual JSON Highlight --- */
+    function syntaxHighlightInline(jsonObj) {
+        let json = JSON.stringify(jsonObj, null, 4);
+
+        // Escape HTML
+        json = json.replace(/&/g, '&amp;')
+                   .replace(/</g, '&lt;')
+                   .replace(/>/g, '&gt;');
+
+        json = json.replace(
+            /("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/g,
+            function (match) {
+                let style = 'color: #b5cea8;';
+                if (/^"/.test(match)) {
+                    if (/:$/.test(match)) {
+                        return `<span style="color:#9cdcfe;">${match.slice(0,-1)}</span>:`; 
+                    } else {
+                        style = 'color:#ce9178;';
+                    }
+                } else if (/true|false/.test(match)) {
+                    style = 'color:#569cd6;';
+                } else if (/null/.test(match)) {
+                    style = 'color:#569cd6;';
+                }
+                return `<span style="${style}">${match}</span>`;
+            }
+        );
+
+        return addLineNumbers(json);
+    }
+
+    /* Update JSON Highlight */
+    function updateMessagesHighlight() {
+        try {
+            const jsonData = JSON.parse(messagesBlock.innerText);
+            const highlightedHtml = syntaxHighlightInline(jsonData);
+            messagesBlock1.innerHTML = highlightedHtml;
+            document.getElementById('messages-pre').style.display = 'none';
+        } catch (e) {
+            console.error('Error highlighting JSON:', e);
+            // If it's not valid JSON, just copy the text as is
+            messagesBlock1.textContent = messagesBlock.innerText;
+        }
+    }
+
+    // Function to update JSON output with manual highlighting
     function updateJsonOutput(jsonData) {
-      const codeElement = document.getElementById('messages').querySelector('code');
-      
-      // 1. Convert to Pretty String
-      const formattedJson = JSON.stringify(jsonData, null, 2);
-      
-      // 2. Set text content
-      codeElement.textContent = formattedJson;
-      
-      // 3. Clear markers
-      codeElement.removeAttribute('data-highlighted');
-      
-      // 4. Trigger Highlight.js
-      hljs.highlightElement(codeElement);
-      
-      console.log('JSON output highlighted with VS Code theme');
+        // Set raw JSON in first block
+        messagesBlock.textContent = JSON.stringify(jsonData, null, 4);
+        
+        // Apply manual highlighting to second block
+        const highlightedHtml = syntaxHighlightInline(jsonData);
+        messagesBlock1.innerHTML = highlightedHtml;
+        document.getElementById('messages-pre').style.display = 'none';
+        
+        console.log('JSON output manually highlighted with VS Code theme');
     }
 
     // --- Cross-Origin Height Communication ---
     function sendHeight() {
-      // Only send height if the loader is not active (i.e., content is visible)
       if (loader.style.display !== 'none') return;
 
       const height = document.body.scrollHeight;
@@ -325,21 +400,17 @@
     const originalAppendStatus = window.appendStatus || function(msg) { 
       const statusDiv = document.getElementById('status');
       if (statusDiv) {
-        // If Pyodide outputs complex status (which includes ANSI codes), write to hidden div
         statusDiv.textContent = msg; 
       }
       console.log("Pyodide Hook:", msg); 
     };
     
     window.appendStatus = function(msg) {
-      // 1. Update the visual status text in status-display
       const cleanMsg = msg.replace(/\u001b\[.*?m/g, ''); 
       if (loadingText) loadingText.textContent = cleanMsg;
       statusDisplay.textContent = cleanMsg;
 
-      // 2. Control the visual transition state and viewport lock
       if (cleanMsg.includes('Done') || cleanMsg.includes('ready') || cleanMsg.includes('Ready')) {
-        // Done loading: Unlock viewport, fade out loader, show content
         document.body.classList.remove('loading-active');
         statusDisplay.innerText = 'Search Query loaded…';
         loader.style.opacity = '0';
@@ -349,17 +420,15 @@
           loader.style.display = 'none';
           document.body.style.overflow = 'hidden'; 
           btnTranslate.disabled = false;
-          sendHeight(); // Final resize
+          sendHeight();
         }, 500);
       } else {
-        // Loading: Lock viewport
         document.body.classList.add('loading-active');
         loader.style.display = 'flex';
         loader.style.opacity = '1';
         contentWrapper.style.opacity = '0';
       }
 
-      // 3. Call the original function and re-trigger height update 
       originalAppendStatus(msg);
       setTimeout(sendHeight, 50); 
     };
@@ -380,20 +449,42 @@
         statusText.innerText = 'Search Query Ready';
         statusDisplay.innerText = 'Search Query Ready';
         
-        // Enable the translate button
         btnTranslate.disabled = false;
-        
-        // Stop the interval to prevent unnecessary height updates
         clearInterval(appendInterval);
-
-        // Send final height once
         sendHeight();
       }
     }, 100);
 
+    // --- UTILITIES ---
+    function copyJsonToClipboard() {
+        const jsonText = messagesBlock.textContent; 
+        navigator.clipboard.writeText(jsonText).then(() => {
+            const copyBtn = document.getElementById('copy-json');
+            const originalHTML = copyBtn.innerHTML;
+            copyBtn.innerHTML = '<i class="fas fa-check"></i>';
+            copyBtn.classList.add('copied');
+            setTimeout(() => {
+                copyBtn.innerHTML = originalHTML;
+                copyBtn.classList.remove('copied');
+            }, 2000);
+        });
+    }
+
+    function downloadJson() {
+        const jsonText = messagesBlock.textContent;
+        const blob = new Blob([jsonText], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'translation-messages.json';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    }
+
     // --- Initial Setup and DOM Observer ---
     document.addEventListener('DOMContentLoaded', () => {
-      // Initial state setup: LOCK VIEWPORT IMMEDIATELY
       document.body.classList.add('loading-active');
       contentWrapper.style.opacity = '0';
       contentWrapper.style.display = 'none';
@@ -401,21 +492,14 @@
       loadingText.textContent = "Initializing search-query...";
       btnTranslate.disabled = true;
 
-      // Initialize Highlight.js
-      hljs.highlightAll();
+      // Setup JSON copy/download buttons
+      document.getElementById('copy-json').addEventListener('click', copyJsonToClipboard);
+      document.getElementById('download-json').addEventListener('click', downloadJson);
 
-      // 1. Send initial minimal height
-      window.addEventListener('load', sendHeight);
-      
-      // 2. Observe DOM changes (Crucial for when the output table appears/disappears)
-      const observer = new MutationObserver(sendHeight);
-      observer.observe(document.body, { attributes: true, childList: true, subtree: true });
-      
-      // --- NEW LOGIC FOR COPY BUTTON ---
+      // Copy button for translated result
       const resultPre = document.getElementById('result');
       const btnCopy = document.getElementById('btn-copy');
 
-      // 1. Sync button visibility with result visibility
       const resultObserver = new MutationObserver(() => {
          if (resultPre.style.display !== 'none') {
              btnCopy.style.display = 'block';
@@ -425,11 +509,9 @@
       });
       resultObserver.observe(resultPre, { attributes: true, attributeFilter: ['style'] });
 
-      // 2. Handle Copy Action
       btnCopy.addEventListener('click', () => {
           const textToCopy = resultPre.innerText;
           navigator.clipboard.writeText(textToCopy).then(() => {
-              // Feedback: Change icon to checkmark
               const originalContent = btnCopy.innerHTML;
               btnCopy.innerHTML = '<i class="fa-solid fa-check" style="color: #10b981;"></i>';
               
@@ -440,30 +522,23 @@
               console.error('Failed to copy text: ', err);
           });
       });
+
+      window.addEventListener('load', sendHeight);
+      const observer = new MutationObserver(sendHeight);
+      observer.observe(document.body, { attributes: true, childList: true, subtree: true });
     });
 
-    // Add event listener for the translate button to handle JSON highlighting
+    // Make the updateJsonOutput function available globally for translate.js
+    window.updateJsonOutput = updateJsonOutput;
+
+    // Add event listener for translate button
     btnTranslate.addEventListener('click', function() {
-      // This will be handled by the translate.js functionality
-      // We'll add a small delay to ensure the JSON is rendered before highlighting
       setTimeout(() => {
-        const messagesElement = document.getElementById('messages');
-        if (messagesElement.style.display !== 'none') {
-          const codeElement = messagesElement.querySelector('code');
-          if (codeElement && codeElement.textContent.trim() !== '') {
-            try {
-              const jsonData = JSON.parse(codeElement.textContent);
-              updateJsonOutput(jsonData);
-            } catch (e) {
-              // If it's not valid JSON, just highlight as is
-              codeElement.removeAttribute('data-highlighted');
-              hljs.highlightElement(codeElement);
-            }
-          }
-        }
-        sendHeight(); // Update height after showing results
+        updateMessagesHighlight();
+        sendHeight();
       }, 100);
     });
+
   </script>
   
   <script src="translate.js"></script>
