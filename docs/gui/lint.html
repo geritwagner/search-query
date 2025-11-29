@@ -173,7 +173,7 @@
                         </button>
                     </div>
                     <pre id="pre"><code id="output"></code></pre>
-                    <pre><code id="output1"></code></pre>
+                    <pre><code style="font-size: 16px; font-family: 'Consolas', 'Monaco', monospace;" id="output1"></code></pre>
                 </div>
             </details>
             <h2 id="messages-title" style="display:none; font-size: 1.25rem; font-weight: 600; margin-top: 1rem;">Messages</h2>
@@ -190,6 +190,13 @@
         const statusDisplay = document.getElementById('status-display');
         const codeBlock = document.getElementById('output');
         const codeBlock1 = document.getElementById('output1');
+        function addLineNumbers(text) {
+            const lines = text.split("\n");
+            return lines
+                .map((line, i) => `<span style="color:#666;">${String(i+1).padStart(1,'0')} </span> ${line}`)
+                .join("\n");
+        }
+
         // --- 1. THE FORCE-COLOR HIGHLIGHTER ---
         // Uses Inline Styles to guarantee colors appear regardless of external CSS
         function syntaxHighlightInline(jsonObj) {
@@ -225,6 +232,7 @@
                 
                 return '<span style="' + style + '">' + match + '</span>';
             });
+            return addLineNumbers(json); // Attach line numbers here
         }
 
 
