@@ -633,9 +633,6 @@ json.dumps([m.to_dict() for m in result])
                 // SAVE
                 //localStorage.setItem('jsonData', JSON.stringify(rawMessages));
                 
-                // HIGHLIGHT (With Inline Styles)
-                updateHighlight(rawMessages);
-                
                 // RENDER CARDS with highlighted queries
                 const splitMessages = [];
                 rawMessages.forEach(m => {
