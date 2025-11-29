@@ -270,6 +270,17 @@
       font-weight: 600;
       margin-left: 0.5rem;
     }
+
+    /* Info message styling */
+    .info-message {
+      background: #dbeafe;
+      border: 1px solid #93c5fd;
+      border-radius: 0.375rem;
+      padding: 1rem;
+      margin-top: 1rem;
+      color: #1e40af;
+      font-size: 0.9rem;
+    }
     
   </style>
 </head>
@@ -341,6 +352,7 @@
       <pre id="messages"><code class="language-json"></code></pre>
     </div>
   </div>
+
   <!-- Pyodide runtime -->
   <script src="https://cdn.jsdelivr.net/pyodide/v0.26.2/full/pyodide.js"></script>
   
@@ -361,16 +373,22 @@
     // Copy functionality
     function setupCopyButtons() {
       // Copy translated query
-      document.getElementById('copy-query').addEventListener('click', function() {
-        const queryText = document.getElementById('translated-query').textContent;
-        copyToClipboard(queryText, this);
-      });
+      const copyQueryBtn = document.getElementById('copy-query');
+      if (copyQueryBtn) {
+        copyQueryBtn.addEventListener('click', function() {
+          const queryText = document.getElementById('translated-query').textContent;
+          copyToClipboard(queryText, this);
+        });
+      }
 
       // Copy messages
-      document.getElementById('copy-messages').addEventListener('click', function() {
-        const messagesText = document.getElementById('messages').textContent;
-        copyToClipboard(messagesText, this);
-      });
+      const copyMessagesBtn = document.getElementById('copy-messages');
+      if (copyMessagesBtn) {
+        copyMessagesBtn.addEventListener('click', function() {
+          const messagesText = document.getElementById('messages').textContent;
+          copyToClipboard(messagesText, this);
+        });
+      }
     }
 
     function copyToClipboard(text, button) {
@@ -395,6 +413,11 @@
     function updateJsonOutput(jsonData) {
       const codeElement = document.getElementById('messages').querySelector('code');
       
+      if (!codeElement) {
+        console.error('Code element not found for messages');
+        return;
+      }
+      
       // 1. Convert to Pretty String
       const formattedJson = JSON.stringify(jsonData, null, 2);
       
@@ -412,19 +435,29 @@
 
     // Function to show translated results
     function showTranslatedResults(translatedQuery, messages) {
+      console.log('Showing translated results:', { translatedQuery, messages });
+      
       // Show translated query
-      document.getElementById('translated-query').textContent = translatedQuery;
-      resultTitle.style.display = 'block';
-      translatedQueryContainer.style.display = 'block';
+      const translatedQueryElement = document.getElementById('translated-query');
+      if (translatedQueryElement) {
+        translatedQueryElement.textContent = translatedQuery || 'No translation available';
+        resultTitle.style.display = 'block';
+        translatedQueryContainer.style.display = 'block';
+      }
 
       // Show messages if available
-      if (messages && Object.keys(messages).length > 0) {
+      const messagesElement = document.getElementById('messages');
+      if (messagesElement && messages && Object.keys(messages).length > 0) {
         updateJsonOutput(messages);
         messagesTitle.style.display = 'block';
         messagesContainer.style.display = 'block';
       } else {
-        messagesTitle.style.display = 'none';
-        messagesContainer.style.display = 'none';
+        // Show info message if no messages
+        if (messagesElement) {
+          messagesElement.textContent = 'No translation messages or warnings.';
+          messagesTitle.style.display = 'block';
+          messagesContainer.style.display = 'block';
+        }
       }
 
       // Setup copy buttons
@@ -436,10 +469,8 @@
 
     // --- Cross-Origin Height Communication ---
     function sendHeight() {
-      // Only send height if the loader is not active (i.e., content is visible)
-      if (loader.style.display !== 'none') return;
-
       const height = document.body.scrollHeight;
+      console.log('Sending height:', height);
       if (window.parent) {
         window.parent.postMessage({
           type: 'setHeight',
@@ -453,7 +484,6 @@
     const originalAppendStatus = window.appendStatus || function(msg) { 
       const statusDiv = document.getElementById('status');
       if (statusDiv) {
-        // If Pyodide outputs complex status (which includes ANSI codes), write to hidden div
         statusDiv.textContent = msg; 
       }
       console.log("Pyodide Hook:", msg); 
@@ -545,6 +575,47 @@
 
     // Make the showTranslatedResults function available globally for translate.js
     window.showTranslatedResults = showTranslatedResults;
+
+    // Add event listener for translate button to test functionality
+    btnTranslate.addEventListener('click', function() {
+      console.log('Translate button clicked');
+      
+      // Show loading state
+      btnTranslate.disabled = true;
+      btnTranslate.textContent = 'Translating...';
+      
+      // Simulate translation (this will be replaced by actual Pyodide translation)
+      setTimeout(() => {
+        const query = document.getElementById('query').value;
+        const sourcePlatform = document.getElementById('platform-source').value;
+        const targetPlatform = document.getElementById('platform-target').value;
+        
+        console.log('Translation parameters:', { query, sourcePlatform, targetPlatform });
+        
+        // Call the translation function from translate.js
+        if (window.runTranslation) {
+          window.runTranslation(query, sourcePlatform, targetPlatform);
+        } else {
+          // Fallback if translate.js is not loaded
+          console.warn('translate.js not loaded, using fallback');
+          const translatedQuery = `[${targetPlatform.toUpperCase()}] ${query}`;
+          const messages = {
+            translation: {
+              source: sourcePlatform,
+              target: targetPlatform,
+              status: "success",
+              timestamp: new Date().toISOString()
+            },
+            warnings: [],
+            notes: ["This is a fallback translation. Install the search-query package for proper translation."]
+          };
+          showTranslatedResults(translatedQuery, messages);
+        }
+        
+        btnTranslate.disabled = false;
+        btnTranslate.textContent = 'Translate';
+      }, 1000);
+    });
 
   </script>
   
