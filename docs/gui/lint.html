@@ -232,7 +232,7 @@
 
         function updateHighlight() {
             // 3. Render directly to InnerHTML
-            const highlightedHtml = syntaxHighlightInline(document.getElementById('output').innerText);
+            const highlightedHtml = syntaxHighlightInline(JSON.parse(document.getElementById('output').innerText));
             codeBlock1.innerHTML = highlightedHtml;
             document.getElementById('pre').style.display = 'none';
         }
