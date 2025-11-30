@@ -255,6 +255,10 @@ json.dumps({"translated": out_str})
       resultEl.textContent = data.translated || "(empty translation result)";
       resultEl.style.display = "block";
       resultTitleEl.style.display = "block";
+      const jsonActionsEl = document.getElementById("json-actions");
+      if (jsonActionsEl) {
+        jsonActionsEl.style.display = "flex";
+      }
     }
   } catch (err) {
     if (resultEl && resultTitleEl) {
