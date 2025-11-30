@@ -296,7 +296,11 @@
             sidebarToolLinks: document.querySelectorAll('.sidebar-tool-link')
         };
 
-        const BASE_PATH = 'https://geritwagner.github.io/search-query/gui/'; 
+        const BASE_PATH = (function () {
+            const path = window.location.pathname;
+            // Strip "index.html" if present and keep the trailing slash
+            return path.endsWith('/') ? path : path.substring(0, path.lastIndexOf('/') + 1);
+        })();
         
         // Storage keys
         const STORAGE_KEYS = {
@@ -368,15 +372,15 @@
         /* --- IFRAME RESIZE LISTENER --- */
 
         function handleIframeResize(event) {
-            const expectedOrigin = 'https://geritwagner.github.io';
+            const expectedOrigin = window.location.origin;  // works local + GitHub Pages
             if (event.origin !== expectedOrigin) { return; }
             
             if (event.data.type === 'setHeight' && event.data.height) {
                 const newHeight = event.data.height;
-                const iframe = DOM.toolIframe;
-                iframe.style.height = `${newHeight + 20}px`;
+                DOM.toolIframe.style.height = `${newHeight + 20}px`;
             }
         }
+
         
         /* --- EVENT LISTENERS --- */
 

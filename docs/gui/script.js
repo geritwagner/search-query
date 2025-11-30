@@ -1,5 +1,5 @@
 // ---- configuration for your package layout in pyodide ----
-const FETCH_BASE = "search_query/";
+const FETCH_BASE = "../../search_query/";
 const PKG_DIR = "search_query";
 
 const PKG_TREE = {

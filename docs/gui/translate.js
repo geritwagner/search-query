@@ -1,7 +1,5 @@
-// translate.js
-
 // where the Python package files can be fetched from
-const FETCH_BASE = "search_query/";
+const FETCH_BASE = "../../search_query/";
 const PKG_DIR = "search_query";
 
 // directory tree of the search_query package (mirrors your existing setup)

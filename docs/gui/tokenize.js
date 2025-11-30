@@ -1,4 +1,4 @@
-const FETCH_BASE = "search_query/";
+const FETCH_BASE = "../../search_query/";
 const PKG_DIR = "search_query";
 
 // same tree as in your existing setup
