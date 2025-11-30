@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <title>search-query Visualizer</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+
+    <style>
+        :root {
+            --primary: #4f46e5;
+            --primary-dark: #3f35c5;
+            --bg-card: #ffffff;
+            --border-color: #e5e7eb;
+            --text-main: #1f2937;
+            --text-secondary: #6b7280;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            line-height: 1.5;
+            font-family: 'Inter', sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-card);
+            color: var(--text-main);
+            padding: 1.5rem;
+            min-height: 100vh;
+            overflow-x: hidden;
+            overflow-y: hidden;
+            position: relative;
+        }
+
+        header h1 {
+            font-size: 1.5rem;
+            font-weight: bold;
+            margin-bottom: 0.25rem;
+        }
+
+        header p {
+            color: var(--text-secondary);
+            margin-top: 0;
+            font-size: 0.95rem;
+        }
+
+        .main-content-card {
+            margin-top: 1.5rem;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        }
+
+        label {
+            display: block;
+            margin-top: 1.25rem;
+            margin-bottom: 0.25rem;
+            font-weight: 600;
+            font-size: 0.875rem;
+        }
+
+        #query {
+            font-size: 1.1rem !important;
+            line-height: 1.6;
+            padding: 1rem;
+            min-height: 160px;
+            font-family: 'Courier New', monospace;
+        }
+
+        textarea {
+            display: block;
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid var(--border-color);
+            border-radius: 0.5rem;
+            box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.07);
+            transition: border-color 0.2s, box-shadow 0.2s;
+            color: var(--text-main);
+            max-width: 100%;
+        }
+
+        textarea:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 1px var(--primary);
+            outline: none;
+        }
+
+        #btn-visualize {
+            width: auto;
+            min-width: 200px;
+            padding: 0.75rem 2rem;
+            border: none;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            color: white;
+            background-color: var(--primary);
+            cursor: pointer;
+            transition: background-color 0.2s;
+            box-shadow: 0 2px 4px rgba(79, 70, 229, 0.4);
+            margin-top: 1.5rem;
+            font-size: 1rem;
+            display: block;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        #btn-visualize:hover {
+            background-color: var(--primary-dark);
+        }
+
+        #pretty-title {
+            margin-top: 1.5rem;
+            font-size: 1.25rem;
+        }
+
+        pre {
+            margin-top: 0.75rem;
+            background-color: #0b1120;
+            color: #e5e7eb;
+            border-radius: 0.5rem;
+            padding: 1rem;
+            border: 1px solid #1f2937;
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            font-size: 0.95rem;
+            max-height: 500px;
+            overflow: auto;
+        }
+
+        .hint {
+            margin-top: 0.5rem;
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>Search-Query Visualizer</h1>
+    <p>Indent and visualize nested subqueries based on parentheses.</p>
+</header>
+
+<div class="main-content-card">
+    <label for="query">Query</label>
+    <textarea id="query" rows="8">TS=(("large language model*" OR "LLM*" OR "generative AI" OR "genAI" OR "foundation model*") AND ("work performance" OR "job performance" OR "individual performance" OR productivity OR efficiency OR effectiveness) AND (workplace OR "knowledge worker*" OR employee* OR worker* OR "organizational context" OR "organizational setting" OR "professional" OR "business"))</textarea>
+
+    <button id="btn-visualize">Visualize structure</button>
+</div>
+
+<!-- AFTER: hidden by default -->
+<div id="result-container"
+     style="display: none; margin-top: 1.5rem; padding: 1rem; background: var(--bg-card);
+            border: 1px solid var(--border-color); border-radius: 0.75rem;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);">
+    <h2 id="pretty-title">Indented structure</h2>
+    <pre id="pretty-output"></pre>
+    <p class="hint">
+        Parentheses define the indentation levels. Quoted phrases are kept together; boolean operators are placed on separate lines.
+    </p>
+</div>
+
+
+<script src="structure.js"></script>
+</body>
+</html>

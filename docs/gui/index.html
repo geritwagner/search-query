@@ -5,7 +5,7 @@
     <title>Search-Query Studio</title>
     <meta name="viewport" content="width=device-width,initial-scale=1" />
 
-    <link rel="icon" type="image/x-icon" href="../source/favicon.ico" />
+    <link rel="icon" type="image/x-icon" href="favicon.ico" />
 
     <script src="https://cdn.jsdelivr.net/pyodide/v0.26.2/full/pyodide.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
@@ -244,7 +244,12 @@
             <a href="#tool-area" data-tool-url="tokenizer.html" class="sidebar-tool-link">
                 <i class="fas fa-microchip w-5 mr-3"></i>  <p style="display: inline-block; margin: 0 0 0 0; padding-left: 10px;">Tokenize</p>
             </a>
-            
+
+            <a href="#tool-area" data-tool-url="structure.html" class="sidebar-tool-link">
+                <i class="fas fa-sitemap w-5 mr-3"></i>
+                <p style="display: inline-block; margin: 0 0 0 0; padding-left: 10px;">Structure</p>
+            </a>
+
             <div style="padding: 1rem 0; font-size: 0.75rem; font-weight: bold; color: var(--text-body); text-transform: uppercase;">Resources</div>
             <a href="https://github.com/CoLRev-Environment/search-query" target="_blank" class="sidebar-tool-link">
                 <i class="fab fa-github w-5 mr-3"></i><p style="display: inline-block; margin: 0 0 0 0; padding-left: 10px;">GitHub</p>
@@ -298,7 +303,7 @@
             sidebarToolLinks: document.querySelectorAll('.sidebar-tool-link')
         };
 
-        // Decide where tool HTML (lint.html, tokenizer.html, visualize.html, …) comes from
+        // Decide where tool HTML (lint.html, tokenizer.html, structure.html, …) comes from
         const IS_GITHUB_PAGES = window.location.hostname === 'geritwagner.github.io';
         const urlParams = new URLSearchParams(window.location.search);
 
