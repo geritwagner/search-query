@@ -1,5 +1,20 @@
-const FETCH_BASE = "../../search_query/";
 const PKG_DIR = "search_query";
+
+const urlParams = new URLSearchParams(window.location.search);
+const IS_GITHUB_PAGES = window.location.hostname === "geritwagner.github.io";
+
+const pkgSource = urlParams.get("pkg") || (IS_GITHUB_PAGES ? "remote" : "local");
+
+const LOCAL_FETCH_BASE = new URL("../../search_query/", window.location.href).toString();
+const REMOTE_FETCH_BASE =
+  "https://raw.githubusercontent.com/CoLRev-Environment/search-query/refs/heads/main/search_query/";
+
+const FETCH_BASE = pkgSource === "remote" ? REMOTE_FETCH_BASE : LOCAL_FETCH_BASE;
+
+console.log(
+  `%c[PYODIDE] search_query package loading from: ${FETCH_BASE}`,
+  "color: #10b981; font-weight: bold;"
+);
 
 // same tree as in your existing setup
 const PKG_TREE = {

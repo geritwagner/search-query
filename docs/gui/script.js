@@ -1,6 +1,27 @@
 // ---- configuration for your package layout in pyodide ----
-const FETCH_BASE = "../../search_query/";
+// ---- configuration for your package layout in pyodide ----
 const PKG_DIR = "search_query";
+
+const urlParams = new URLSearchParams(window.location.search);
+const IS_GITHUB_PAGES = window.location.hostname === "geritwagner.github.io";
+
+// pkgSource: 'local' or 'remote'
+// - local: use the package from your repo (layout: repo_root/search_query/, docs/gui/…)
+// - remote: load from GitHub raw (main branch)
+const pkgSource = urlParams.get("pkg") || (IS_GITHUB_PAGES ? "remote" : "local");
+
+const LOCAL_FETCH_BASE = new URL("../../search_query/", window.location.href).toString();
+const REMOTE_FETCH_BASE =
+  "https://raw.githubusercontent.com/CoLRev-Environment/search-query/refs/heads/main/search_query/";
+
+// This is what loadPackageFilesIntoPyodide() will use
+const FETCH_BASE = pkgSource === "remote" ? REMOTE_FETCH_BASE : LOCAL_FETCH_BASE;
+
+console.log(
+  `%c[PYODIDE] search_query package loading from: ${FETCH_BASE}`,
+  "color: #10b981; font-weight: bold;"
+);
+
 
 const PKG_TREE = {
   "": [

@@ -296,11 +296,20 @@
             sidebarToolLinks: document.querySelectorAll('.sidebar-tool-link')
         };
 
-        const BASE_PATH = (function () {
-            const path = window.location.pathname;
-            // Strip "index.html" if present and keep the trailing slash
-            return path.endsWith('/') ? path : path.substring(0, path.lastIndexOf('/') + 1);
-        })();
+        // Decide where tool HTML (lint.html, tokenizer.html, visualize.html, …) comes from
+        const IS_GITHUB_PAGES = window.location.hostname === 'geritwagner.github.io';
+        const urlParams = new URLSearchParams(window.location.search);
+
+        // toolsSource: 'local' or 'remote'
+        const toolsSource = urlParams.get('tools') || (IS_GITHUB_PAGES ? 'remote' : 'local');
+
+        // For local dev: use files from the same directory as index.html
+        // For Pages: keep using the published GUI under /search-query/gui/
+        const BASE_PATH =
+        toolsSource === 'remote'
+            ? 'https://geritwagner.github.io/search-query/gui/'
+            : './';
+
         
         // Storage keys
         const STORAGE_KEYS = {
@@ -372,12 +381,11 @@
         /* --- IFRAME RESIZE LISTENER --- */
 
         function handleIframeResize(event) {
-            const expectedOrigin = window.location.origin;  // works local + GitHub Pages
+            const expectedOrigin = window.location.origin;  // instead of hard-coded GitHub origin
             if (event.origin !== expectedOrigin) { return; }
             
             if (event.data.type === 'setHeight' && event.data.height) {
-                const newHeight = event.data.height;
-                DOM.toolIframe.style.height = `${newHeight + 20}px`;
+                DOM.toolIframe.style.height = `${event.data.height + 20}px`;
             }
         }
 
@@ -388,9 +396,10 @@
             
             window.addEventListener('message', handleIframeResize, false);
             
-            const initialToolUrl = BASE_PATH + 'translate.html';
+            const queryString = window.location.search || "";
+            const initialToolUrl = BASE_PATH + 'translate.html' + queryString;
             const initialToolName = 'translate.html';
-            
+
             // Check if there's a stored tool selection
             const { toolUrl: storedUrl, toolName: storedName } = getSelectedTool();
             
@@ -418,7 +427,9 @@
                 if (link) {
                     e.preventDefault();
                     const relativeUrl = link.getAttribute('data-tool-url');
-                    const fullUrl = BASE_PATH + relativeUrl;
+                    const queryString = window.location.search || "";
+                    const fullUrl = BASE_PATH + relativeUrl + queryString;
+
                     const toolName = relativeUrl;
                     
                     console.log('Tool switch clicked:', fullUrl, toolName);
