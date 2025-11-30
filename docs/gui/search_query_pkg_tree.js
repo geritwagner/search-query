@@ -1,4 +1,4 @@
-// directory tree of the search_query package (mirrors your existing setup)
+// directory tree of the search_query package
 window.searchQueryPKG_TREE = {
   "": [
     "__init__.py",

@@ -32,7 +32,6 @@
         body { 
             font-family: var(--font-stack); background-color: var(--bg-base); color: var(--text-heading); 
             min-height: 100vh; scroll-behavior: smooth;
-            /* CRITICAL FIX: Ensure no unwanted horizontal scrolling */
             overflow-x: hidden; 
         }
         h1, h2, h3, h4 { color: var(--text-heading); margin: 0; }
@@ -115,8 +114,8 @@
             font-size: 1.5rem;
             font-weight: 700;
             background: linear-gradient(90deg, #4f46e5, #6366f1);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
+            --webkit-background-clip: text;
+            --webkit-text-fill-color: transparent;
         }
 
         /* --- Hero Section (Now Documentation Header) --- */
@@ -124,7 +123,7 @@
             font-family: 'Space Grotesk', sans-serif;
             font-size: 2.5rem; line-height: 1.1; font-weight: 700; margin-bottom: 0.5rem; 
             background: linear-gradient(90deg, var(--text-heading), var(--primary), var(--primary-accent)); 
-            -webkit-background-clip: text; -webkit-text-fill-color: transparent; 
+            --webkit-background-clip: text; -webkit-text-fill-color: transparent; 
             background-size: 200% auto; animation: text-flow 4s linear infinite; 
             letter-spacing: -1px; margin-top: 0;
         }
@@ -138,10 +137,8 @@
         }
         #launch-tool-cta:hover { background-color: var(--primary-dark); transform: scale(1.05); }
 
-        /* --- Documentation Grid Fix (CRITICAL CHANGE) --- */
         #documentation-grid {
             display: grid;
-            /* Enforce single column layout for all screens */
             grid-template-columns: 1fr;
             gap: 1.5rem;
         }
@@ -325,7 +322,6 @@
         };
 
         /* --- UI/VISUAL CONTROLS --- */
-
         function toggleSidebar(forceClose = false) {
             const isOpen = DOM.sidebar.classList.contains('open');
             const shouldOpen = forceClose ? false : !isOpen;
@@ -344,15 +340,12 @@
         function loadToolIntoIframe(toolUrl, toolName = '') {
             console.log('Loading tool:', toolUrl);
             
-            // Update iframe source
             if (DOM.toolIframe.src !== toolUrl) {
                 DOM.toolIframe.src = toolUrl;
             }
             
-            // Update active state in sidebar
             updateActiveSidebarItem(toolName || toolUrl.replace(BASE_PATH, ''));
             
-            // Ensure iframe is visible and scroll to it
             DOM.interactiveToolWrap.style.display = 'block';
             setTimeout(() => {
                 DOM.toolIframe.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -388,7 +381,7 @@
         /* --- IFRAME RESIZE LISTENER --- */
 
         function handleIframeResize(event) {
-            const expectedOrigin = window.location.origin;  // instead of hard-coded GitHub origin
+            const expectedOrigin = window.location.origin;
             if (event.origin !== expectedOrigin) { return; }
             
             if (event.data.type === 'setHeight' && event.data.height) {

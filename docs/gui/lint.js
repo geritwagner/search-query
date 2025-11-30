@@ -24,12 +24,6 @@ console.log(
 
 const PKG_TREE = window.searchQueryPKG_TREE;
 
-// in case someone adds back "ebsco" in HTML
-const platformAliases = {
-  ebsco: "ebscohost"
-};
-
-// allow all the things we just made sure to create
 const allowedPlatforms = new Set([
   "wos",
   "pubmed",

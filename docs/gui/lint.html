@@ -81,13 +81,13 @@
         
         /* --- JSON OUTPUT WINDOW --- */
               pre {
-                    background-color: #f6f8fa;   /* GitHub code block background */
-                    color: #24292e;              /* Default GitHub text color */
+                    background-color: #f6f8fa;
+                    color: #24292e;
                     font-family: Consolas, "Liberation Mono", Menlo, monospace;
                     font-size: 14px;
                     padding: 12px 16px;
                     border-radius: 6px;
-                    border: 1px solid #d0d7de;   /* Light GitHub-style border */
+                    border: 1px solid #d0d7de;
                     display: block;
                     overflow-x: auto;
                     line-height: 1.5;        }
@@ -110,13 +110,13 @@
             padding: 1rem; 
             margin-bottom: 10px; 
             box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-            background-color: #f6f8fa;   /* GitHub code block background */
-            color: #24292e;              /* Default GitHub text color */
+            background-color: #f6f8fa;
+            color: #24292e;
             font-family: Consolas, "Liberation Mono", Menlo, monospace;
             font-size: 14px;
             padding: 12px 16px;
             border-radius: 6px;
-            border: 1px solid #d0d7de;   /* Light GitHub-style border */
+            border: 1px solid #d0d7de;
             display: block;
             overflow-x: auto;
             line-height: 1.5;        
@@ -135,18 +135,18 @@
         .lint-item { border-top: 1px solid #e5e7eb; margin-top: 16px; padding-top: 8px; background-color: inherit; }
         .lint-message { font-size: 0.95rem; color: #374151; white-space: pre-wrap; margin-bottom: 4px; }
         .lint-separator { border-top: 1px solid #e5e7eb; margin: 8px 0; }
-          /* Lint card (styles that will target the fragment you gave) */
+
         #lint-container { margin-top: 18px; }
         .lint-card {
             padding: 14px;
             box-shadow: 0 6px 18px rgba(0,0,0,0.35);
-            background-color: #f6f8fa;   /* GitHub code block background */
-            color: #24292e;              /* Default GitHub text color */
+            background-color: #f6f8fa;
+            color: #24292e;
             font-family: Consolas, "Liberation Mono", Menlo, monospace;
             font-size: 14px;
             padding: 12px 16px;
             border-radius: 6px;
-            border: 1px solid #d0d7de;   /* Light GitHub-style border */
+            border: 1px solid #d0d7de;
             display: block;
             overflow-x: auto;
             line-height: 1.5;
@@ -173,7 +173,7 @@
             font-size: 13px;
         }
         .lint-hl-0 { color: #ff6b6b; font-weight:700; }
-        .lint-hl-1 { color: #ffd86b; font-weight:700; } /* bonus if more highlights needed */
+        .lint-hl-1 { color: #ffd86b; font-weight:700; }
 
 
     </style>
@@ -242,98 +242,8 @@
         const contentWrapper = document.getElementById('content-wrapper');
         const statusDisplay = document.getElementById('status-display');
         const codeBlock = document.getElementById('output');
-/*        function addLineNumbers(text) {
-            const lines = text.split("\n");
-            return lines
-                .map((line, i) => `<span style="color:#666;">${String(i+1).padStart(1,'0')} </span> ${line}`)
-                .join("\n");
-        }
 
-        // --- 1. THE FORCE-COLOR HIGHLIGHTER ---
-        // Uses Inline Styles to guarantee colors appear regardless of external CSS
-        function syntaxHighlightInline(jsonObj) {
-            // Convert object to string if it isn't already
-            let json = JSON.stringify(jsonObj, undefined, 4);
-            
-            // Escape HTML characters (security)
-            json = json.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-            
-            // The Regex Magic
-            // 1. Strings (including keys)
-            // 2. Booleans (true/false)
-            // 3. Null
-            // 4. Numbers
-            return json.replace(/("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/g, function (match) {
-                let style = 'color: #b5cea8;'; // Default: Number (Light Green)
-                
-                if (/^"/.test(match)) {
-                    if (/:$/.test(match)) {
-                        // KEY DETECTED (ends with :) -> Light Blue
-                        return '<span style="color: #9cdcfe;">' + match.slice(0, -1) + '</span>:';
-                    } else {
-                        // STRING DETECTED -> Salmon/Orange
-                        style = 'color: #ce9178;';
-                    }
-                } else if (/true|false/.test(match)) {
-                    // BOOLEAN -> Blue
-                    style = 'color: #569cd6;';
-                } else if (/null/.test(match)) {
-                    // NULL -> Blue
-                    style = 'color: #569cd6;';
-                }
-                
-                return '<span style="' + style + '">' + match + '</span>';
-            });
-            return addLineNumbers(json); // Attach line numbers here
-        }
-
-
-        // --- 2. UPDATE LOGIC ---
-
-        function updateHighlight() {
-            // 3. Render directly to InnerHTML
-            const highlightedHtml = syntaxHighlightInline(JSON.parse(document.getElementById('output').innerText));
-            codeBlock1.innerHTML = highlightedHtml;
-            document.getElementById('pre').style.display = 'none';
-        }
-        function highlightMessages(text) {
-            let lines = text.trim().split("\n");
-
-            return lines
-                .map((line, i) => {
-                    let colored = line;
-
-                    // ICONS
-                    colored = colored.replace("🚨", `<span style="color:#ff5555;">🚨</span>`);
-                    colored = colored.replace("🐞", `<span style="color:#ffaa00;">🐞</span>`);
-
-                    // ERROR LABELS
-                    colored = colored.replace(/invalid-syntax/gi, `<span style="color:#ff5555;">invalid-syntax</span>`);
-                    colored = colored.replace(/invalid-token-sequence/gi, `<span style="color:#ff5555;">invalid-token-sequence</span>`);
-
-                    // ERROR CODES (PARSE_XXXX)
-                    colored = colored.replace(/\(PARSE_[0-9]+\)/g, m => `<span style="color:#4fc1ff;">${m}</span>`);
-
-                    // "More info"
-                    colored = colored.replace(/More info/gi, `<span style="color:#00aaff;">More info</span>`);
-
-                    return `<span class="ln">${String(i+1).padStart(2,"0")}</span>  ${colored}`;
-                })
-                .join("\n");
-        }
-
-        document.getElementById('btn-lint').addEventListener('click', function(){
-            updateHighlight()
-            document.getElementById("messages").innerHTML = highlightMessages(rawMessages);
-            setTimeout(()=>{
-                document.getElementById('pre1').style.display = 'block';
-                console.log(codeBlock1.innerText)
-                updateHighlight()
-            }, 1000)
-
-        })
-*/
-        // --- 3. UTILITIES ---
+        // --- UTILITIES ---
         function copyJsonToClipboard() {
             const jsonText = codeBlock.textContent; 
             navigator.clipboard.writeText(jsonText).then(() => {
@@ -369,7 +279,7 @@
             }
         }
 
-        // --- 4. PYODIDE SETUP ---
+        // --- PYODIDE SETUP ---
         const originalAppendStatus = window.appendStatus || function(msg) { 
             if (statusDisplay) statusDisplay.textContent = msg; 
         };
@@ -398,7 +308,7 @@
             setTimeout(sendHeight, 50); 
         };
 
-        // --- 5. INIT ---
+        // --- INIT ---
         document.addEventListener('DOMContentLoaded', () => {
             document.body.classList.add('loading-active');
             contentWrapper.style.opacity = '0';
