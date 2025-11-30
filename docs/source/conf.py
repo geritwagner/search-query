@@ -43,6 +43,7 @@ autodoc_default_options = {
 
 html_theme = "sphinx_rtd_theme"
 html_static_path = ["_static"]
+html_favicon = "favicon.ico"
 
 html_css_files = [
     "css/custom.css",
