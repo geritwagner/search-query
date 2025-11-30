@@ -15,7 +15,6 @@ const PKG_TREE = {
     "linter_base.py",
     "parser.py",
     "parser_base.py",
-    "pre_notation.py",
     "query.py",
     "query_and.py",
     "query_or.py",
@@ -27,7 +26,6 @@ const PKG_TREE = {
     "search_file.py",
     "serializer_base.py",
     "serializer_structured.py",
-    "structured.py",
     "translator_base.py",
     "upgrade.py",
     "utils.py"
@@ -46,7 +44,7 @@ const PKG_TREE = {
     "serializer.py",
     "translator.py"
   ],
-  "ebscohost/v_1_0_0": ["__init__.py"],
+  "ebscohost/v_1": ["__init__.py"],
   generic: ["__init__.py", "linter.py", "serializer.py"],
   "generic/v_1": ["__init__.py", "serializer.py"],
   json_db: [
