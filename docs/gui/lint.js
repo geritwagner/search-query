@@ -24,6 +24,10 @@ console.log(
 
 const PKG_TREE = window.searchQueryPKG_TREE;
 
+const platformAliases = {
+  ebsco: "ebscohost"
+};
+
 const allowedPlatforms = new Set([
   "wos",
   "pubmed",
