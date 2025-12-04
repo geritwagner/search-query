@@ -98,24 +98,11 @@
             gap: 0.75rem;
             margin-bottom: 1.5rem;
         }
-        .logo-icon {
-            width: 40px;
-            height: 40px;
-            background: linear-gradient(135deg, #4f46e5, #6366f1);
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-weight: bold;
-            font-size: 1.2rem;
-        }
         .logo-text {
             font-size: 1.5rem;
             font-weight: 700;
-            background: linear-gradient(90deg, #4f46e5, #6366f1);
-            --webkit-background-clip: text;
-            --webkit-text-fill-color: transparent;
+            color: var(--text-heading);
+            letter-spacing: -0.02em;
         }
 
         /* --- Hero Section (Now Documentation Header) --- */
@@ -208,9 +195,9 @@
         <button id="menu-toggle" class="p-2">
             <i class="fas fa-bars text-xl"></i>
         </button>
-        <h1 class="text-xl font-bold ml-4" style="padding-top: 25px;">
-            <div class="logo-container">
-                <img src="https://raw.githubusercontent.com/CoLRev-Environment/search-query/refs/heads/main/docs/source/_static/search_query_logo.svg" width="100px" >
+        <h1 class="text-xl font-bold ml-4">
+            <div class="logo-container" style="margin-bottom: 0;">
+                <span class="logo-text">Search Query Studio</span>
             </div>
         </h1>
     </header>
@@ -219,8 +206,8 @@
 
     <nav id="sidebar">
         <header style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 1rem; border-bottom: 1px solid var(--border-color);">
-            <div class="logo-container">
-                <img src="https://raw.githubusercontent.com/CoLRev-Environment/search-query/refs/heads/main/docs/source/_static/search_query_logo.svg" width="200px" >
+            <div class="logo-container" style="margin-bottom: 0;">
+                <span class="logo-text" style="font-size: 1.25rem;">Search Query Studio</span>
             </div>
             <button id="close-menu" style="border: none; background: none; color: var(--text-heading); cursor: pointer; padding: 0.5rem;" class="lg:hidden">
                 <i class="fas fa-times text-xl"></i>
