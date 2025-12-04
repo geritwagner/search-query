@@ -4,14 +4,14 @@
   <meta charset="UTF-8" />
   <title>search-query translator</title>
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  
+
   <!-- Highlight.js for JSON coloring -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/vs2015.min.css">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/json.min.js"></script>
 
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
-  
+
   <style>
     /* --- CSS Variables (Ensure consistency with Host) --- */
     :root {
@@ -25,11 +25,11 @@
 
     /* --- Global Resets & Body Styles for IFRAME --- */
     * { box-sizing: border-box; margin: 0; padding: 0; line-height: 1.5; font-family: 'Inter', sans-serif; }
-    
+
     body {
       background-color: var(--bg-card);
       color: var(--text-main);
-      padding: 1.5rem; 
+      padding: 1.5rem;
       min-height: 100vh;
       overflow-x: hidden;
       overflow-y: hidden;
@@ -41,14 +41,14 @@
       overflow: hidden; /* Prevents scrolling */
       height: 100vh;    /* Locks height */
     }
-    
+
     /* --- Layout & Typography --- */
     header h1 { font-size: 1.5rem; font-weight: bold; margin-bottom: 0.25rem; }
     header p { color: var(--text-secondary); margin-top: 0; font-size: 0.95rem; }
-    
+
     /* --- Form Elements --- */
     label { display: block; margin-top: 1.25rem; margin-bottom: 0.25rem; font-weight: 600; font-size: 0.875rem; }
-    
+
     /* Query textarea with larger font size */
     #query {
       font-size: 1.1rem !important;
@@ -57,29 +57,29 @@
       min-height: 120px;
       font-family: 'Courier New', monospace;
       width: 100%;
-      
+
       border: 1px solid var(--border-color);
       border-radius: 0.5rem;
       box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.07);
       transition: border-color 0.2s, box-shadow 0.2s;
     }
-    
+
     #query:focus {
       border-color: var(--primary);
       box-shadow: 0 0 0 1px var(--primary);
       outline: none;
     }
-    
+
     /* Narrower form elements */
-    select { 
-      display: block; width: 100%; padding: 0.75rem; border: 1px solid var(--border-color); 
-      border-radius: 0.5rem; box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.07); 
+    select {
+      display: block; width: 100%; padding: 0.75rem; border: 1px solid var(--border-color);
+      border-radius: 0.5rem; box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.07);
       transition: border-color 0.2s, box-shadow 0.2s; color: var(--text-main);
       max-width: 300px;
     }
-    
-    select:focus { 
-      border-color: var(--primary); box-shadow: 0 0 0 1px var(--primary); outline: none; 
+
+    select:focus {
+      border-color: var(--primary); box-shadow: 0 0 0 1px var(--primary); outline: none;
     }
 
     /* --- Button --- */
@@ -87,13 +87,13 @@
       width: auto;
       min-width: 200px;
       padding: 0.75rem 2rem;
-      border: none; 
-      border-radius: 0.5rem; 
-      font-weight: 600; 
-      color: white; 
-      background-color: var(--primary); 
-      cursor: pointer; 
-      transition: background-color 0.2s; 
+      border: none;
+      border-radius: 0.5rem;
+      font-weight: 600;
+      color: white;
+      background-color: var(--primary);
+      cursor: pointer;
+      transition: background-color 0.2s;
       box-shadow: 0 2px 4px rgba(79, 70, 229, 0.4);
       margin-top: 1rem;
       font-size: 1rem;
@@ -105,13 +105,13 @@
     #btn-translate:disabled { opacity: 0.6; cursor: not-allowed; box-shadow: none; }
 
     /* --- Status & Loading --- */
-    #status { 
+    #status {
       display: none; /* Hidden as per original setup */
     }
 
-    #status-display { 
-      margin-top: 1rem; padding: 0.5rem 1rem; background: #fff3e0; border: 1px solid #ffcc80; 
-      border-radius: 0.375rem; font-size: 0.875rem; color: #a55a00; font-weight: 500; 
+    #status-display {
+      margin-top: 1rem; padding: 0.5rem 1rem; background: #fff3e0; border: 1px solid #ffcc80;
+      border-radius: 0.375rem; font-size: 0.875rem; color: #a55a00; font-weight: 500;
       white-space: pre-wrap;
     }
 
@@ -142,7 +142,7 @@
       border: 1px solid #d0d7de;
       display: block;
       overflow-x: auto;
-      line-height: 1.5; 
+      line-height: 1.5;
       word-wrap: break-word;
       margin-top: 0.5rem;
     }
@@ -157,7 +157,7 @@
       border: 1px solid #d0d7de;
       display: block;
       overflow-x: auto;
-      line-height: 1.5; 
+      line-height: 1.5;
       margin: 0;
       padding: 0;
       white-space: pre-wrap;
@@ -170,7 +170,7 @@
     .hljs-number { color: #b5cea8 !important; }    /* Numbers: Light Green */
     .hljs-literal, .hljs-keyword { color: #569cd6 !important; } /* Booleans: Blue */
     .hljs-punctuation { color: #d4d4d4 !important; } /* Punctuation: Light Gray */
-    
+
     /* --- LOADING OVERLAY STYLES (Fixed and Centered) --- */
     #loading-overlay {
       position: fixed;
@@ -180,7 +180,7 @@
       height: 100%;
       background-color: rgba(255, 255, 255, 0.95);
       z-index: 1000;
-      display: flex; 
+      display: flex;
       flex-direction: column;
       justify-content: center;
       align-items: center;
@@ -217,7 +217,7 @@
       font-size: 1.25rem;
       font-weight: 600;
     }
-    
+
   </style>
 </head>
 <body>
@@ -226,7 +226,7 @@
     <div class="loader"></div>
     <div id="loading-text">Initializing search-query...</div>
   </div>
-  
+
   <div id="content-wrapper">
     <header>
       <h1>search-query translator</h1>
@@ -279,7 +279,7 @@
 
   <!-- Pyodide runtime -->
   <script src="https://cdn.jsdelivr.net/pyodide/v0.26.2/full/pyodide.js"></script>
-  
+
   <script>
     // Initialize Highlight.js
     hljs.configure({ ignoreUnescapedHTML: true });
@@ -293,23 +293,23 @@
     // Function to update JSON output with highlighting
     function updateJsonOutput(jsonData) {
       const codeElement = document.getElementById('messages').querySelector('code');
-      
+
       // 1. Convert to Pretty String
       const formattedJson = JSON.stringify(jsonData, null, 2);
-      
+
       // 2. Set text content
       codeElement.textContent = formattedJson;
-      
+
       // 3. Clear markers
       codeElement.removeAttribute('data-highlighted');
-      
+
       // 4. Trigger Highlight.js
       hljs.highlightElement(codeElement);
-      
+
       console.log('JSON output highlighted with VS Code theme');
     }
     function copyJsonToClipboard() {
-      const jsonText = codeBlock.textContent; 
+      const jsonText = codeBlock.textContent;
       navigator.clipboard.writeText(jsonText).then(() => {
           const copyBtn = document.getElementById('copy-json');
           const originalHTML = copyBtn.innerHTML;
@@ -348,21 +348,21 @@
         }, window.location.origin);
       }
     }
-    
+
     // --- Pyodide Status Hook and Loader Control ---
-    
-    const originalAppendStatus = window.appendStatus || function(msg) { 
+
+    const originalAppendStatus = window.appendStatus || function(msg) {
       const statusDiv = document.getElementById('status');
       if (statusDiv) {
         // If Pyodide outputs complex status (which includes ANSI codes), write to hidden div
-        statusDiv.textContent = msg; 
+        statusDiv.textContent = msg;
       }
-      console.log("Pyodide Hook:", msg); 
+      console.log("Pyodide Hook:", msg);
     };
-    
+
     window.appendStatus = function(msg) {
       // 1. Update the visual status text in status-display
-      const cleanMsg = msg.replace(/\u001b\[.*?m/g, ''); 
+      const cleanMsg = msg.replace(/\u001b\[.*?m/g, '');
       if (loadingText) loadingText.textContent = cleanMsg;
       statusDisplay.textContent = cleanMsg;
 
@@ -376,7 +376,7 @@
 
         setTimeout(() => {
           loader.style.display = 'none';
-          document.body.style.overflow = 'hidden'; 
+          document.body.style.overflow = 'hidden';
           btnTranslate.disabled = false;
           sendHeight(); // Final resize
         }, 500);
@@ -388,11 +388,11 @@
         contentWrapper.style.opacity = '0';
       }
 
-      // 3. Call the original function and re-trigger height update 
+      // 3. Call the original function and re-trigger height update
       originalAppendStatus(msg);
-      setTimeout(sendHeight, 50); 
+      setTimeout(sendHeight, 50);
     };
-    
+
     // --- Append module with interval stopped after ready ---
     const appendInterval = setInterval(() => {
       const statusText = document.getElementById('status');
@@ -408,10 +408,10 @@
         contentWrapper.style.opacity = '1';
         statusText.innerText = 'Search Query Ready';
         statusDisplay.innerText = 'Search Query Ready';
-        
+
         // Enable the translate button
         btnTranslate.disabled = false;
-        
+
         // Stop the interval to prevent unnecessary height updates
         clearInterval(appendInterval);
 
@@ -437,14 +437,14 @@
 
       // 1. Send initial minimal height
       window.addEventListener('load', sendHeight);
-      
+
       // 2. Observe DOM changes (Crucial for when the output table appears/disappears)
       const observer = new MutationObserver(sendHeight);
       observer.observe(document.body, { attributes: true, childList: true, subtree: true });
     });
 
   </script>
-  
+
   <script src="search_query_pkg_tree.js"></script>
   <script src="translate.js"></script>
 </body>

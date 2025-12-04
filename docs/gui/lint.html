@@ -4,39 +4,39 @@
     <meta charset="UTF-8" />
     <title>Search-Query Linter</title>
     <meta name="viewport" content="width=device-width,initial-scale=1" />
-    
+
     <script src="https://cdn.jsdelivr.net/pyodide/v0.26.2/full/pyodide.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
-    
+
     <style>
         /* --- CORE CSS --- */
         :root {
-            --primary: #4f46e5;       
+            --primary: #4f46e5;
             --primary-dark: #3f35c5;
             --bg-card: #ffffff;
-            --border-color: #e5e7eb;  
-            --text-main: #1f2937;     
-            --text-secondary: #6b7280; 
-            --error-red: #dc2626;     
-            --warning-yellow: #d97706; 
+            --border-color: #e5e7eb;
+            --text-main: #1f2937;
+            --text-secondary: #6b7280;
+            --error-red: #dc2626;
+            --warning-yellow: #d97706;
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; line-height: 1.5; font-family: 'Inter', sans-serif; }
         body {
             background-color: var(--bg-card);
             color: var(--text-main);
-            padding: 1.5rem; 
+            padding: 1.5rem;
             min-height: 100vh;
             overflow-x: hidden;
-            overflow-y: hidden; 
+            overflow-y: hidden;
             position: relative;
         }
-        
+
         body.loading-active { overflow: hidden; height: 100vh; }
 
         header h1 { font-size: 1.5rem; font-weight: bold; margin-bottom: 0.25rem; }
         header p { color: var(--text-secondary); margin-top: 0; font-size: 0.95rem; }
-        
+
         .main-content-card {
             margin-top: 1.5rem;
             background: var(--bg-card);
@@ -47,7 +47,7 @@
         }
 
         label { display: block; margin-top: 1.25rem; margin-bottom: 0.25rem; font-weight: 600; font-size: 0.875rem; }
-        
+
         #query {
             font-size: 1.1rem !important;
             line-height: 1.6;
@@ -55,16 +55,16 @@
             min-height: 120px;
             font-family: 'Courier New', monospace;
         }
-        
-        textarea, select { 
-            display: block; width: 100%; padding: 0.75rem; border: 1px solid var(--border-color); 
-            border-radius: 0.5rem; box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.07); 
+
+        textarea, select {
+            display: block; width: 100%; padding: 0.75rem; border: 1px solid var(--border-color);
+            border-radius: 0.5rem; box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.07);
             transition: border-color 0.2s, box-shadow 0.2s; color: var(--text-main);
             max-width: 100%;
         }
-        
-        textarea:focus, select:focus { 
-            border-color: var(--primary); box-shadow: 0 0 0 1px var(--primary); outline: none; 
+
+        textarea:focus, select:focus {
+            border-color: var(--primary); box-shadow: 0 0 0 1px var(--primary); outline: none;
         }
 
         #btn-lint {
@@ -75,10 +75,10 @@
 
         #platform { max-width: 300px; }
 
-        #status { display:none; } 
+        #status { display:none; }
         #status-display { margin-top: 1rem; padding: 0.5rem 1rem; background: #fff3e0; border: 1px solid #ffcc80; border-radius: 0.375rem; font-size: 0.875rem; color: #a55a00; font-weight: 500; }
         #output-wrap { margin-top: 1.5rem; position: relative; }
-        
+
         /* --- JSON OUTPUT WINDOW --- */
               pre {
                     background-color: #f6f8fa;
@@ -91,14 +91,14 @@
                     display: block;
                     overflow-x: auto;
                     line-height: 1.5;        }
-                
+
         #output {
             font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
             font-size: 0.85rem;
             background: transparent !important;
             margin: 0;
             padding: 0;
-            white-space: pre; 
+            white-space: pre;
         }
 
         .json-actions { position: absolute; top: 15px; right: 15px; display: flex; gap: 8px; z-index: 20; }
@@ -106,9 +106,9 @@
         .json-btn:hover { background: rgba(255, 255, 255, 0.1) !important; color: #ffffff; }
         .json-btn.copied { color: #4CAF50 !important; }
 
-        #lint-view { 
-            padding: 1rem; 
-            margin-bottom: 10px; 
+        #lint-view {
+            padding: 1rem;
+            margin-bottom: 10px;
             box-shadow: 0 1px 3px rgba(0,0,0,0.05);
             background-color: #f6f8fa;
             color: #24292e;
@@ -119,19 +119,19 @@
             border: 1px solid #d0d7de;
             display: block;
             overflow-x: auto;
-            line-height: 1.5;        
+            line-height: 1.5;
         }
 
         #lint-view .ansi-red { color: var(--error-red); font-weight: 600; }
         #lint-view .ansi-yellow { color: var(--warning-yellow); font-weight: 600; }
         #lint-view .lint-title { font-weight: 700; font-size: 1rem; margin-bottom: 0.5rem;}
-       
+
         #loading-overlay { position: fixed; inset: 0; background-color: rgba(255, 255, 255, 0.95); z-index: 1000; display: flex; flex-direction: column; justify-content: center; align-items: center; transition: opacity 0.5s ease; opacity: 1; }
         .loader { border: 4px solid var(--border-color); border-top: 4px solid var(--primary); border-radius: 50%; width: 50px; height: 50px; animation: spin 1s linear infinite; margin-bottom: 1rem; }
         #loading-text { font-size: 1.1rem; color: var(--text-main); font-weight: 500; text-align: center; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         #content-wrapper { transition: opacity 0.5s ease; opacity: 0; }
-        
+
         .lint-item { border-top: 1px solid #e5e7eb; margin-top: 16px; padding-top: 8px; background-color: inherit; }
         .lint-message { font-size: 0.95rem; color: #374151; white-space: pre-wrap; margin-bottom: 4px; }
         .lint-separator { border-top: 1px solid #e5e7eb; margin: 8px 0; }
@@ -185,14 +185,14 @@
         <div class="loader"></div>
         <div id="loading-text">Initializing Search Query...</div>
     </div>
-    
+
     <div id="content-wrapper">
         <header>
             <h1>Search-Query Linter</h1>
             <p>Paste a query, select a platform, and run the linter in your browser.</p>
         </header>
 
-        <div id="status">Loading Search Query…</div> 
+        <div id="status">Loading Search Query…</div>
         <div id="status-display">Loading Search Query…</div>
 
         <div class="main-content-card">
@@ -245,7 +245,7 @@
 
         // --- UTILITIES ---
         function copyJsonToClipboard() {
-            const jsonText = codeBlock.textContent; 
+            const jsonText = codeBlock.textContent;
             navigator.clipboard.writeText(jsonText).then(() => {
                 const copyBtn = document.getElementById('copy-json');
                 const originalHTML = copyBtn.innerHTML;
@@ -280,12 +280,12 @@
         }
 
         // --- PYODIDE SETUP ---
-        const originalAppendStatus = window.appendStatus || function(msg) { 
-            if (statusDisplay) statusDisplay.textContent = msg; 
+        const originalAppendStatus = window.appendStatus || function(msg) {
+            if (statusDisplay) statusDisplay.textContent = msg;
         };
 
         window.appendStatus = function(msg) {
-            const cleanMsg = msg.replace(/\u001b\[.*?m/g, '').trim(); 
+            const cleanMsg = msg.replace(/\u001b\[.*?m/g, '').trim();
             if (loadingText) loadingText.textContent = cleanMsg;
 
             if (cleanMsg.includes('Done') || cleanMsg.includes('ready') || cleanMsg.includes('Ready')) {
@@ -305,14 +305,14 @@
                 contentWrapper.style.opacity = '0';
             }
             originalAppendStatus(msg);
-            setTimeout(sendHeight, 50); 
+            setTimeout(sendHeight, 50);
         };
 
         // --- INIT ---
         document.addEventListener('DOMContentLoaded', () => {
             document.body.classList.add('loading-active');
             contentWrapper.style.opacity = '0';
-            loader.style.display = 'flex'; 
+            loader.style.display = 'flex';
             loadingText.textContent = "Initializing Search Query...";
 
             document.getElementById('copy-json').addEventListener('click', copyJsonToClipboard);

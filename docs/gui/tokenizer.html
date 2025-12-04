@@ -4,14 +4,14 @@
     <meta charset="UTF-8" />
     <title>search-query Tokenizer</title>
     <meta name="viewport" content="width=device-width,initial-scale=1" />
-    
+
     <!-- Highlight.js for JSON coloring -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/vs2015.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/json.min.js"></script>
 
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
-    
+
     <style>
         /* --- CSS Variables (Ensure consistency with Host) --- */
         :root {
@@ -25,11 +25,11 @@
 
         /* --- Global Resets & Body Styles for IFRAME --- */
         * { box-sizing: border-box; margin: 0; padding: 0; line-height: 1.5; font-family: 'Inter', sans-serif; }
-        
+
         body {
             background-color: var(--bg-card);
             color: var(--text-main);
-            padding: 1.5rem; 
+            padding: 1.5rem;
             min-height: 100vh;
             overflow-x: hidden;
             overflow-y: hidden;
@@ -41,11 +41,11 @@
             overflow: hidden; /* Prevents scrolling */
             height: 100vh;    /* Locks height */
         }
-        
+
         /* --- Layout & Typography --- */
         header h1 { font-size: 1.5rem; font-weight: bold; margin-bottom: 0.25rem; }
         header p { color: var(--text-secondary); margin-top: 0; font-size: 0.95rem; }
-        
+
         .main-content-card {
             margin-top: 1.5rem;
             background: var(--bg-card);
@@ -57,7 +57,7 @@
 
         /* --- Form Elements --- */
         label { display: block; margin-top: 1.25rem; margin-bottom: 0.25rem; font-weight: 600; font-size: 0.875rem; }
-        
+
         /* Query textarea with larger font size */
         #query {
             font-size: 1.1rem !important;
@@ -66,17 +66,17 @@
             min-height: 120px;
             font-family: 'Courier New', monospace;
         }
-        
+
         /* Narrower form elements */
-        textarea, select { 
-            display: block; width: 100%; padding: 0.75rem; border: 1px solid var(--border-color); 
-            border-radius: 0.5rem; box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.07); 
+        textarea, select {
+            display: block; width: 100%; padding: 0.75rem; border: 1px solid var(--border-color);
+            border-radius: 0.5rem; box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.07);
             transition: border-color 0.2s, box-shadow 0.2s; color: var(--text-main);
             max-width: 100%;
         }
-        
-        textarea:focus, select:focus { 
-            border-color: var(--primary); box-shadow: 0 0 0 1px var(--primary); outline: none; 
+
+        textarea:focus, select:focus {
+            border-color: var(--primary); box-shadow: 0 0 0 1px var(--primary); outline: none;
         }
 
         /* --- Button --- */
@@ -84,13 +84,13 @@
             width: auto;
             min-width: 200px;
             padding: 0.75rem 2rem;
-            border: none; 
-            border-radius: 0.5rem; 
-            font-weight: 600; 
-            color: white; 
-            background-color: var(--primary); 
-            cursor: pointer; 
-            transition: background-color 0.2s; 
+            border: none;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            color: white;
+            background-color: var(--primary);
+            cursor: pointer;
+            transition: background-color 0.2s;
             box-shadow: 0 2px 4px rgba(79, 70, 229, 0.4);
             margin-top: 1.5rem;
             font-size: 1rem;
@@ -102,16 +102,16 @@
         #btn-tokenize:disabled { opacity: 0.6; cursor: not-allowed; box-shadow: none; }
 
         /* --- Status & Loading --- */
-        #status { display:none; } 
-        #status-display { 
-            margin-top: 1rem; padding: 0.5rem 1rem; background: #fff3e0; border: 1px solid #ffcc80; 
-            border-radius: 0.375rem; font-size: 0.875rem; color: #a55a00; font-weight: 500; 
+        #status { display:none; }
+        #status-display {
+            margin-top: 1rem; padding: 0.5rem 1rem; background: #fff3e0; border: 1px solid #ffcc80;
+            border-radius: 0.375rem; font-size: 0.875rem; color: #a55a00; font-weight: 500;
         }
 
         /* --- Output Table Styles --- */
         #tokens-table {
-            width: 100%; border-collapse: collapse; margin-top: 1rem; background: var(--bg-card); 
-            border: 1px solid var(--border-color); border-radius: 0.5rem; overflow: hidden; 
+            width: 100%; border-collapse: collapse; margin-top: 1rem; background: var(--bg-card);
+            border: 1px solid var(--border-color); border-radius: 0.5rem; overflow: hidden;
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
         }
         #tokens-table th, #tokens-table td { padding: 0.75rem; border-bottom: 1px solid #f3f4f6; font-size: 0.9rem; }
@@ -144,7 +144,7 @@
         .hljs-number { color: #b5cea8 !important; }    /* Numbers: Light Green */
         .hljs-literal, .hljs-keyword { color: #569cd6 !important; } /* Booleans: Blue */
         .hljs-punctuation { color: #d4d4d4 !important; } /* Punctuation: Light Gray */
-        
+
         /* --- LOADING OVERLAY STYLES (Fixed and Centered) --- */
         #loading-overlay {
             position: fixed;
@@ -154,7 +154,7 @@
             height: 100%;
             background-color: rgba(255, 255, 255, 0.95);
             z-index: 1000;
-            display: flex; 
+            display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
@@ -180,36 +180,36 @@
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
-        
+
         /* Utility to hide the content on load */
         #content-wrapper { transition: opacity 0.5s ease; opacity: 0; }
-        
+
         /* Narrower platform select */
         #platform {
             max-width: 300px;
         }
-        
+
     </style>
 </head>
 <body>
 
-    
+
     <div id="loading-overlay">
         <div class="loader"></div>
         <div id="loading-text">Initializing search-query...</div>
     </div>
-    
+
     <div id="content-wrapper">
-        
+
         <header>
             <h1>Search-Query Tokenizer</h1>
             <p>Paste a query, select a platform, and see the raw tokens from <code>tokenize()</code>.</p>
         </header>
-        
-        <div id="status">Loading Search Query…</div> 
-        
+
+        <div id="status">Loading Search Query…</div>
+
         <div id="status-display">Loading Search Query…</div>
-        
+
         <div class="main-content-card">
             <label for="query">Query</label>
             <textarea id="query" rows="6">(TI=(platform* OR "digital work") AND PY=2020-2025)</textarea>
@@ -227,7 +227,7 @@
         </div>
 
         <div style="margin-top: 1.5rem; padding: 1rem; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 0.75rem; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);">
-            
+
             <details style="margin-top: 0;">
                 <summary style="font-weight: 600; color: var(--text-secondary); cursor: pointer; padding: 0.5rem 0;">Raw JSON</summary>
                 <pre><code id="output" class="language-json">Waiting for input...</code></pre>
@@ -248,10 +248,10 @@
     <script src="https://cdn.jsdelivr.net/pyodide/v0.26.2/full/pyodide.js"></script>
     <script src="search_query_pkg_tree.js"></script>
     <script src="tokenize.js"></script>
-    
+
     <script>
-        const PARENT_ORIGIN = window.location.origin; 
-        
+        const PARENT_ORIGIN = window.location.origin;
+
         const loader = document.getElementById('loading-overlay');
         const loadingText = document.getElementById('loading-text');
         const contentWrapper = document.getElementById('content-wrapper');
@@ -262,19 +262,19 @@
 
         function updateJsonOutput(jsonData) {
             const codeElement = document.getElementById('output');
-            
+
             // 1. Convert to Pretty String
             const formattedJson = JSON.stringify(jsonData, null, 2);
-            
+
             // 2. Set text content
             codeElement.textContent = formattedJson;
-            
+
             // 3. Clear markers
             codeElement.removeAttribute('data-highlighted');
-            
+
             // 4. Trigger Highlight.js
             hljs.highlightElement(codeElement);
-            
+
             console.log('JSON output highlighted with VS Code theme');
         }
 
@@ -291,21 +291,21 @@
                 }, PARENT_ORIGIN);
             }
         }
-        
+
         // --- Pyodide Status Hook and Loader Control ---
-        
-        const originalAppendStatus = window.appendStatus || function(msg) { 
+
+        const originalAppendStatus = window.appendStatus || function(msg) {
             const statusDiv = document.getElementById('status');
             if (statusDiv) {
                 // If Pyodide outputs complex status (which includes ANSI codes), write to hidden div
-                statusDiv.textContent = msg; 
+                statusDiv.textContent = msg;
             }
-            console.log("Pyodide Hook:", msg); 
+            console.log("Pyodide Hook:", msg);
         };
-        
+
         window.appendStatus = function(msg) {
             // 1. Update the visual status text
-            const cleanMsg = msg.replace(/\u001b\[.*?m/g, ''); 
+            const cleanMsg = msg.replace(/\u001b\[.*?m/g, '');
             if (loadingText) loadingText.textContent = cleanMsg;
 
             // 2. Control the visual transition state and viewport lock
@@ -318,7 +318,7 @@
 
                 setTimeout(() => {
                     loader.style.display = 'none';
-                    document.body.style.overflow = 'hidden'; 
+                    document.body.style.overflow = 'hidden';
                     sendHeight(); // Final resize
                 }, 500);
             } else {
@@ -329,17 +329,17 @@
                 contentWrapper.style.opacity = '0';
             }
 
-            // 3. Call the original function and re-trigger height update 
+            // 3. Call the original function and re-trigger height update
             originalAppendStatus(msg);
-            setTimeout(sendHeight, 50); 
+            setTimeout(sendHeight, 50);
         };
-        
+
         // --- Initial Setup and DOM Observer ---
         document.addEventListener('DOMContentLoaded', () => {
             // Initial state setup: LOCK VIEWPORT IMMEDIATELY
             document.body.classList.add('loading-active');
             contentWrapper.style.opacity = '0';
-            loader.style.display = 'flex'; 
+            loader.style.display = 'flex';
             loadingText.textContent = "Initializing search-query...";
 
             // Initialize Highlight.js
@@ -347,7 +347,7 @@
 
             // 1. Send initial minimal height
             window.addEventListener('load', sendHeight);
-            
+
             // 2. Observe DOM changes (Crucial for when the output table appears/disappears)
             const observer = new MutationObserver(sendHeight);
             observer.observe(document.body, { attributes: true, childList: true, subtree: true });

@@ -9,7 +9,7 @@
 
     <script src="https://cdn.jsdelivr.net/pyodide/v0.26.2/full/pyodide.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
-    
+
     <style>
         /* --- CSS VARIABLES --- */
         :root {
@@ -29,10 +29,10 @@
 
         /* --- Global Resets & Body --- */
         * { box-sizing: border-box; margin: 0; padding: 0; line-height: 1.5; }
-        body { 
-            font-family: var(--font-stack); background-color: var(--bg-base); color: var(--text-heading); 
+        body {
+            font-family: var(--font-stack); background-color: var(--bg-base); color: var(--text-heading);
             min-height: 100vh; scroll-behavior: smooth;
-            overflow-x: hidden; 
+            overflow-x: hidden;
         }
         h1, h2, h3, h4 { color: var(--text-heading); margin: 0; }
         a { text-decoration: none; color: var(--primary); transition: color 0.2s; }
@@ -43,43 +43,43 @@
         body::-webkit-scrollbar-thumb { background-color: var(--primary-accent); border-radius: 10px; }
 
         /* --- Layout & Responsiveness --- */
-        #mobile-header { 
-            position: fixed; top: 0; left: 0; width: 100%; height: 64px; 
-            background-color: var(--bg-card); border-bottom: 1px solid var(--border-color); 
-            z-index: 50; display: flex; align-items: center; padding: 0 1rem; 
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1); 
+        #mobile-header {
+            position: fixed; top: 0; left: 0; width: 100%; height: 64px;
+            background-color: var(--bg-card); border-bottom: 1px solid var(--border-color);
+            z-index: 50; display: flex; align-items: center; padding: 0 1rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
         }
-        #mobile-header h1 { 
-            font-size: 1.25rem; font-weight: bold; margin-left: 1rem; 
+        #mobile-header h1 {
+            font-size: 1.25rem; font-weight: bold; margin-left: 1rem;
             display: flex; align-items: center;
         }
         #menu-toggle { border: none; background: none; color: var(--text-heading); cursor: pointer; padding: 0.5rem; }
 
-        #sidebar { 
-            position: fixed; top: 0; left: 0; height: 100vh; width: var(--sidebar-width); background-color: var(--bg-card); 
-            border-right: 1px solid var(--border-color); z-index: 60; transform: translateX(-100%); 
-            transition: transform 0.3s ease-out; box-shadow: 4px 0 15px rgba(0, 0, 0, 0.2); 
-            padding: 1.5rem 1rem; overflow-y: auto; display: flex; flex-direction: column; 
+        #sidebar {
+            position: fixed; top: 0; left: 0; height: 100vh; width: var(--sidebar-width); background-color: var(--bg-card);
+            border-right: 1px solid var(--border-color); z-index: 60; transform: translateX(-100%);
+            transition: transform 0.3s ease-out; box-shadow: 4px 0 15px rgba(0, 0, 0, 0.2);
+            padding: 1.5rem 1rem; overflow-y: auto; display: flex; flex-direction: column;
         }
         #sidebar.open { transform: translateX(0); }
         #backdrop { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.5); z-index: 55; display: none; }
-        
+
         #main-content { padding-top: 64px; transition: margin-left 0.3s ease-out; padding-left: 0; }
         .main-container { max-width: 76rem; margin: 0 auto; padding: 2.5rem 1.5rem; }
 
         @media (min-width: 1024px) {
-            
+
             #mobile-header { display: none; }
             #sidebar { transform: translateX(0); width: var(--sidebar-width); position: fixed; padding-top: 2rem; }
             #main-content { padding-left: var(--sidebar-width); padding-top: 2rem; }
-            .main-container { padding: 0 1.5rem 2.5rem; } 
+            .main-container { padding: 0 1.5rem 2.5rem; }
             #tool-iframe { height: 600px; }
             #quick-access-ctas { display: none !important; }
 
             /* Show close button only on mobile (overridden for desktop here) */
             #close-menu { display: none !important; }
         }
-        
+
         /* --- Mobile Specific Styles --- */
         #close-menu { /* Mobile X button */
             display: block !important;
@@ -106,20 +106,20 @@
         }
 
         /* --- Hero Section (Now Documentation Header) --- */
-        #hero-headline { 
+        #hero-headline {
             font-family: 'Space Grotesk', sans-serif;
-            font-size: 2.5rem; line-height: 1.1; font-weight: 700; margin-bottom: 0.5rem; 
-            background: linear-gradient(90deg, var(--text-heading), var(--primary), var(--primary-accent)); 
-            --webkit-background-clip: text; -webkit-text-fill-color: transparent; 
-            background-size: 200% auto; animation: text-flow 4s linear infinite; 
+            font-size: 2.5rem; line-height: 1.1; font-weight: 700; margin-bottom: 0.5rem;
+            background: linear-gradient(90deg, var(--text-heading), var(--primary), var(--primary-accent));
+            --webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            background-size: 200% auto; animation: text-flow 4s linear infinite;
             letter-spacing: -1px; margin-top: 0;
         }
-        
+
         /* --- CTA Buttons --- */
-        #launch-tool-cta { 
-            padding: 0.75rem 2rem; font-weight: bold; color: white; background-color: var(--primary); 
-            border: none; border-radius: 9999px; box-shadow: 0 4px 10px rgba(79, 70, 229, 0.5); 
-            cursor: pointer; transition: background-color 0.2s, transform 0.2s; font-size: 1.125rem; 
+        #launch-tool-cta {
+            padding: 0.75rem 2rem; font-weight: bold; color: white; background-color: var(--primary);
+            border: none; border-radius: 9999px; box-shadow: 0 4px 10px rgba(79, 70, 229, 0.5);
+            cursor: pointer; transition: background-color 0.2s, transform 0.2s; font-size: 1.125rem;
             margin-top: 2rem;
         }
         #launch-tool-cta:hover { background-color: var(--primary-dark); transform: scale(1.05); }
@@ -131,19 +131,19 @@
         }
 
         /* --- Iframe Specific Styling --- */
-        #tool-iframe { 
-            width: 100%; 
-            border: 1px solid var(--border-color); 
-            border-radius: 0.5rem; 
+        #tool-iframe {
+            width: 100%;
+            border: 1px solid var(--border-color);
+            border-radius: 0.5rem;
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-            height: 600px; 
+            height: 600px;
             transition: height 0.3s ease-out;
         }
 
         /* --- Documentation Card Base --- */
-        .doc-card { 
+        .doc-card {
             display: flex; align-items: flex-start; gap: 1rem; padding: 1.5rem; border-radius: 0.5rem; background: var(--bg-card); box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
-            border-left: 4px solid var(--primary-accent); 
+            border-left: 4px solid var(--primary-accent);
         }
         .doc-card-icon { color: var(--primary); font-size: 2rem; flex-shrink: 0; padding-top: 0.25rem; }
 
@@ -190,7 +190,7 @@
     </style>
 </head>
 <body>
-    
+
     <header id="mobile-header">
         <button id="menu-toggle" class="p-2">
             <i class="fas fa-bars text-xl"></i>
@@ -213,9 +213,9 @@
                 <i class="fas fa-times text-xl"></i>
             </button>
         </header>
-        
+
         <div style="display: flex; flex-direction: column; margin-top: 1rem; color: var(--text-heading);">
-            
+
             <div style="padding: 1rem 0; font-size: 0.75rem; font-weight: bold; color: var(--text-body); text-transform: uppercase;">Features</div>
             <a href="#tool-area" data-tool-url="lint.html" class="sidebar-tool-link">
                 <i class="fas fa-tasks w-5 mr-3"></i> <p style="display: inline-block; margin: 0 0 0 0; padding-left: 10px;">Lint</p>
@@ -223,7 +223,7 @@
             <a href="#tool-area" data-tool-url="translate.html" class="sidebar-tool-link">
                 <i class="fas fa-language w-5 mr-3"></i>  <p style="display: inline-block; margin: 0 0 0 0; padding-left: 10px;">Translate</p>
             </a>
-            
+
             <div style="padding: 1rem 0; font-size: 0.75rem; font-weight: bold; color: var(--text-body); text-transform: uppercase;">Debug</div>
             <a href="#tool-area" data-tool-url="tokenizer.html" class="sidebar-tool-link">
                 <i class="fas fa-microchip w-5 mr-3"></i>  <p style="display: inline-block; margin: 0 0 0 0; padding-left: 10px;">Tokenize</p>
@@ -245,27 +245,27 @@
                 <i class="fas fa-file-contract w-5 mr-3"></i> <p style="display: inline-block; margin: 0 0 0 0; padding-left: 10px;">License</p>
             </a>
         </div>
-        
+
         <footer style="margin-top: auto; padding-top: 1rem; border-top: 1px solid var(--border-color); font-size: 0.75rem; color: var(--text-body);">
             Search-Query Studio © 2025
         </footer>
     </nav>
-    
+
     <div id="main-content">
-        
+
         <div id="interactive-tool-wrap">
             <div class="main-container">
-                
+
                 <section id="documentation" style="width: 100%; padding-top: 0;">
-                    
+
                     <h1 id="hero-headline" style="margin-bottom: 0.5rem; color: var(--text-heading); text-align: center;">
                         Search Query Studio
                     </h1>
-                    
+
                     <p style="font-size: 1.25rem; color: var(--text-body); text-align: center; max-width: 42rem; margin: 0 auto 2rem;">
                         The web interface for search-query.
                     </p>
-                                   
+
                 </section>
 
                 <div id="tool-area-content">
@@ -301,7 +301,7 @@
             ? 'https://geritwagner.github.io/search-query/gui/'
             : './';
 
-        
+
         // Storage keys
         const STORAGE_KEYS = {
             TOOL_URL: 'selectedToolUrl',
@@ -316,7 +316,7 @@
             if (shouldOpen) {
                 DOM.sidebar.classList.add('open');
                 DOM.backdrop.style.display = 'block';
-                document.body.style.overflow = 'hidden'; 
+                document.body.style.overflow = 'hidden';
             } else {
                 DOM.sidebar.classList.remove('open');
                 DOM.backdrop.style.display = 'none';
@@ -326,13 +326,13 @@
 
         function loadToolIntoIframe(toolUrl, toolName = '') {
             console.log('Loading tool:', toolUrl);
-            
+
             if (DOM.toolIframe.src !== toolUrl) {
                 DOM.toolIframe.src = toolUrl;
             }
-            
+
             updateActiveSidebarItem(toolName || toolUrl.replace(BASE_PATH, ''));
-            
+
             DOM.interactiveToolWrap.style.display = 'block';
             setTimeout(() => {
                 DOM.toolIframe.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -364,32 +364,32 @@
             localStorage.removeItem(STORAGE_KEYS.TOOL_URL);
             localStorage.removeItem(STORAGE_KEYS.TOOL_NAME);
         }
-        
+
         /* --- IFRAME RESIZE LISTENER --- */
 
         function handleIframeResize(event) {
             const expectedOrigin = window.location.origin;
             if (event.origin !== expectedOrigin) { return; }
-            
+
             if (event.data.type === 'setHeight' && event.data.height) {
                 DOM.toolIframe.style.height = `${event.data.height + 20}px`;
             }
         }
 
-        
+
         /* --- EVENT LISTENERS --- */
 
         document.addEventListener('DOMContentLoaded', () => {
-            
+
             window.addEventListener('message', handleIframeResize, false);
-            
+
             const queryString = window.location.search || "";
             const initialToolUrl = BASE_PATH + 'translate.html' + queryString;
             const initialToolName = 'translate.html';
 
             // Check if there's a stored tool selection
             const { toolUrl: storedUrl, toolName: storedName } = getSelectedTool();
-            
+
             // Clear storage after retrieval (so it doesn't persist across multiple sessions)
             clearSelectedTool();
 
@@ -418,22 +418,22 @@
                     const fullUrl = BASE_PATH + relativeUrl + queryString;
 
                     const toolName = relativeUrl;
-                    
+
                     console.log('Tool switch clicked:', fullUrl, toolName);
-                    
+
                     // Save selection to localStorage
                     saveSelectedTool(fullUrl, toolName);
-                    
+
                     // Close mobile sidebar if open
                     if (window.innerWidth < 1024) {
                         toggleSidebar(true);
                     }
-                    
+
                     // Reload the page to ensure clean state
                     window.location.reload();
                 }
             };
-            
+
             // Attach handler to sidebar links
             DOM.sidebarToolLinks.forEach(link => {
                 link.addEventListener('click', handleToolSwitch);

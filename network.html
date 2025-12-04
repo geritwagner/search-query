@@ -14,52 +14,52 @@
             --primary-dark: #4f46e5;
             --primary-light: #818cf8;
             --primary-contrast: #ffffff;
-            
+
             /* Secondary Colors */
             --secondary-main: #a855f7;
             --secondary-light: #c084fc;
             --secondary-dark: #9333ea;
             --secondary-contrast: #ffffff;
-            
+
             /* Background Colors */
             --bg-dark: #0f172a;
             --bg-darker: #1e1b4b;
             --bg-card: #1e293b;
             --bg-card-light: #334155;
             --bg-input: rgba(15, 23, 42, 0.5);
-            
+
             /* Text Colors */
             --text-primary: #ffffff;
             --text-secondary: #94a3b8;
             --text-muted: #64748b;
             --text-light: #cbd5e1;
             --text-accent: #e0e7ff;
-            
+
             /* Status Colors */
             --success: #10b981;
             --warning: #f59e0b;
             --error: #ef4444;
             --info: #3b82f6;
-            
+
             /* Code Colors */
             --code-purple: #c084fc;
             --code-blue: #818cf8;
             --code-green: #34d399;
             --code-yellow: #fbbf24;
             --code-gray: #64748b;
-            
+
             /* Border Colors */
             --border-primary: rgba(99, 102, 241, 0.2);
             --border-secondary: rgba(168, 85, 247, 0.2);
             --border-info: rgba(59, 130, 246, 0.2);
-            
+
             /* Shadow Colors */
             --shadow-primary: rgba(99, 102, 241, 0.4);
             --shadow-secondary: rgba(168, 85, 247, 0.4);
             --shadow-blue: rgba(59, 130, 246, 0.4);
             --shadow-green: rgba(16, 185, 129, 0.4);
             --shadow-dark: rgba(0, 0, 0, 0.5);
-            
+
             /* Gradient Colors */
             --gradient-primary: linear-gradient(135deg, #6366f1, #a855f7);
             --gradient-primary-light: linear-gradient(135deg, #6366f1, #8b5cf6);
@@ -69,17 +69,17 @@
             --gradient-dark: linear-gradient(135deg, #1e293b, #334155);
             --gradient-hero: linear-gradient(180deg, #0f172a 0%, #1e1b4b 100%);
             --gradient-appbar: linear-gradient(to right, #1e1b4b, #312e81);
-            
+
             /* Typography */
             --font-family: 'Inter', sans-serif;
             --font-family-mono: monospace;
-            
+
             /* Border Radius */
             --border-radius-sm: 8px;
             --border-radius-md: 12px;
             --border-radius-lg: 16px;
             --border-radius-xl: 50%;
-            
+
             /* Spacing */
             --spacing-xs: 8px;
             --spacing-sm: 12px;
@@ -507,22 +507,22 @@
             .container {
                 padding: 0 var(--spacing-sm);
             }
-            
+
             .h1 { font-size: 40px; }
             .h2 { font-size: 32px; }
             .h3 { font-size: 28px; }
-            
+
             .grid-2,
             .grid-3,
             .grid-4 {
                 grid-template-columns: 1fr;
             }
-            
+
             .app-bar-toolbar {
                 flex-direction: column;
                 gap: var(--spacing-md);
             }
-            
+
             .nav-links {
                 flex-wrap: wrap;
                 justify-content: center;
@@ -737,7 +737,7 @@
         </div>
     </section>
 <!----
-    
+
     <section id="pricing" class="section-gradient">
         <div class="container">
             <div class="text-center">
@@ -957,17 +957,17 @@
                 });
             }
         });
-    
+
     setTimeout(()=>{
         document.getElementById('loadline').classList.remove('net-run');
         document.querySelector('h3').textContent = 'Search Query Loaded Successfully';
-    
+
         setTimeout(()=>{
             document.getElementById('loadingDiv').style.display = 'none';
         }, 1000)
     },10000);
-    
-    
+
+
     </script>
 </body>
 </html>
