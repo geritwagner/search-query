@@ -119,21 +119,22 @@
         }
 
         /* --- Hero Section (Now Documentation Header) --- */
-        #hero-headline { 
+       #hero-headline { 
             font-family: 'Space Grotesk', sans-serif;
-            background: linear-gradient(90deg, var(--text-heading), var(--primary), var(--primary-accent)); 
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin: 0;
+            line-height: 1.1;
+        
+            background: linear-gradient(90deg, #ff0080, #7928ca, #4ade80);
+            background-size: 200% auto;
+            animation: text-flow 4s linear infinite;
+        
             -webkit-background-clip: text;
             background-clip: text;
-            color: transparent;
-            font-size: 2.5rem; 
-            line-height: 1.1; 
-            font-weight: 700; 
-            margin-bottom: 0.5rem;  
-            letter-spacing: -1px; 
-            margin-top: 0;
         
-            background-size: 200% auto; 
-            animation: text-flow 4s linear infinite;
+            -webkit-text-fill-color: transparent;
+            color: transparent;
         }
         
         /* --- CTA Buttons --- */
