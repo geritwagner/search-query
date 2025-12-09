@@ -121,8 +121,19 @@
         /* --- Hero Section (Now Documentation Header) --- */
         #hero-headline { 
             font-family: 'Space Grotesk', sans-serif;
-            font-size: 2.5rem; line-height: 1.1; font-weight: 700; margin-bottom: 0.5rem;  
-            letter-spacing: -1px; margin-top: 0;
+            background: linear-gradient(90deg, var(--text-heading), var(--primary), var(--primary-accent)); 
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            font-size: 2.5rem; 
+            line-height: 1.1; 
+            font-weight: 700; 
+            margin-bottom: 0.5rem;  
+            letter-spacing: -1px; 
+            margin-top: 0;
+        
+            background-size: 200% auto; 
+            animation: text-flow 4s linear infinite;
         }
         
         /* --- CTA Buttons --- */
