@@ -287,13 +287,6 @@
   <script src="https://cdn.jsdelivr.net/pyodide/v0.26.2/full/pyodide.js"></script>
   
   <script>
-    const isEmbedded = window.self !== window.top;
-    alert(isEmbedded);
-    if (isEmbedded) {
-      document.documentElement.style.overflow = 'hidden';
-      document.body.style.overflow = 'hidden';
-      alert('Embedded")
-    }
     // Initialize Highlight.js
     hljs.configure({ ignoreUnescapedHTML: true });
 
