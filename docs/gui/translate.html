@@ -35,6 +35,12 @@
       overflow-y: hidden;
       position: relative;
     }
+    #content-wrapper {
+      min-height: 100%;
+      overflow-y: auto;
+      overflow-x: hidden;
+    }
+
 
     /* UTILITY CLASS FOR VIEWPORT LOCK */
     body.loading-active {
@@ -335,18 +341,21 @@
       URL.revokeObjectURL(url);
   }
 
-    // --- Cross-Origin Height Communication ---
     function sendHeight() {
-      // Only send height if the loader is not active (i.e., content is visible)
       if (loader.style.display !== 'none') return;
-
-      const height = document.body.scrollHeight;
-      if (window.parent) {
-        window.parent.postMessage({
+    
+      const wrapper = document.getElementById('content-wrapper');
+      if (!wrapper) return;
+    
+      const height = wrapper.scrollHeight;
+    
+      window.parent.postMessage(
+        {
           type: 'setHeight',
           height: height
-        }, window.location.origin);
-      }
+        },
+        '*'
+      );
     }
     
     // --- Pyodide Status Hook and Loader Control ---
