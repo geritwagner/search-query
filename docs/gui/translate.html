@@ -32,7 +32,7 @@
       padding: 1.5rem; 
       min-height: 100vh;
       overflow-x: hidden;
-      overflow-y: hidden;
+      overflow-y: auto;
       position: relative;
     }
     #content-wrapper {
@@ -287,6 +287,12 @@
   <script src="https://cdn.jsdelivr.net/pyodide/v0.26.2/full/pyodide.js"></script>
   
   <script>
+    const isEmbedded = window.self !== window.top;
+
+    if (isEmbedded) {
+      document.documentElement.style.overflow = 'hidden';
+      document.body.style.overflow = 'hidden';
+    }
     // Initialize Highlight.js
     hljs.configure({ ignoreUnescapedHTML: true });
 
@@ -341,23 +347,20 @@
       URL.revokeObjectURL(url);
   }
 
-    function sendHeight() {
-      if (loader.style.display !== 'none') return;
-    
-      const wrapper = document.getElementById('content-wrapper');
-      if (!wrapper) return;
-    
-      const height = wrapper.scrollHeight;
-    
-      window.parent.postMessage(
-        {
-          type: 'setHeight',
-          height: height
-        },
-        '*'
-      );
-    }
-    
+  function sendHeight() {
+    if (!isEmbedded) return;           // 👈 critical
+    if (loader.style.display !== 'none') return;
+  
+    const wrapper = document.getElementById('content-wrapper');
+    if (!wrapper) return;
+  
+    const height = wrapper.scrollHeight;
+  
+    window.parent.postMessage(
+      { type: 'setHeight', height },
+      '*'
+    );
+  }
     // --- Pyodide Status Hook and Loader Control ---
     
     const originalAppendStatus = window.appendStatus || function(msg) { 
