@@ -288,7 +288,7 @@
   
   <script>
     const isEmbedded = window.self !== window.top;
-
+    alert(isEmbedded);
     if (isEmbedded) {
       document.documentElement.style.overflow = 'hidden';
       document.body.style.overflow = 'hidden';
@@ -348,20 +348,20 @@
       URL.revokeObjectURL(url);
   }
 
-  function sendHeight() {
-    if (!isEmbedded) return;           // 👈 critical
-    if (loader.style.display !== 'none') return;
-  
-    const wrapper = document.getElementById('content-wrapper');
-    if (!wrapper) return;
-  
-    const height = wrapper.scrollHeight;
-  
-    window.parent.postMessage(
-      { type: 'setHeight', height },
-      '*'
-    );
-  }
+    function sendHeight() {
+      if (!isEmbedded) return;           // 👈 critical
+      if (loader.style.display !== 'none') return;
+    
+      const wrapper = document.getElementById('content-wrapper');
+      if (!wrapper) return;
+    
+      const height = wrapper.scrollHeight;
+    
+      window.parent.postMessage(
+        { type: 'setHeight', height },
+        '*'
+      );
+    }
     // --- Pyodide Status Hook and Loader Control ---
     
     const originalAppendStatus = window.appendStatus || function(msg) { 
