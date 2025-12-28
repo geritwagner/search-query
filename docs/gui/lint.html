@@ -9,50 +9,146 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
     
     <style>
-        /* --- CORE CSS --- */
+        /* --- CSS VARIABLES --- */
         :root {
-            --primary: #4f46e5;       
+            --primary: #4f46e5;
             --primary-dark: #3f35c5;
+            --primary-accent: #6366f1;
+            --bg-base: #f9fafb;
+            --bg-base-lighter: #eef2ff;
             --bg-card: #ffffff;
-            --border-color: #e5e7eb;  
-            --text-main: #1f2937;     
-            --text-secondary: #6b7280; 
+            --border-color: #e5e7eb;
+            --text-heading: #1f2937;
+            --text-body: #6b7280;
+            --font-stack: 'Inter', sans-serif;
+            --font-display: 'Space Grotesk', sans-serif;
+            --sidebar-width: 280px;
             --error-red: #dc2626;     
-            --warning-yellow: #d97706; 
+            --warning-yellow: #d97706;
         }
 
-        * { box-sizing: border-box; margin: 0; padding: 0; line-height: 1.5; font-family: 'Inter', sans-serif; }
-        /* Add to your CSS */
-        body {
-          background-color: var(--bg-card);
-          color: var(--text-main);
-          padding: 1.5rem; 
-          min-height: 100vh;
-          overflow-x: hidden;
-          overflow-y: auto;
-          position: relative;
-          
-          /* ADD THIS: Extra bottom padding for iframe safety */
-          padding-bottom: 30px !important;
-        }    
-        #content-wrapper {
-          min-height: 100%;
-          overflow-y: auto;
-          overflow-x: hidden;
-          
-          /* ADD THIS: Extra padding at bottom */
-          padding-bottom: 20px;
-        }
-    
-        /* UTILITY CLASS FOR VIEWPORT LOCK */
-        body.loading-active {
-          height: 100vh;    /* Locks height */
+        /* --- Global Resets & Body --- */
+        * { box-sizing: border-box; margin: 0; padding: 0; line-height: 1.5; font-family: var(--font-stack); }
+        body { 
+            background-color: var(--bg-base); 
+            color: var(--text-heading); 
+            min-height: 100vh; 
+            scroll-behavior: smooth;
+            overflow-x: hidden;
         }
         
+        /* --- Custom Scrollbar --- */
+        body::-webkit-scrollbar { width: 8px; }
+        body::-webkit-scrollbar-thumb { background-color: var(--primary-accent); border-radius: 10px; }
 
-        header h1 { font-size: 1.5rem; font-weight: bold; margin-bottom: 0.25rem; }
-        header p { color: var(--text-secondary); margin-top: 0; font-size: 0.95rem; }
+        /* --- Layout & Responsiveness --- */
+        #mobile-header { 
+            position: fixed; top: 0; left: 0; width: 100%; height: 64px; 
+            background-color: var(--bg-card); border-bottom: 1px solid var(--border-color); 
+            z-index: 50; display: flex; align-items: center; padding: 0 1rem; 
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1); 
+        }
+        #mobile-header h1 { 
+            font-size: 1.25rem; font-weight: bold; margin-left: 1rem; 
+            display: flex; align-items: center;
+        }
+        #menu-toggle { border: none; background: none; color: var(--text-heading); cursor: pointer; padding: 0.5rem; }
+
+        #sidebar { 
+            position: fixed; top: 0; left: 0; height: 100vh; width: var(--sidebar-width); background-color: var(--bg-card); 
+            border-right: 1px solid var(--border-color); z-index: 60; transform: translateX(-100%); 
+            transition: transform 0.3s ease-out; box-shadow: 4px 0 15px rgba(0, 0, 0, 0.2); 
+            padding: 1.5rem 1rem; overflow-y: auto; display: flex; flex-direction: column; 
+        }
+        #sidebar.open { transform: translateX(0); }
+        #backdrop { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.5); z-index: 55; display: none; }
         
+        #main-content { padding-top: 64px; transition: margin-left 0.3s ease-out; padding-left: 0; }
+        .main-container { max-width: 76rem; margin: 0 auto; padding: 2.5rem 1.5rem; }
+
+        @media (min-width: 1024px) {
+            #mobile-header { display: none; }
+            #sidebar { transform: translateX(0); width: var(--sidebar-width); position: fixed; padding-top: 2rem; }
+            #main-content { padding-left: var(--sidebar-width); padding-top: 2rem; }
+            .main-container { padding: 0 1.5rem 2.5rem; }
+            #close-menu { display: none !important; }
+        }
+        
+        /* --- Mobile Specific Styles --- */
+        #close-menu {
+            display: block !important;
+            border: none; background: none; color: var(--text-heading); cursor: pointer; padding: 0.5rem;
+        }
+        
+        /* --- Logo and Branding --- */
+        .logo-container {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 1.5rem;
+        }
+        .logo-icon {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, #4f46e5, #6366f1);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 1.2rem;
+        }
+        .logo-text {
+            font-size: 1.5rem;
+            font-weight: 700;
+            background: linear-gradient(90deg, #4f46e5, #6366f1);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        /* --- Hero Section --- */
+        #hero-headline { 
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin: 0;
+            line-height: 1.1;
+            background: linear-gradient(90deg, var(--text-heading), var(--primary), var(--primary-accent));
+            background-size: 200% auto;
+            animation: text-flow 4s linear infinite;
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            color: transparent;
+        }
+        
+        @keyframes text-flow {
+            0% { background-position: 0% 50%; }
+            100% { background-position: 100% 50%; }
+        }
+
+        /* --- Sidebar Navigation --- */
+        .sidebar-tool-link {
+            display: flex;
+            align-items: center;
+            padding: 0.5rem 0.75rem;
+            border-radius: 0.375rem;
+            color: var(--text-heading);
+            transition: all 0.2s ease;
+            margin-bottom: 0.25rem;
+            text-decoration: none;
+        }
+        .sidebar-tool-link:hover {
+            background-color: var(--bg-base-lighter);
+            color: var(--primary);
+        }
+        .sidebar-tool-link.active {
+            background-color: var(--primary);
+            color: white;
+        }
+
+        /* --- CORE LINTER CSS --- */
         .main-content-card {
             margin-top: 1.5rem;
             background: var(--bg-card);
@@ -84,7 +180,10 @@
         }
 
         #btn-lint {
-            width: auto; min-width: 200px; padding: 0.75rem 2rem; border: none; border-radius: 0.5rem; font-weight: 600; color: white; background-color: var(--primary); cursor: pointer; transition: background-color 0.2s; box-shadow: 0 2px 4px rgba(79, 70, 229, 0.4); margin-top: 1.5rem; font-size: 1rem; display: block; margin-left: auto; margin-right: auto;
+            width: auto; min-width: 200px; padding: 0.75rem 2rem; border: none; border-radius: 0.5rem; 
+            font-weight: 600; color: white; background-color: var(--primary); cursor: pointer; 
+            transition: background-color 0.2s; box-shadow: 0 2px 4px rgba(79, 70, 229, 0.4); 
+            margin-top: 1.5rem; font-size: 1rem; display: block; margin-left: auto; margin-right: auto;
         }
         #btn-lint:hover:not(:disabled) { background-color: var(--primary-dark); }
         #btn-lint:disabled { opacity: 0.6; cursor: not-allowed; box-shadow: none; }
@@ -96,18 +195,19 @@
         #output-wrap { margin-top: 1.5rem; position: relative; }
         
         /* --- JSON OUTPUT WINDOW --- */
-              pre {
-                    background-color: #f6f8fa;
-                    color: #24292e;
-                    font-family: Consolas, "Liberation Mono", Menlo, monospace;
-                    font-size: 14px;
-                    padding: 12px 16px;
-                    border-radius: 6px;
-                    border: 1px solid #d0d7de;
-                    display: block;
-                    overflow-x: auto;
-                    line-height: 1.5;        }
-                
+        pre {
+            background-color: #f6f8fa;
+            color: #24292e;
+            font-family: Consolas, "Liberation Mono", Menlo, monospace;
+            font-size: 14px;
+            padding: 12px 16px;
+            border-radius: 6px;
+            border: 1px solid #d0d7de;
+            display: block;
+            overflow-x: auto;
+            line-height: 1.5;
+        }
+        
         #output {
             font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
             font-size: 0.85rem;
@@ -135,16 +235,27 @@
             border: 1px solid #d0d7de;
             display: block;
             overflow-x: auto;
-            line-height: 1.5;        
+            line-height: 1.5;
         }
 
         #lint-view .ansi-red { color: var(--error-red); font-weight: 600; }
         #lint-view .ansi-yellow { color: var(--warning-yellow); font-weight: 600; }
         #lint-view .lint-title { font-weight: 700; font-size: 1rem; margin-bottom: 0.5rem;}
        
-        #loading-overlay { position: fixed; inset: 0; background-color: rgba(255, 255, 255, 0.95); z-index: 1000; display: flex; flex-direction: column; justify-content: center; align-items: center; transition: opacity 0.5s ease; opacity: 1; }
+        #loading-overlay { 
+            position: fixed; 
+            inset: 0; 
+            background-color: rgba(255, 255, 255, 0.95); 
+            z-index: 1000; 
+            display: flex; 
+            flex-direction: column; 
+            justify-content: center; 
+            align-items: center; 
+            transition: opacity 0.5s ease; 
+            opacity: 1; 
+        }
         .loader { border: 4px solid var(--border-color); border-top: 4px solid var(--primary); border-radius: 50%; width: 50px; height: 50px; animation: spin 1s linear infinite; margin-bottom: 1rem; }
-        #loading-text { font-size: 1.1rem; color: var(--text-main); font-weight: 500; text-align: center; }
+        #loading-text { font-size: 1.1rem; color: var(--text-heading); font-weight: 500; text-align: center; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         #content-wrapper { transition: opacity 0.5s ease; opacity: 0; }
         
@@ -166,7 +277,6 @@
             display: block;
             overflow-x: auto;
             line-height: 1.5;
-
         }
         .lint-title { color: #ff7474; font-weight: 700; margin-bottom: px; font-size: 1rem; }
         .lint-meta { color: #cfcfcf; margin-bottom: 8px; }
@@ -191,69 +301,229 @@
         .lint-hl-0 { color: #ff6b6b; font-weight:700; }
         .lint-hl-1 { color: #ffd86b; font-weight:700; }
 
-
+        /* Tool content styles */
+        .tool-header h1 { font-size: 1.5rem; font-weight: bold; margin-bottom: 0.25rem; }
+        .tool-header p { color: var(--text-body); margin-top: 0; font-size: 0.95rem; }
+        
+        /* Ensure content is visible in iframe context */
+        body.loading-active {
+            height: 100vh;
+        }
+        
+        /* Footer Links */
+        .footer-links {
+            display: flex;
+            gap: 1.5rem;
+            justify-content: center;
+            margin-top: 1rem;
+        }
+        .footer-links a {
+            color: var(--text-body);
+            font-size: 0.875rem;
+            transition: color 0.2s;
+        }
+        .footer-links a:hover {
+            color: var(--primary);
+        }
     </style>
 </head>
 
 <body>
+    <!-- Mobile Header -->
+    <header id="mobile-header">
+        <button id="menu-toggle" class="p-2">
+            <i class="fas fa-bars text-xl"></i>
+        </button>
+        <h1 class="text-xl font-bold ml-4" style="padding-top: 25px;">
+            <div class="logo-container">
+                <img src="https://raw.githubusercontent.com/CoLRev-Environment/search-query/refs/heads/main/docs/source/_static/search_query_logo.svg" width="100px" >
+            </div>
+        </h1>
+    </header>
 
-    <div id="loading-overlay">
-        <div class="loader"></div>
-        <div id="loading-text">Initializing Search Query...</div>
-    </div>
-    
-    <div id="content-wrapper">
-        <header>
-            <h1>Search-Query Linter</h1>
-            <p>Paste a query, select a platform, and run the linter in your browser.</p>
+    <!-- Sidebar Backdrop -->
+    <div id="backdrop" style="display:none;"></div>
+
+    <!-- Sidebar Navigation -->
+    <nav id="sidebar">
+        <header style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 1rem; border-bottom: 1px solid var(--border-color);">
+            <div class="logo-container">
+                <img src="https://raw.githubusercontent.com/CoLRev-Environment/search-query/refs/heads/main/docs/source/_static/search_query_logo.svg" width="200px" >
+            </div>
+            <button id="close-menu" style="border: none; background: none; color: var(--text-heading); cursor: pointer; padding: 0.5rem;" class="lg:hidden">
+                <i class="fas fa-times text-xl"></i>
+            </button>
         </header>
+        
+        <div style="display: flex; flex-direction: column; margin-top: 1rem; color: var(--text-heading);">
+            <div style="padding: 1rem 0; font-size: 0.75rem; font-weight: bold; color: var(--text-body); text-transform: uppercase;">Features</div>
+            <a href="#" data-tool-url="lint.html" class="sidebar-tool-link active">
+                <i class="fas fa-tasks w-5 mr-3"></i> <p style="display: inline-block; margin: 0 0 0 0; padding-left: 10px;">Lint</p>
+            </a>
+            <a href="#" data-tool-url="translate.html" class="sidebar-tool-link">
+                <i class="fas fa-language w-5 mr-3"></i>  <p style="display: inline-block; margin: 0 0 0 0; padding-left: 10px;">Translate</p>
+            </a>
+            
+            <div style="padding: 1rem 0; font-size: 0.75rem; font-weight: bold; color: var(--text-body); text-transform: uppercase;">Debug</div>
+            <a href="#" data-tool-url="tokenizer.html" class="sidebar-tool-link">
+                <i class="fas fa-microchip w-5 mr-3"></i>  <p style="display: inline-block; margin: 0 0 0 0; padding-left: 10px;">Tokenize</p>
+            </a>
+            <a href="#" data-tool-url="structure.html" class="sidebar-tool-link">
+                <i class="fas fa-sitemap w-5 mr-3"></i>
+                <p style="display: inline-block; margin: 0 0 0 0; padding-left: 10px;">Structure</p>
+            </a>
 
-        <div id="status">Loading Search Query…</div> 
-        <div id="status-display">Loading Search Query…</div>
+            <div style="padding: 1rem 0; font-size: 0.75rem; font-weight: bold; color: var(--text-body); text-transform: uppercase;">Resources</div>
+            <a href="https://github.com/CoLRev-Environment/search-query" target="_blank" class="sidebar-tool-link">
+                <i class="fab fa-github w-5 mr-3"></i><p style="display: inline-block; margin: 0 0 0 0; padding-left: 10px;">GitHub</p>
+            </a>
+            <a href="https://colrev-environment.github.io/search-query/" target="_blank" class="sidebar-tool-link">
+                <i class="fas fa-book w-5 mr-3"></i> <p style="display: inline-block; margin: 0 0 0 0; padding-left: 10px;">Documentation</p>
+            </a>
+            <a href="https://github.com/CoLRev-Environment/search-query/blob/main/LICENSE" target="_blank" class="sidebar-tool-link">
+                <i class="fas fa-file-contract w-5 mr-3"></i> <p style="display: inline-block; margin: 0 0 0 0; padding-left: 10px;">License</p>
+            </a>
+        </div>
+        
+        <footer style="margin-top: auto; padding-top: 1rem; border-top: 1px solid var(--border-color); font-size: 0.75rem; color: var(--text-body);">
+            Search-Query Studio © 2025
+        </footer>
+    </nav>
+    
+    <!-- Main Content Area -->
+    <div id="main-content">
+        <div id="interactive-tool-wrap">
+            <div class="main-container">
+                <!-- Hero Section -->
+                <section id="documentation" style="width: 100%; padding-top: 0;">
+                    <h1 id="hero-headline" style="margin-bottom: 0.5rem; color: var(--text-heading); text-align: center;">
+                        Search Query Studio
+                    </h1>
+                    <p style="font-size: 1.25rem; color: var(--text-body); text-align: center; max-width: 42rem; margin: 0 auto 2rem;">
+                        The web interface for search-query.
+                    </p>
+                </section>
 
-        <div class="main-content-card">
-            <label for="query">Query</label>
-            <textarea id="query">(TI=(platform* OR "digital work") AND PY=2020-2025)</textarea>
+                <!-- Tool Content Area -->
+                <div id="tool-area-content" style="padding-bottom:50px;">
+                    <div id="loading-overlay">
+                        <div class="loader"></div>
+                        <div id="loading-text">Initializing Search Query...</div>
+                    </div>
+                    
+                    <div id="content-wrapper">
+                        <div class="tool-header">
+                            <h1>Search-Query Linter</h1>
+                            <p>Paste a query, select a platform, and run the linter in your browser.</p>
+                        </div>
 
-            <label for="platform">Platform</label>
-            <select id="platform">
-                <option value="wos">WoS</option>
-                <option value="pubmed">PubMed</option>
-                <option value="ebscohost">EBSCOhost</option>
-            </select>
+                        <div id="status">Loading Search Query…</div> 
+                        <div id="status-display">Loading Search Query…</div>
 
-            <div class="row">
-                <button id="btn-lint" disabled>Lint</button>
+                        <div class="main-content-card">
+                            <label for="query">Query</label>
+                            <textarea id="query">(TI=(platform* OR "digital work") AND PY=2020-2025)</textarea>
+
+                            <label for="platform">Platform</label>
+                            <select id="platform">
+                                <option value="wos">WoS</option>
+                                <option value="pubmed">PubMed</option>
+                                <option value="ebscohost">EBSCOhost</option>
+                            </select>
+
+                            <div class="row">
+                                <button id="btn-lint" disabled>Lint</button>
+                            </div>
+                        </div>
+
+                        <div style="margin-top: 1.5rem;">
+                            <details id="output-wrap" style="margin-bottom: 1rem;">
+                                <summary style="font-weight: 600; color: var(--text-body); cursor: pointer; padding: 0.5rem 0; position: relative;">
+                                    Raw Linter Output (JSON)
+                                </summary>
+                                <div style="position: relative;">
+                                    <div class="json-actions">
+                                        <button class="json-btn" id="copy-json" title="Copy JSON">
+                                            <i class="far fa-copy"></i>
+                                        </button>
+                                        <button class="json-btn" id="download-json" title="Download JSON">
+                                            <i class="fas fa-download"></i>
+                                        </button>
+                                    </div>
+                                    <pre id="pre"><code style="font-size: 16px; font-family: 'Consolas', 'Monaco', monospace;" id="output"></code></pre>
+                                </div>
+                            </details>
+                            <h2 id="messages-title" style="display:none; font-size: 1.25rem; font-weight: 600; margin-top: 1rem;">Messages</h2>
+                            <div id="lint-view" style="display:none;"></div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
-
-        <div style="margin-top: 1.5rem;">
-            <details id="output-wrap" style="margin-bottom: 1rem;">
-                <summary style="font-weight: 600; color: var(--text-secondary); cursor: pointer; padding: 0.5rem 0; position: relative;">
-                    Raw Linter Output (JSON)
-                </summary>
-                <div style="position: relative;">
-                    <div class="json-actions">
-                        <button class="json-btn" id="copy-json" title="Copy JSON">
-                            <i class="far fa-copy"></i>
-                        </button>
-                        <button class="json-btn" id="download-json" title="Download JSON">
-                            <i class="fas fa-download"></i>
-                        </button>
-                    </div>
-                    <pre id="pre"><code style="font-size: 16px; font-family: 'Consolas', 'Monaco', monospace;" id="output"></code></pre>
-                </div>
-            </details>
-            <h2 id="messages-title" style="display:none; font-size: 1.25rem; font-weight: 600; margin-top: 1rem;">Messages</h2>
-            <div id="lint-view" style="display:none;"></div>
-        </div>
     </div>
+
     <script src="search_query_pkg_tree.js"></script>
     <script src="lint.js"></script>
     <script>
-         // Add this at the beginning of your script
+        // --- SIDEBAR AND NAVIGATION FUNCTIONALITY ---
+        const DOM = {
+            sidebar: document.getElementById('sidebar'),
+            menuToggle: document.getElementById('menu-toggle'),
+            closeMenuBtn: document.getElementById('close-menu'),
+            backdrop: document.getElementById('backdrop'),
+            sidebarToolLinks: document.querySelectorAll('.sidebar-tool-link')
+        };
+
+        // Storage keys
+        const STORAGE_KEYS = {
+            TOOL_URL: 'selectedToolUrl',
+            TOOL_NAME: 'selectedToolName'
+        };
+
+        /* --- UI/VISUAL CONTROLS --- */
+        function toggleSidebar(forceClose = false) {
+            const isOpen = DOM.sidebar.classList.contains('open');
+            const shouldOpen = forceClose ? false : !isOpen;
+
+            if (shouldOpen) {
+                DOM.sidebar.classList.add('open');
+                DOM.backdrop.style.display = 'block';
+                document.body.style.overflow = 'hidden'; 
+            } else {
+                DOM.sidebar.classList.remove('open');
+                DOM.backdrop.style.display = 'none';
+                document.body.style.overflow = '';
+            }
+        }
+
+        function updateActiveSidebarItem(activeTool) {
+            DOM.sidebarToolLinks.forEach(link => {
+                link.classList.remove('active');
+                const toolUrl = link.getAttribute('data-tool-url');
+                if (toolUrl && toolUrl === activeTool) {
+                    link.classList.add('active');
+                }
+            });
+        }
+
+        function saveSelectedTool(toolUrl, toolName) {
+            localStorage.setItem(STORAGE_KEYS.TOOL_URL, toolUrl);
+            localStorage.setItem(STORAGE_KEYS.TOOL_NAME, toolName);
+        }
+
+        function getSelectedTool() {
+            const toolUrl = localStorage.getItem(STORAGE_KEYS.TOOL_URL);
+            const toolName = localStorage.getItem(STORAGE_KEYS.TOOL_NAME);
+            return { toolUrl, toolName };
+        }
+
+        function clearSelectedTool() {
+            localStorage.removeItem(STORAGE_KEYS.TOOL_URL);
+            localStorage.removeItem(STORAGE_KEYS.TOOL_NAME);
+        }
+
+        // --- LINTER FUNCTIONALITY ---
         const isEmbedded = window.parent !== window;
-        
         const PARENT_ORIGIN = window.location.origin;
 
         const loader = document.getElementById('loading-overlay');
@@ -298,7 +568,6 @@
             heightTimeout = setTimeout(sendHeight, 150);
         }
 
-        // CORRECTED sendHeight function - measures the LAST VISIBLE ELEMENT's bottom position
         function sendHeight() {
             // Only adjust iframe if we're embedded
             if (!isEmbedded) {
@@ -368,9 +637,6 @@
             );
         }
         
-        // Listen for resize events
-        window.addEventListener('resize', debouncedSendHeight);
-
         // --- PYODIDE SETUP ---
         const originalAppendStatus = window.appendStatus || function(msg) { 
             if (statusDisplay) statusDisplay.textContent = msg; 
@@ -397,7 +663,7 @@
                     }
                     
                     btnLint.disabled = false;
-                    debouncedSendHeight(); // Use debounced version
+                    debouncedSendHeight();
                 }, 500);
             } else {
                 document.body.classList.add('loading-active');
@@ -412,6 +678,42 @@
 
         // --- INIT ---
         document.addEventListener('DOMContentLoaded', () => {
+            // Initialize sidebar
+            updateActiveSidebarItem('lint.html');
+            
+            // Mobile Menu Toggles
+            DOM.menuToggle.addEventListener('click', () => toggleSidebar());
+            DOM.backdrop.addEventListener('click', () => toggleSidebar(true));
+            DOM.closeMenuBtn.addEventListener('click', () => toggleSidebar(true));
+
+            // Sidebar Navigation Handler
+            const handleToolSwitch = (e) => {
+                const link = e.target.closest('[data-tool-url]');
+                if (link) {
+                    e.preventDefault();
+                    const relativeUrl = link.getAttribute('data-tool-url');
+                    const toolName = relativeUrl;
+                    
+                    // Save selection to localStorage
+                    saveSelectedTool(relativeUrl, toolName);
+                    
+                    // Close mobile sidebar if open
+                    if (window.innerWidth < 1024) {
+                        toggleSidebar(true);
+                    }
+                    
+                    // In a standalone context, we would navigate to the tool
+                    // For now, just update the active state
+                    console.log('Would navigate to:', relativeUrl);
+                    updateActiveSidebarItem(relativeUrl);
+                }
+            };
+            
+            // Attach handler to sidebar links
+            DOM.sidebarToolLinks.forEach(link => {
+                link.addEventListener('click', handleToolSwitch);
+            });
+
             // Set initial overflow based on whether embedded
             if (isEmbedded) {
                 document.body.style.overflow = 'hidden';
@@ -429,7 +731,6 @@
             
             // When lint button is clicked
             btnLint.addEventListener('click', () => {
-                // Wait for results to render, then update height
                 setTimeout(debouncedSendHeight, 800);
             });
 
@@ -443,6 +744,8 @@
                 subtree: true 
             });
 
+            // Listen for resize events
+            window.addEventListener('resize', debouncedSendHeight);
         });
 
     </script>
