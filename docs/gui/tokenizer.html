@@ -32,16 +32,9 @@
             padding: 1.5rem; 
             min-height: 100vh;
             overflow-x: hidden;
-            overflow-y: hidden;
             position: relative;
         }
 
-        /* UTILITY CLASS FOR VIEWPORT LOCK */
-        body.loading-active {
-            overflow: hidden; /* Prevents scrolling */
-            height: 100vh;    /* Locks height */
-        }
-        
         /* --- Layout & Typography --- */
         header h1 { font-size: 1.5rem; font-weight: bold; margin-bottom: 0.25rem; }
         header p { color: var(--text-secondary); margin-top: 0; font-size: 0.95rem; }
@@ -154,12 +147,12 @@
             height: 100%;
             background-color: rgba(255, 255, 255, 0.95);
             z-index: 1000;
-            display: flex; 
+            display: none; /* Start hidden */
             flex-direction: column;
             justify-content: center;
             align-items: center;
             transition: opacity 0.5s ease;
-            opacity: 1;
+            opacity: 0;
         }
         .loader {
             border: 4px solid var(--border-color);
@@ -181,8 +174,11 @@
             100% { transform: rotate(360deg); }
         }
         
-        /* Utility to hide the content on load */
-        #content-wrapper { transition: opacity 0.5s ease; opacity: 0; }
+        /* Content wrapper - ALWAYS VISIBLE */
+        #content-wrapper { 
+            opacity: 1;
+            display: block;
+        }
         
         /* Narrower platform select */
         #platform {
@@ -253,8 +249,6 @@
         // Add this at the beginning of your script
         const isEmbedded = window.parent !== window;
         
-        const PARENT_ORIGIN = window.location.origin; 
-        
         const loader = document.getElementById('loading-overlay');
         const loadingText = document.getElementById('loading-text');
         const contentWrapper = document.getElementById('content-wrapper');
@@ -282,19 +276,11 @@
             console.log('JSON output highlighted with VS Code theme');
         }
 
-        // Debounce to prevent excessive height updates
-        let heightTimeout;
-        function debouncedSendHeight() {
-            clearTimeout(heightTimeout);
-            heightTimeout = setTimeout(sendHeight, 150);
-        }
-
-        // SIMPLIFIED AND FIXED sendHeight function
+        // SIMPLE AND EFFECTIVE sendHeight function
         function sendHeight() {
             // Only adjust iframe if we're embedded
             if (!isEmbedded) {
                 document.body.style.overflowY = 'auto';
-                document.body.style.overflowX = 'auto';
                 return;
             }
             
@@ -302,65 +288,28 @@
             document.body.style.overflow = 'hidden';
             
             // Don't calculate during loading
-            if (loader.style.display !== 'none') return;
+            if (loader.style.display === 'flex') return;
             
-            // Get the bottom of the last visible element in content-wrapper
-            const wrapper = document.getElementById('content-wrapper');
-            if (!wrapper) return;
+            // Get the ACTUAL full height of the entire document
+            const height = document.documentElement.scrollHeight;
             
-            // Get all child elements of the wrapper
-            const elements = wrapper.children;
-            let maxBottom = 0;
-            
-            // Loop through all direct children (more reliable than all descendants)
-            for (let i = 0; i < elements.length; i++) {
-                const element = elements[i];
-                const style = window.getComputedStyle(element);
-                
-                // Skip hidden elements
-                if (style.display === 'none' || style.visibility === 'hidden') {
-                    continue;
-                }
-                
-                // Get element's position
-                const rect = element.getBoundingClientRect();
-                
-                // Only consider elements that are actually visible
-                if (rect.height > 0) {
-                    const elementBottom = rect.bottom + window.pageYOffset;
-                    
-                    // Track the element with the highest bottom position
-                    if (elementBottom > maxBottom) {
-                        maxBottom = elementBottom;
-                    }
-                }
-            }
-            
-            // If no visible children found, use wrapper itself
-            if (maxBottom === 0) {
-                const rect = wrapper.getBoundingClientRect();
-                maxBottom = rect.bottom + window.pageYOffset;
-            }
-            
-            // Get the top of the document
-            const docTop = document.documentElement.getBoundingClientRect().top + window.pageYOffset;
-            
-            // Calculate height: from top of document to bottom of last visible element
-            const contentHeight = maxBottom - docTop;
-            
-            // Add a small buffer (30px) to prevent cut-off
-            const finalHeight = contentHeight + 30;
-            
-            // Send to parent frame
+            // Send to parent frame with small buffer
             window.parent.postMessage(
-                { type: 'setHeight', height: Math.ceil(finalHeight) },
+                { type: 'setHeight', height: height + 30 },
                 '*'
             );
         }
         
+        // Debounce to prevent excessive height updates
+        let heightTimeout;
+        function debouncedSendHeight() {
+            clearTimeout(heightTimeout);
+            heightTimeout = setTimeout(sendHeight, 100);
+        }
+        
         // Listen for resize events
         window.addEventListener('resize', debouncedSendHeight);
-        
+
         // --- Pyodide Status Hook and Loader Control ---
         
         const originalAppendStatus = window.appendStatus || function(msg) { 
@@ -372,41 +321,32 @@
         };
         
         window.appendStatus = function(msg) {
-            // 1. Update the visual status text
-            const cleanMsg = msg.replace(/\u001b\[.*?m/g, ''); 
-            if (loadingText) loadingText.textContent = cleanMsg;
-
-            // 2. Control the visual transition state and viewport lock
-            if (cleanMsg.includes('Done') || cleanMsg.includes('ready') || cleanMsg.includes('Ready')) {
-                // Done loading: Unlock viewport, fade out loader, show content
-                document.body.classList.remove('loading-active');
-                statusDisplay.innerText = 'Search Query loaded…';
-                loader.style.opacity = '0';
-                contentWrapper.style.opacity = '1';
-
-                setTimeout(() => {
-                    loader.style.display = 'none';
-                    // CRITICAL: Only lock overflow if embedded
-                    if (isEmbedded) {
-                        document.body.style.overflow = 'hidden';
-                    } else {
-                        document.body.style.overflow = 'auto';
-                    }
-                    // Enable button
-                    btnTokenize.disabled = false;
-                    debouncedSendHeight(); // Final resize
-                }, 500);
-            } else {
-                // Loading: Lock viewport
-                document.body.classList.add('loading-active');
-                loader.style.display = 'flex';
+            const cleanMsg = msg.replace(/\u001b\[.*?m/g, '').trim(); 
+            
+            // Update loading text
+            loadingText.textContent = cleanMsg || "Loading...";
+            statusDisplay.textContent = cleanMsg || "Loading...";
+            
+            // Show loader with content visible behind it
+            loader.style.display = 'flex';
+            setTimeout(() => {
                 loader.style.opacity = '1';
-                contentWrapper.style.opacity = '0';
+            }, 10);
+            
+            // When ready, hide loader
+            if (cleanMsg.includes('Done') || cleanMsg.includes('ready') || cleanMsg.includes('Ready')) {
+                setTimeout(() => {
+                    loader.style.opacity = '0';
+                    setTimeout(() => {
+                        loader.style.display = 'none';
+                        btnTokenize.disabled = false;
+                        debouncedSendHeight(); // Update height after loading
+                    }, 500);
+                }, 500);
             }
-
-            // 3. Call the original function and re-trigger height update 
+            
             originalAppendStatus(msg);
-            setTimeout(debouncedSendHeight, 50); 
+            setTimeout(debouncedSendHeight, 50);
         };
         
         // --- Append module with interval stopped after ready ---
@@ -419,38 +359,37 @@
             statusDisplay.innerText = lastLine || "Loading…";
 
             if (lastLine.includes("search-query ready.")) {
-                loader.style.display = 'none';
-                contentWrapper.style.display = 'block';
-                contentWrapper.style.opacity = '1';
-                statusText.innerText = 'Search Query Ready';
-                statusDisplay.innerText = 'Search Query Ready';
-                
-                // Enable the tokenize button
-                btnTokenize.disabled = false;
-                
-                // Stop the interval to prevent unnecessary height updates
-                clearInterval(appendInterval);
-
-                // Send final height once
-                debouncedSendHeight();
+                loader.style.opacity = '0';
+                setTimeout(() => {
+                    loader.style.display = 'none';
+                    btnTokenize.disabled = false;
+                    clearInterval(appendInterval);
+                    debouncedSendHeight();
+                }, 500);
             }
         }, 100);
         
         // --- Initial Setup and DOM Observer ---
         document.addEventListener('DOMContentLoaded', () => {
-            // Set initial overflow based on whether embedded
+            // Set overflow based on whether embedded
             if (isEmbedded) {
                 document.body.style.overflow = 'hidden';
             } else {
                 document.body.style.overflow = 'auto';
             }
             
-            // Initial state setup: LOCK VIEWPORT IMMEDIATELY
-            document.body.classList.add('loading-active');
-            contentWrapper.style.opacity = '0';
-            contentWrapper.style.display = 'none';
-            loader.style.display = 'flex'; 
+            // Show content immediately
+            contentWrapper.style.opacity = '1';
+            contentWrapper.style.display = 'block';
+            
+            // Show loader immediately (it will hide when ready)
+            loader.style.display = 'flex';
+            setTimeout(() => {
+                loader.style.opacity = '1';
+            }, 10);
+            
             loadingText.textContent = "Initializing search-query...";
+            statusDisplay.textContent = "Initializing search-query...";
             btnTokenize.disabled = true;
             
             // When tokenize button is clicked
@@ -462,16 +401,19 @@
             // Initialize Highlight.js
             hljs.highlightAll();
 
-            // 1. Send initial minimal height
-            window.addEventListener('load', debouncedSendHeight);
+            // Send initial height
+            setTimeout(debouncedSendHeight, 100);
             
-            // 2. Observe DOM changes
+            // Observe DOM changes
             const observer = new MutationObserver(debouncedSendHeight);
             observer.observe(document.body, { 
                 attributes: true, 
                 childList: true, 
                 subtree: true 
             });
+            
+            // Also send height on window load
+            window.addEventListener('load', debouncedSendHeight);
         });
     </script>
 </body>
