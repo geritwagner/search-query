@@ -369,7 +369,7 @@
         heightTimeout = setTimeout(sendHeight, 150);
     }
 
-    // SIMPLIFIED AND CORRECTED sendHeight function
+    // CORRECTED sendHeight function - measures the LAST VISIBLE ELEMENT's bottom position
     function sendHeight() {
         // Only adjust iframe if we're embedded
         if (!isEmbedded) {
@@ -384,19 +384,57 @@
         // Don't calculate during loading
         if (loader.style.display !== 'none') return;
         
-        // Get the ACTUAL full height of the document content
-        // This is the most reliable method
-        const scrollHeight = document.documentElement.scrollHeight;
+        // Get ALL elements inside content-wrapper
+        const wrapper = document.getElementById('content-wrapper');
+        if (!wrapper) return;
         
-        // Get the body's height including padding
-        const bodyRect = document.body.getBoundingClientRect();
-        const bodyHeight = bodyRect.height;
+        const allElements = wrapper.getElementsByTagName('*');
+        let lastVisibleElement = null;
+        let maxBottom = 0;
         
-        // Use the larger of the two measurements
-        const contentHeight = Math.max(scrollHeight, bodyHeight);
+        // Find the element with the highest bottom position (last visible element)
+        for (let element of allElements) {
+            const style = window.getComputedStyle(element);
+            
+            // Skip hidden elements
+            if (style.display === 'none' || style.visibility === 'hidden') {
+                continue;
+            }
+            
+            // Get element's position
+            const rect = element.getBoundingClientRect();
+            
+            // Only consider elements that are actually in the view (have height)
+            if (rect.height > 0) {
+                const elementBottom = rect.bottom + window.pageYOffset;
+                
+                // Track the element with the highest bottom position
+                if (elementBottom > maxBottom) {
+                    maxBottom = elementBottom;
+                    lastVisibleElement = element;
+                }
+            }
+        }
         
-        // Add a reasonable buffer to prevent cut-off (30px)
-        const finalHeight = contentHeight + 30;
+        // If no elements found, use the wrapper itself
+        if (!lastVisibleElement) {
+            lastVisibleElement = wrapper;
+            const rect = wrapper.getBoundingClientRect();
+            maxBottom = rect.bottom + window.pageYOffset;
+        }
+        
+        // Get the top of the document
+        const docTop = document.documentElement.getBoundingClientRect().top + window.pageYOffset;
+        
+        // Calculate height: from top of document to bottom of last visible element
+        const contentHeight = maxBottom - docTop;
+        
+        // Add a small buffer (20px) to prevent cut-off
+        const finalHeight = contentHeight + 20;
+        
+        console.log('Last element:', lastVisibleElement.tagName, 
+                   'Bottom position:', maxBottom, 
+                   'Calculated height:', Math.ceil(finalHeight));
         
         // Send to parent frame
         window.parent.postMessage(
