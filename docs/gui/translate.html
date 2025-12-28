@@ -351,15 +351,12 @@
   }
 
   function sendHeight() {
-      // Always check if embedded first
       if (!isEmbedded) {
-        // Normal webpage: enable overflow
         document.body.style.overflowY = 'auto';
         document.body.style.overflowX = 'hidden';
         return;
       }
       
-      // If embedded: disable overflow and send height
       document.body.style.overflowY = 'hidden';
       document.body.style.overflowX = 'hidden';
       
@@ -368,14 +365,21 @@
       const wrapper = document.getElementById('content-wrapper');
       if (!wrapper) return;
       
-      const height = wrapper.scrollHeight;
+      // Get the full document height including padding
+      const height = Math.max(
+        document.body.scrollHeight, 
+        document.body.offsetHeight,
+        wrapper.scrollHeight
+      );
+      
+      // ADD a bit more to ensure no cutoff
+      const paddedHeight = height + 20; // Add 20px safety margin
       
       window.parent.postMessage(
-        { type: 'setHeight', height },
+        { type: 'setHeight', height: paddedHeight },
         '*'
       );
-    }    // --- Pyodide Status Hook and Loader Control ---
-    
+    }    
     const originalAppendStatus = window.appendStatus || function(msg) { 
       const statusDiv = document.getElementById('status');
       if (statusDiv) {
