@@ -38,6 +38,7 @@
 
         /* UTILITY CLASS FOR VIEWPORT LOCK */
         body.loading-active {
+            overflow: hidden; /* Prevents scrolling */
             height: 100vh;    /* Locks height */
         }
         
@@ -180,8 +181,12 @@
             100% { transform: rotate(360deg); }
         }
         
-        /* Utility to hide the content on load */
-        #content-wrapper { transition: opacity 0.5s ease; opacity: 0; }
+        /* Content wrapper - MUST match linter exactly */
+        #content-wrapper { 
+            transition: opacity 0.5s ease; 
+            opacity: 0;
+            display: block;
+        }
         
         /* Narrower platform select */
         #platform {
@@ -257,7 +262,6 @@
         const contentWrapper = document.getElementById('content-wrapper');
         const statusDisplay = document.getElementById('status-display');
         const btnTokenize = document.getElementById('btn-tokenize');
-        const codeBlock = document.getElementById('output');
 
         // --- Highlighting Logic ---
         hljs.configure({ ignoreUnescapedHTML: true });
@@ -282,21 +286,25 @@
 
         // --- UTILITIES ---
         function copyJsonToClipboard() {
-            const jsonText = codeBlock.textContent; 
+            const codeElement = document.getElementById('output');
+            const jsonText = codeElement.textContent; 
             navigator.clipboard.writeText(jsonText).then(() => {
                 const copyBtn = document.getElementById('copy-json');
-                const originalHTML = copyBtn.innerHTML;
-                copyBtn.innerHTML = '<i class="fas fa-check"></i>';
-                copyBtn.classList.add('copied');
-                setTimeout(() => {
-                    copyBtn.innerHTML = originalHTML;
-                    copyBtn.classList.remove('copied');
-                }, 2000);
+                if (copyBtn) {
+                    const originalHTML = copyBtn.innerHTML;
+                    copyBtn.innerHTML = '<i class="fas fa-check"></i>';
+                    copyBtn.classList.add('copied');
+                    setTimeout(() => {
+                        copyBtn.innerHTML = originalHTML;
+                        copyBtn.classList.remove('copied');
+                    }, 2000);
+                }
             });
         }
 
         function downloadJson() {
-            const jsonText = codeBlock.textContent;
+            const codeElement = document.getElementById('output');
+            const jsonText = codeElement.textContent;
             const blob = new Blob([jsonText], { type: 'application/json' });
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
@@ -315,7 +323,7 @@
             heightTimeout = setTimeout(sendHeight, 150);
         }
 
-        // SAME sendHeight function as your working linter
+        // SEND HEIGHT FUNCTION - SAME AS LINTER
         function sendHeight() {
             // Only adjust iframe if we're embedded
             if (!isEmbedded) {
@@ -339,7 +347,8 @@
             let maxBottom = 0;
             
             // Find the element with the highest bottom position (last visible element)
-            for (let element of allElements) {
+            for (let i = 0; i < allElements.length; i++) {
+                const element = allElements[i];
                 const style = window.getComputedStyle(element);
                 
                 // Skip hidden elements
@@ -388,26 +397,23 @@
         // Listen for resize events
         window.addEventListener('resize', debouncedSendHeight);
         
-        // --- Pyodide Status Hook and Loader Control ---
+        // --- Pyodide Status Hook and Loader Control - MUST MATCH LINTER EXACTLY ---
         
         const originalAppendStatus = window.appendStatus || function(msg) { 
             const statusDiv = document.getElementById('status');
             if (statusDiv) {
-                // If Pyodide outputs complex status (which includes ANSI codes), write to hidden div
                 statusDiv.textContent = msg; 
             }
             console.log("Pyodide Hook:", msg); 
         };
         
         window.appendStatus = function(msg) {
-            // 1. Update the visual status text
             const cleanMsg = msg.replace(/\u001b\[.*?m/g, ''); 
             if (loadingText) loadingText.textContent = cleanMsg;
+            statusDisplay.textContent = cleanMsg;
 
-            // 2. Control the visual transition state and viewport lock
             if (cleanMsg.includes('Done') || cleanMsg.includes('ready') || cleanMsg.includes('Ready')) {
-                // Done loading: Unlock viewport, fade out loader, show content
-                document.body.classList.remove('loading-active');
+                // Done loading
                 statusDisplay.innerText = 'Search Query loaded…';
                 loader.style.opacity = '0';
                 contentWrapper.style.opacity = '1';
@@ -433,12 +439,11 @@
                 contentWrapper.style.opacity = '0';
             }
 
-            // 3. Call the original function and re-trigger height update 
             originalAppendStatus(msg);
             setTimeout(debouncedSendHeight, 50); 
         };
         
-        // --- Append module with interval stopped after ready ---
+        // --- Append module with interval stopped after ready - MUST MATCH LINTER ---
         const appendInterval = setInterval(() => {
             const statusText = document.getElementById('status');
             const lines = statusText.innerText.split("\n");
@@ -461,11 +466,11 @@
                 clearInterval(appendInterval);
 
                 // Send final height once
-                sendHeight();
+                debouncedSendHeight();
             }
         }, 100);
 
-        // --- Initial Setup and DOM Observer ---
+        // --- Initial Setup and DOM Observer - MUST MATCH LINTER ---
         document.addEventListener('DOMContentLoaded', () => {
             // Initial state setup: LOCK VIEWPORT IMMEDIATELY
             document.body.classList.add('loading-active');
@@ -475,10 +480,12 @@
             loadingText.textContent = "Initializing search-query...";
             btnTokenize.disabled = true;
 
-            // Add copy/download buttons event listeners if they exist
+            // Add event listeners if buttons exist
             const copyBtn = document.getElementById('copy-json');
             const downloadBtn = document.getElementById('download-json');
             
+            // Note: Your tokenizer HTML doesn't have copy/download buttons
+            // If you add them later, these listeners will work
             if (copyBtn) {
                 copyBtn.addEventListener('click', copyJsonToClipboard);
             }
@@ -497,7 +504,7 @@
             hljs.highlightAll();
 
             // 1. Send initial minimal height
-            window.addEventListener('load', sendHeight);
+            window.addEventListener('load', debouncedSendHeight);
             
             // 2. Observe DOM changes (Crucial for when the output table appears/disappears)
             const observer = new MutationObserver(debouncedSendHeight);
