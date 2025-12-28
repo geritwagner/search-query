@@ -325,11 +325,46 @@
         .footer-links a:hover {
             color: var(--primary);
         }
+
+        /* --- IFRAME MODE STYLES --- */
+        body.iframe-mode #mobile-header,
+        body.iframe-mode #sidebar,
+        body.iframe-mode #backdrop {
+            display: none !important;
+        }
+
+        body.iframe-mode #main-content {
+            padding-left: 0 !important;
+            padding-top: 0 !important;
+        }
+
+        body.iframe-mode .main-container {
+            padding: 0 1rem 1.5rem !important;
+        }
+
+        body.iframe-mode #hero-headline,
+        body.iframe-mode #documentation p {
+            display: none !important;
+        }
+
+        body.iframe-mode #interactive-tool-wrap {
+            padding-top: 0 !important;
+        }
+
+        body.iframe-mode .tool-header h1 {
+            font-size: 1.25rem !important;
+            margin-top: 0.5rem !important;
+        }
+
+        body.iframe-mode .tool-header p {
+            font-size: 0.875rem !important;
+            margin-bottom: 1rem !important;
+        }
     </style>
 </head>
 
 <body>
-    <!-- Mobile Header -->
+    <!-- Mobile Header (Hidden in iframe) -->
     <header id="mobile-header">
         <button id="menu-toggle" class="p-2">
             <i class="fas fa-bars text-xl"></i>
@@ -341,10 +376,10 @@
         </h1>
     </header>
 
-    <!-- Sidebar Backdrop -->
+    <!-- Sidebar Backdrop (Hidden in iframe) -->
     <div id="backdrop" style="display:none;"></div>
 
-    <!-- Sidebar Navigation -->
+    <!-- Sidebar Navigation (Hidden in iframe) -->
     <nav id="sidebar">
         <header style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 1rem; border-bottom: 1px solid var(--border-color);">
             <div class="logo-container">
@@ -394,7 +429,7 @@
     <div id="main-content">
         <div id="interactive-tool-wrap">
             <div class="main-container">
-                <!-- Hero Section -->
+                <!-- Hero Section (Hidden in iframe) -->
                 <section id="documentation" style="width: 100%; padding-top: 0;">
                     <h1 id="hero-headline" style="margin-bottom: 0.5rem; color: var(--text-heading); text-align: center;">
                         Search Query Studio
@@ -474,6 +509,18 @@
             sidebarToolLinks: document.querySelectorAll('.sidebar-tool-link')
         };
 
+        // Detect if we're in an iframe
+        const isEmbedded = window.parent !== window;
+        
+        // Apply iframe mode immediately
+        if (isEmbedded) {
+            document.body.classList.add('iframe-mode');
+            // Hide sidebar and header for iframe mode
+            DOM.sidebar.style.display = 'none';
+            document.getElementById('mobile-header').style.display = 'none';
+            document.getElementById('backdrop').style.display = 'none';
+        }
+
         // Storage keys
         const STORAGE_KEYS = {
             TOOL_URL: 'selectedToolUrl',
@@ -482,6 +529,9 @@
 
         /* --- UI/VISUAL CONTROLS --- */
         function toggleSidebar(forceClose = false) {
+            // Don't toggle sidebar in iframe mode
+            if (isEmbedded) return;
+            
             const isOpen = DOM.sidebar.classList.contains('open');
             const shouldOpen = forceClose ? false : !isOpen;
 
@@ -497,6 +547,8 @@
         }
 
         function updateActiveSidebarItem(activeTool) {
+            if (isEmbedded) return; // Skip in iframe mode
+            
             DOM.sidebarToolLinks.forEach(link => {
                 link.classList.remove('active');
                 const toolUrl = link.getAttribute('data-tool-url');
@@ -507,23 +559,25 @@
         }
 
         function saveSelectedTool(toolUrl, toolName) {
+            if (isEmbedded) return; // Skip in iframe mode
             localStorage.setItem(STORAGE_KEYS.TOOL_URL, toolUrl);
             localStorage.setItem(STORAGE_KEYS.TOOL_NAME, toolName);
         }
 
         function getSelectedTool() {
+            if (isEmbedded) return { toolUrl: null, toolName: null };
             const toolUrl = localStorage.getItem(STORAGE_KEYS.TOOL_URL);
             const toolName = localStorage.getItem(STORAGE_KEYS.TOOL_NAME);
             return { toolUrl, toolName };
         }
 
         function clearSelectedTool() {
+            if (isEmbedded) return; // Skip in iframe mode
             localStorage.removeItem(STORAGE_KEYS.TOOL_URL);
             localStorage.removeItem(STORAGE_KEYS.TOOL_NAME);
         }
 
         // --- LINTER FUNCTIONALITY ---
-        const isEmbedded = window.parent !== window;
         const PARENT_ORIGIN = window.location.origin;
 
         const loader = document.getElementById('loading-overlay');
@@ -678,41 +732,43 @@
 
         // --- INIT ---
         document.addEventListener('DOMContentLoaded', () => {
-            // Initialize sidebar
-            updateActiveSidebarItem('lint.html');
-            
-            // Mobile Menu Toggles
-            DOM.menuToggle.addEventListener('click', () => toggleSidebar());
-            DOM.backdrop.addEventListener('click', () => toggleSidebar(true));
-            DOM.closeMenuBtn.addEventListener('click', () => toggleSidebar(true));
+            // Only initialize sidebar functionality if not in iframe
+            if (!isEmbedded) {
+                updateActiveSidebarItem('lint.html');
+                
+                // Mobile Menu Toggles
+                DOM.menuToggle.addEventListener('click', () => toggleSidebar());
+                DOM.backdrop.addEventListener('click', () => toggleSidebar(true));
+                DOM.closeMenuBtn.addEventListener('click', () => toggleSidebar(true));
 
-            // Sidebar Navigation Handler
-            const handleToolSwitch = (e) => {
-                const link = e.target.closest('[data-tool-url]');
-                if (link) {
-                    e.preventDefault();
-                    const relativeUrl = link.getAttribute('data-tool-url');
-                    const toolName = relativeUrl;
-                    
-                    // Save selection to localStorage
-                    saveSelectedTool(relativeUrl, toolName);
-                    
-                    // Close mobile sidebar if open
-                    if (window.innerWidth < 1024) {
-                        toggleSidebar(true);
+                // Sidebar Navigation Handler
+                const handleToolSwitch = (e) => {
+                    const link = e.target.closest('[data-tool-url]');
+                    if (link) {
+                        e.preventDefault();
+                        const relativeUrl = link.getAttribute('data-tool-url');
+                        const toolName = relativeUrl;
+                        
+                        // Save selection to localStorage
+                        saveSelectedTool(relativeUrl, toolName);
+                        
+                        // Close mobile sidebar if open
+                        if (window.innerWidth < 1024) {
+                            toggleSidebar(true);
+                        }
+                        
+                        // In a standalone context, we would navigate to the tool
+                        // For now, just update the active state
+                        console.log('Would navigate to:', relativeUrl);
+                        updateActiveSidebarItem(relativeUrl);
                     }
-                    
-                    // In a standalone context, we would navigate to the tool
-                    // For now, just update the active state
-                    console.log('Would navigate to:', relativeUrl);
-                    updateActiveSidebarItem(relativeUrl);
-                }
-            };
-            
-            // Attach handler to sidebar links
-            DOM.sidebarToolLinks.forEach(link => {
-                link.addEventListener('click', handleToolSwitch);
-            });
+                };
+                
+                // Attach handler to sidebar links
+                DOM.sidebarToolLinks.forEach(link => {
+                    link.addEventListener('click', handleToolSwitch);
+                });
+            }
 
             // Set initial overflow based on whether embedded
             if (isEmbedded) {
@@ -746,6 +802,9 @@
 
             // Listen for resize events
             window.addEventListener('resize', debouncedSendHeight);
+            
+            // Initial height calculation
+            setTimeout(debouncedSendHeight, 100);
         });
 
     </script>
