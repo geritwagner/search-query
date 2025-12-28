@@ -2,475 +2,447 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8" />
-    <title>Search-Query Studio</title>
+    <title>Search-Query Linter</title>
     <meta name="viewport" content="width=device-width,initial-scale=1" />
     
     <script src="https://cdn.jsdelivr.net/pyodide/v0.26.2/full/pyodide.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
     
     <style>
-        /* --- CSS VARIABLES --- */
+        /* --- CORE CSS --- */
         :root {
-            --primary: #4f46e5;
+            --primary: #4f46e5;       
             --primary-dark: #3f35c5;
-            --primary-accent: #6366f1;
-            --bg-base: #f9fafb;
-            --bg-base-lighter: #eef2ff;
             --bg-card: #ffffff;
-            --border-color: #e5e7eb;
-            --text-heading: #1f2937;
-            --text-body: #6b7280;
-            --font-stack: 'Inter', sans-serif;
-            --font-display: 'Space Grotesk', sans-serif;
-            --sidebar-width: 280px;
+            --border-color: #e5e7eb;  
+            --text-main: #1f2937;     
+            --text-secondary: #6b7280; 
+            --error-red: #dc2626;     
+            --warning-yellow: #d97706; 
         }
 
-        /* --- Global Resets & Body --- */
-        * { box-sizing: border-box; margin: 0; padding: 0; line-height: 1.5; }
-        body { 
-            font-family: var(--font-stack); 
-            background-color: var(--bg-base); 
-            color: var(--text-heading); 
-            min-height: 100vh;
-            overflow-x: hidden;
-            margin: 0;
+        * { box-sizing: border-box; margin: 0; padding: 0; line-height: 1.5; font-family: 'Inter', sans-serif; }
+        /* Add to your CSS */
+        body {
+          background-color: var(--bg-card);
+          color: var(--text-main);
+          padding: 1.5rem; 
+          min-height: 100vh;
+          overflow-x: hidden;
+          overflow-y: auto;
+          position: relative;
+          
+          /* ADD THIS: Extra bottom padding for iframe safety */
+          padding-bottom: 30px !important;
+        }    
+        #content-wrapper {
+          min-height: 100%;
+          overflow-y: auto;
+          overflow-x: hidden;
+          
+          /* ADD THIS: Extra padding at bottom */
+          padding-bottom: 20px;
         }
-        h1, h2, h3, h4 { color: var(--text-heading); margin: 0; }
-        a { text-decoration: none; color: var(--primary); transition: color 0.2s; }
-        a:hover { color: var(--primary-accent); }
-
-        /* --- Custom Scrollbar --- */
-        body::-webkit-scrollbar { width: 8px; }
-        body::-webkit-scrollbar-thumb { background-color: var(--primary-accent); border-radius: 10px; }
-
-        /* --- Layout & Responsiveness --- */
-        #mobile-header { 
-            position: fixed; top: 0; left: 0; width: 100%; height: 64px; 
-            background-color: var(--bg-card); border-bottom: 1px solid var(--border-color); 
-            z-index: 100; display: flex; align-items: center; padding: 0 1rem; 
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1); 
-        }
-        #menu-toggle { 
-            border: none; background: none; color: var(--text-heading); 
-            cursor: pointer; padding: 0.5rem; font-size: 1.25rem;
-        }
-
-        #sidebar { 
-            position: fixed; top: 0; left: 0; height: 100vh; width: var(--sidebar-width); 
-            background-color: var(--bg-card); border-right: 1px solid var(--border-color); 
-            z-index: 150; transform: translateX(-100%); transition: transform 0.3s ease-out; 
-            box-shadow: 4px 0 15px rgba(0, 0, 0, 0.2); padding: 1.5rem 1rem; 
-            overflow-y: auto; display: flex; flex-direction: column; 
-        }
-        #sidebar.open { transform: translateX(0); }
-        #backdrop { 
-            position: fixed; inset: 0; background: rgba(0, 0, 0, 0.5); 
-            z-index: 120; display: none; 
+    
+        /* UTILITY CLASS FOR VIEWPORT LOCK */
+        body.loading-active {
+          height: 100vh;    /* Locks height */
         }
         
-        #main-content { 
-            min-height: 100vh;
-            padding-top: 64px; 
-            transition: margin-left 0.3s ease-out; 
-            padding-left: 0; 
-        }
+
+        header h1 { font-size: 1.5rem; font-weight: bold; margin-bottom: 0.25rem; }
+        header p { color: var(--text-secondary); margin-top: 0; font-size: 0.95rem; }
         
-        @media (min-width: 1024px) {
-            #mobile-header { display: none; }
-            #sidebar { 
-                transform: translateX(0); 
-                width: var(--sidebar-width); 
-                position: fixed; 
-                padding-top: 2rem; 
-            }
-            #main-content { 
-                padding-left: var(--sidebar-width); 
-                padding-top: 0; 
-            }
-            #close-menu { display: none !important; }
-            #backdrop { display: none !important; }
-        }
-
-        /* --- Mobile Specific Styles --- */
-        #close-menu {
-            display: block !important;
-            border: none;
-            background: none;
-            color: var(--text-heading);
-            cursor: pointer;
-            padding: 0.5rem;
-            font-size: 1.25rem;
-        }
-
-        /* --- Logo and Branding --- */
-        .logo-container {
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-            margin-bottom: 1.5rem;
-        }
-
-        /* --- Sidebar Navigation --- */
-        .sidebar-tool-link {
-            display: flex;
-            align-items: center;
-            padding: 0.75rem 1rem;
-            border-radius: 0.375rem;
-            color: var(--text-heading);
-            transition: all 0.2s ease;
-            margin-bottom: 0.25rem;
-            cursor: pointer;
-            text-decoration: none;
-            font-size: 0.95rem;
-        }
-        .sidebar-tool-link:hover {
-            background-color: var(--bg-base-lighter);
-            color: var(--primary);
-        }
-        .sidebar-tool-link.active {
-            background-color: var(--primary);
-            color: white;
-        }
-        
-        .sidebar-section-title {
-            padding: 1.5rem 0 0.5rem 1rem;
-            font-size: 0.75rem;
-            font-weight: bold;
-            color: var(--text-body);
-            text-transform: uppercase;
-            margin-top: 0.5rem;
-        }
-
-        /* --- Hero Section --- */
-        #hero-headline { 
-            font-family: 'Space Grotesk', sans-serif;
-            font-size: 2.5rem;
-            font-weight: 700;
-            margin: 0;
-            line-height: 1.1;
-            background: linear-gradient(90deg, var(--text-heading), var(--primary), var(--primary-accent));
-            background-size: 200% auto;
-            animation: text-flow 4s linear infinite;
-            -webkit-background-clip: text;
-            background-clip: text;
-            -webkit-text-feature-settings: "liga" 0;
-            color: transparent;
-        }
-        
-        .welcome-container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 3rem 1.5rem;
-        }
-
-        .features-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-            gap: 1.5rem;
-            margin-top: 3rem;
-        }
-
-        .feature-card {
+        .main-content-card {
+            margin-top: 1.5rem;
             background: var(--bg-card);
             border: 1px solid var(--border-color);
             border-radius: 0.75rem;
             padding: 1.5rem;
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-            transition: transform 0.2s, box-shadow 0.2s;
-            text-align: center;
-        }
-        .feature-card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
         }
 
-        .feature-icon {
-            font-size: 2rem;
-            color: var(--primary);
-            margin-bottom: 1rem;
+        label { display: block; margin-top: 1.25rem; margin-bottom: 0.25rem; font-weight: 600; font-size: 0.875rem; }
+        
+        #query {
+            font-size: 1.1rem !important;
+            line-height: 1.6;
+            padding: 1rem;
+            min-height: 120px;
+            font-family: 'Courier New', monospace;
+        }
+        
+        textarea, select { 
+            display: block; width: 100%; padding: 0.75rem; border: 1px solid var(--border-color); 
+            border-radius: 0.5rem; box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.07); 
+            transition: border-color 0.2s, box-shadow 0.2s; color: var(--text-main);
+            max-width: 100%;
+        }
+        
+        textarea:focus, select:focus { 
+            border-color: var(--primary); box-shadow: 0 0 0 1px var(--primary); outline: none; 
         }
 
-        /* --- Footer --- */
-        .sidebar-footer {
-            margin-top: auto;
-            padding-top: 1.5rem;
-            border-top: 1px solid var(--border-color);
-            font-size: 0.75rem;
-            color: var(--text-body);
-            text-align: center;
+        #btn-lint {
+            width: auto; min-width: 200px; padding: 0.75rem 2rem; border: none; border-radius: 0.5rem; font-weight: 600; color: white; background-color: var(--primary); cursor: pointer; transition: background-color 0.2s; box-shadow: 0 2px 4px rgba(79, 70, 229, 0.4); margin-top: 1.5rem; font-size: 1rem; display: block; margin-left: auto; margin-right: auto;
+        }
+        #btn-lint:hover:not(:disabled) { background-color: var(--primary-dark); }
+        #btn-lint:disabled { opacity: 0.6; cursor: not-allowed; box-shadow: none; }
+
+        #platform { max-width: 300px; }
+
+        #status { display:none; } 
+        #status-display { margin-top: 1rem; padding: 0.5rem 1rem; background: #fff3e0; border: 1px solid #ffcc80; border-radius: 0.375rem; font-size: 0.875rem; color: #a55a00; font-weight: 500; }
+        #output-wrap { margin-top: 1.5rem; position: relative; }
+        
+        /* --- JSON OUTPUT WINDOW --- */
+              pre {
+                    background-color: #f6f8fa;
+                    color: #24292e;
+                    font-family: Consolas, "Liberation Mono", Menlo, monospace;
+                    font-size: 14px;
+                    padding: 12px 16px;
+                    border-radius: 6px;
+                    border: 1px solid #d0d7de;
+                    display: block;
+                    overflow-x: auto;
+                    line-height: 1.5;        }
+                
+        #output {
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            font-size: 0.85rem;
+            background: transparent !important;
+            margin: 0;
+            padding: 0;
+            white-space: pre; 
         }
 
-        /* --- Tool Container --- */
-        .tool-iframe-container {
-            width: 100%;
-            min-height: calc(100vh - 64px);
-            border: none;
+        .json-actions { position: absolute; top: 15px; right: 15px; display: flex; gap: 8px; z-index: 20; }
+        .json-btn { background: transparent !important; border: none !important; border-radius: 4px; color: #d4d4d4; padding: 6px 8px; cursor: pointer; font-size: 14px; transition: all 0.2s ease; backdrop-filter: none; }
+        .json-btn:hover { background: rgba(255, 255, 255, 0.1) !important; color: #ffffff; }
+        .json-btn.copied { color: #4CAF50 !important; }
+
+        #lint-view { 
+            padding: 1rem; 
+            margin-bottom: 10px; 
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            background-color: #f6f8fa;
+            color: #24292e;
+            font-family: Consolas, "Liberation Mono", Menlo, monospace;
+            font-size: 14px;
+            padding: 12px 16px;
+            border-radius: 6px;
+            border: 1px solid #d0d7de;
+            display: block;
+            overflow-x: auto;
+            line-height: 1.5;        
         }
 
-        /* --- Animations --- */
-        @keyframes text-flow {
-            0% { background-position: 0% 50%; }
-            100% { background-position: 100% 50%; }
+        #lint-view .ansi-red { color: var(--error-red); font-weight: 600; }
+        #lint-view .ansi-yellow { color: var(--warning-yellow); font-weight: 600; }
+        #lint-view .lint-title { font-weight: 700; font-size: 1rem; margin-bottom: 0.5rem;}
+       
+        #loading-overlay { position: fixed; inset: 0; background-color: rgba(255, 255, 255, 0.95); z-index: 1000; display: flex; flex-direction: column; justify-content: center; align-items: center; transition: opacity 0.5s ease; opacity: 1; }
+        .loader { border: 4px solid var(--border-color); border-top: 4px solid var(--primary); border-radius: 50%; width: 50px; height: 50px; animation: spin 1s linear infinite; margin-bottom: 1rem; }
+        #loading-text { font-size: 1.1rem; color: var(--text-main); font-weight: 500; text-align: center; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        #content-wrapper { transition: opacity 0.5s ease; opacity: 0; }
+        
+        .lint-item { border-top: 1px solid #e5e7eb; margin-top: 16px; padding-top: 8px; background-color: inherit; }
+        .lint-message { font-size: 0.95rem; color: #374151; white-space: pre-wrap; margin-bottom: 4px; }
+        .lint-separator { border-top: 1px solid #e5e7eb; margin: 8px 0; }
+
+        #lint-container { margin-top: 18px; }
+        .lint-card {
+            padding: 14px;
+            box-shadow: 0 6px 18px rgba(0,0,0,0.35);
+            background-color: #f6f8fa;
+            color: #24292e;
+            font-family: Consolas, "Liberation Mono", Menlo, monospace;
+            font-size: 14px;
+            padding: 12px 16px;
+            border-radius: 6px;
+            border: 1px solid #d0d7de;
+            display: block;
+            overflow-x: auto;
+            line-height: 1.5;
+
         }
+        .lint-title { color: #ff7474; font-weight: 700; margin-bottom: px; font-size: 1rem; }
+        .lint-meta { color: #cfcfcf; margin-bottom: 8px; }
+        .lint-details { color: #d3c48c; margin-bottom: 10px; white-space: pre-wrap; }
+        .lint-links a { color: #4fc1ff; text-decoration: none; margin-right: 8px; font-weight: 600; }
+        .lint-links a:hover { text-decoration: underline; }
+        .lint-report { color: #ffb74d !important; }
+        .lint-links-spacer { display:inline-block; width:8px; }
+
+        .lint-query {
+            background: #0f0f0f;
+            color: #fff;
+            padding: 10px;
+            border-radius: 8px;
+            border: 1px solid #2b2b2b;
+            margin-top: 10px;
+            margin-bottom: 70px;
+            overflow-x: auto;
+            font-family: Consolas, monospace;
+            font-size: 13px;
+        }
+        .lint-hl-0 { color: #ff6b6b; font-weight:700; }
+        .lint-hl-1 { color: #ffd86b; font-weight:700; }
+
 
     </style>
 </head>
+
 <body>
-    <!-- Mobile Header -->
-    <header id="mobile-header">
-        <button id="menu-toggle" class="p-2">
-            <i class="fas fa-bars"></i>
-        </button>
-        <div class="logo-container" style="margin: 0; padding-left: 1rem;">
-            <img src="https://raw.githubusercontent.com/CoLRev-Environment/search-query/refs/heads/main/docs/source/_static/search_query_logo.svg" width="120" alt="Search Query Logo">
-        </div>
-    </header>
 
-    <!-- Backdrop for Mobile Menu -->
-    <div id="backdrop"></div>
+    <div id="loading-overlay">
+        <div class="loader"></div>
+        <div id="loading-text">Initializing Search Query...</div>
+    </div>
+    
+    <div id="content-wrapper">
+        <header>
+            <h1>Search-Query Linter</h1>
+            <p>Paste a query, select a platform, and run the linter in your browser.</p>
+        </header>
 
-    <!-- Sidebar Navigation -->
-    <nav id="sidebar">
-        <div style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 1.5rem; border-bottom: 1px solid var(--border-color);">
-            <div class="logo-container">
-                <img src="https://raw.githubusercontent.com/CoLRev-Environment/search-query/refs/heads/main/docs/source/_static/search_query_logo.svg" width="180" alt="Search Query Logo">
-            </div>
-            <button id="close-menu">
-                <i class="fas fa-times"></i>
-            </button>
-        </div>
-        
-        <div style="display: flex; flex-direction: column; margin-top: 1rem;">
-            <div class="sidebar-section-title">Features</div>
-            <a href="https://geritwagner.github.io/search-query/gui/translate.html" class="sidebar-tool-link" target="_self">
-                <i class="fas fa-language" style="width: 20px; margin-right: 12px;"></i>
-                Translate
-            </a>
-            <a href="https://geritwagner.github.io/search-query/gui/lint.html" class="sidebar-tool-link" target="_self">
-                <i class="fas fa-tasks" style="width: 20px; margin-right: 12px;"></i>
-                Lint
-            </a>
-            
-            <div class="sidebar-section-title">Debug</div>
-            <a href="https://geritwagner.github.io/search-query/gui/tokenizer.html" class="sidebar-tool-link" target="_self">
-                <i class="fas fa-microchip" style="width: 20px; margin-right: 12px;"></i>
-                Tokenize
-            </a>
-            <a href="#" class="sidebar-tool-link" style="opacity: 0.6; cursor: not-allowed;">
-                <i class="fas fa-sitemap" style="width: 20px; margin-right: 12px;"></i>
-                Structure (Coming Soon)
-            </a>
+        <div id="status">Loading Search Query…</div> 
+        <div id="status-display">Loading Search Query…</div>
 
-            <div class="sidebar-section-title">Resources</div>
-            <a href="https://github.com/CoLRev-Environment/search-query" target="_blank" class="sidebar-tool-link">
-                <i class="fab fa-github" style="width: 20px; margin-right: 12px;"></i>
-                GitHub
-            </a>
-            <a href="https://colrev-environment.github.io/search-query/" target="_blank" class="sidebar-tool-link">
-                <i class="fas fa-book" style="width: 20px; margin-right: 12px;"></i>
-                Documentation
-            </a>
-            <a href="https://github.com/CoLRev-Environment/search-query/blob/main/LICENSE" target="_blank" class="sidebar-tool-link">
-                <i class="fas fa-file-contract" style="width: 20px; margin-right: 12px;"></i>
-                License
-            </a>
-        </div>
-        
-        <div class="sidebar-footer">
-            Search-Query Studio © 2025
-        </div>
-    </nav>
+        <div class="main-content-card">
+            <label for="query">Query</label>
+            <textarea id="query">(TI=(platform* OR "digital work") AND PY=2020-2025)</textarea>
 
-    <!-- Main Content Area -->
-    <main id="main-content">
-        <!-- Welcome Screen -->
-        <div class="welcome-container">
-            <div style="text-align: center; max-width: 800px; margin: 0 auto;">
-                <h1 id="hero-headline" style="margin-bottom: 1rem;">
-                    Search Query Studio
-                </h1>
-                <p style="font-size: 1.25rem; color: var(--text-body); margin-bottom: 2rem; line-height: 1.6;">
-                    A comprehensive web interface for search-query tools. Translate, lint, and tokenize search queries across different platforms.
-                </p>
-                
-                <div class="features-grid">
-                    <div class="feature-card">
-                        <div class="feature-icon">
-                            <i class="fas fa-language"></i>
-                        </div>
-                        <h3 style="margin-bottom: 0.75rem; color: var(--text-heading);">Translate</h3>
-                        <p style="color: var(--text-body); line-height: 1.5;">
-                            Convert search queries between different database platforms like Web of Science, PubMed, and EBSCOhost.
-                        </p>
-                        <a href="https://geritwagner.github.io/search-query/gui/translate.html" style="display: inline-block; margin-top: 1rem; color: var(--primary); font-weight: 600;">
-                            Use Translator →
-                        </a>
-                    </div>
-                    
-                    <div class="feature-card">
-                        <div class="feature-icon">
-                            <i class="fas fa-tasks"></i>
-                        </div>
-                        <h3 style="margin-bottom: 0.75rem; color: var(--text-heading);">Lint</h3>
-                        <p style="color: var(--text-body); line-height: 1.5;">
-                            Validate and check search queries for errors, warnings, and best practices across different platforms.
-                        </p>
-                        <a href="https://geritwagner.github.io/search-query/gui/lint.html" style="display: inline-block; margin-top: 1rem; color: var(--primary); font-weight: 600;">
-                            Use Linter →
-                        </a>
-                    </div>
-                    
-                    <div class="feature-card">
-                        <div class="feature-icon">
-                            <i class="fas fa-microchip"></i>
-                        </div>
-                        <h3 style="margin-bottom: 0.75rem; color: var(--text-heading);">Tokenize</h3>
-                        <p style="color: var(--text-body); line-height: 1.5;">
-                            Break down search queries into tokens for detailed analysis and debugging of query structure.
-                        </p>
-                        <a href="https://geritwagner.github.io/search-query/gui/tokenizer.html" style="display: inline-block; margin-top: 1rem; color: var(--primary); font-weight: 600;">
-                            Use Tokenizer →
-                        </a>
-                    </div>
-                </div>
-                
-                <div style="margin-top: 4rem; padding: 2rem; background: var(--bg-card); border-radius: 0.75rem; border: 1px solid var(--border-color);">
-                    <h3 style="margin-bottom: 1rem; color: var(--text-heading);">How It Works</h3>
-                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem; margin-top: 1.5rem;">
-                        <div>
-                            <div style="background: var(--primary); color: white; width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; margin-bottom: 0.75rem;">1</div>
-                            <h4 style="margin-bottom: 0.5rem;">Select a Tool</h4>
-                            <p style="color: var(--text-body); font-size: 0.95rem;">Choose from Translate, Lint, or Tokenize tools from the sidebar.</p>
-                        </div>
-                        <div>
-                            <div style="background: var(--primary); color: white; width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; margin-bottom: 0.75rem;">2</div>
-                            <h4 style="margin-bottom: 0.5rem;">Enter Your Query</h4>
-                            <p style="color: var(--text-body); font-size: 0.95rem;">Paste your search query and select the target platform.</p>
-                        </div>
-                        <div>
-                            <div style="background: var(--primary); color: white; width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; margin-bottom: 0.75rem;">3</div>
-                            <h4 style="margin-bottom: 0.5rem;">Get Results</h4>
-                            <p style="color: var(--text-body); font-size: 0.95rem;">View the results, copy JSON output, or download for further analysis.</p>
-                        </div>
-                    </div>
-                </div>
+            <label for="platform">Platform</label>
+            <select id="platform">
+                <option value="wos">WoS</option>
+                <option value="pubmed">PubMed</option>
+                <option value="ebscohost">EBSCOhost</option>
+            </select>
+
+            <div class="row">
+                <button id="btn-lint" disabled>Lint</button>
             </div>
         </div>
-    </main>
 
+        <div style="margin-top: 1.5rem;">
+            <details id="output-wrap" style="margin-bottom: 1rem;">
+                <summary style="font-weight: 600; color: var(--text-secondary); cursor: pointer; padding: 0.5rem 0; position: relative;">
+                    Raw Linter Output (JSON)
+                </summary>
+                <div style="position: relative;">
+                    <div class="json-actions">
+                        <button class="json-btn" id="copy-json" title="Copy JSON">
+                            <i class="far fa-copy"></i>
+                        </button>
+                        <button class="json-btn" id="download-json" title="Download JSON">
+                            <i class="fas fa-download"></i>
+                        </button>
+                    </div>
+                    <pre id="pre"><code style="font-size: 16px; font-family: 'Consolas', 'Monaco', monospace;" id="output"></code></pre>
+                </div>
+            </details>
+            <h2 id="messages-title" style="display:none; font-size: 1.25rem; font-weight: 600; margin-top: 1rem;">Messages</h2>
+            <div id="lint-view" style="display:none;"></div>
+        </div>
+    </div>
+    <script src="search_query_pkg_tree.js"></script>
+    <script src="lint.js"></script>
     <script>
-        // DOM Elements
-        const DOM = {
-            sidebar: document.getElementById('sidebar'),
-            menuToggle: document.getElementById('menu-toggle'),
-            closeMenuBtn: document.getElementById('close-menu'),
-            backdrop: document.getElementById('backdrop'),
-            mainContent: document.getElementById('main-content'),
-            sidebarLinks: document.querySelectorAll('.sidebar-tool-link')
-        };
+         // Add this at the beginning of your script
+        const isEmbedded = window.parent !== window;
+        
+        const PARENT_ORIGIN = window.location.origin;
 
-        // Current active page
-        let currentPage = 'welcome';
+        const loader = document.getElementById('loading-overlay');
+        const loadingText = document.getElementById('loading-text');
+        const contentWrapper = document.getElementById('content-wrapper');
+        const statusDisplay = document.getElementById('status-display');
+        const codeBlock = document.getElementById('output');
+        const btnLint = document.getElementById('btn-lint');
 
-        // Toggle sidebar for mobile
-        function toggleSidebar(forceClose = false) {
-            const isOpen = DOM.sidebar.classList.contains('open');
-            const shouldOpen = forceClose ? false : !isOpen;
-
-            if (shouldOpen) {
-                DOM.sidebar.classList.add('open');
-                DOM.backdrop.style.display = 'block';
-                document.body.style.overflow = 'hidden';
-            } else {
-                DOM.sidebar.classList.remove('open');
-                DOM.backdrop.style.display = 'none';
-                document.body.style.overflow = '';
-            }
-        }
-
-        // Highlight current page in sidebar
-        function highlightCurrentPage() {
-            const currentUrl = window.location.href;
-            
-            DOM.sidebarLinks.forEach(link => {
-                link.classList.remove('active');
-                
-                // Check if this link matches the current page
-                const linkUrl = link.getAttribute('href');
-                if (linkUrl && currentUrl.includes(linkUrl)) {
-                    link.classList.add('active');
-                }
+        // --- UTILITIES ---
+        function copyJsonToClipboard() {
+            const jsonText = codeBlock.textContent; 
+            navigator.clipboard.writeText(jsonText).then(() => {
+                const copyBtn = document.getElementById('copy-json');
+                const originalHTML = copyBtn.innerHTML;
+                copyBtn.innerHTML = '<i class="fas fa-check"></i>';
+                copyBtn.classList.add('copied');
+                setTimeout(() => {
+                    copyBtn.innerHTML = originalHTML;
+                    copyBtn.classList.remove('copied');
+                }, 2000);
             });
         }
 
-        // Handle tool navigation
-        function handleToolNavigation(e) {
-            const link = e.currentTarget;
-            const toolUrl = link.getAttribute('href');
-            
-            // Don't prevent default for external links or empty links
-            if (!toolUrl || toolUrl === '#' || link.getAttribute('target') === '_blank') {
+        function downloadJson() {
+            const jsonText = codeBlock.textContent;
+            const blob = new Blob([jsonText], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'linter-output.json';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        // Debounce to prevent excessive height updates
+        let heightTimeout;
+        function debouncedSendHeight() {
+            clearTimeout(heightTimeout);
+            heightTimeout = setTimeout(sendHeight, 150);
+        }
+
+        // CORRECTED sendHeight function - measures the LAST VISIBLE ELEMENT's bottom position
+        function sendHeight() {
+            // Only adjust iframe if we're embedded
+            if (!isEmbedded) {
+                document.body.style.overflowY = 'auto';
+                document.body.style.overflowX = 'auto';
                 return;
             }
             
-            // Check if it's one of our tools
-            if (toolUrl.includes('geritwagner.github.io/search-query/gui/')) {
-                e.preventDefault();
+            // Hide scrollbars when embedded
+            document.body.style.overflow = 'hidden';
+            
+            // Don't calculate during loading
+            if (loader.style.display !== 'none') return;
+            
+            // Get ALL elements inside content-wrapper
+            const wrapper = document.getElementById('content-wrapper');
+            if (!wrapper) return;
+            
+            const allElements = wrapper.getElementsByTagName('*');
+            let lastVisibleElement = null;
+            let maxBottom = 0;
+            
+            // Find the element with the highest bottom position (last visible element)
+            for (let element of allElements) {
+                const style = window.getComputedStyle(element);
                 
-                // Update browser history
-                window.history.pushState({ tool: toolUrl }, '', toolUrl);
+                // Skip hidden elements
+                if (style.display === 'none' || style.visibility === 'hidden') {
+                    continue;
+                }
                 
-                // Load the tool page
-                loadToolPage(toolUrl);
+                // Get element's position
+                const rect = element.getBoundingClientRect();
                 
-                // Close mobile sidebar
-                if (window.innerWidth < 1024) {
-                    toggleSidebar(true);
+                // Only consider elements that are actually in the view (have height)
+                if (rect.height > 0) {
+                    const elementBottom = rect.bottom + window.pageYOffset;
+                    
+                    // Track the element with the highest bottom position
+                    if (elementBottom > maxBottom) {
+                        maxBottom = elementBottom;
+                        lastVisibleElement = element;
+                    }
                 }
             }
-        }
-
-        // Load tool page
-        function loadToolPage(url) {
-            // Show loading state
-            document.body.style.cursor = 'wait';
             
-            // Navigate to the tool page
-            window.location.href = url;
+            // If no elements found, use the wrapper itself
+            if (!lastVisibleElement) {
+                lastVisibleElement = wrapper;
+                const rect = wrapper.getBoundingClientRect();
+                maxBottom = rect.bottom + window.pageYOffset;
+            }
+            
+            // Get the top of the document
+            const docTop = document.documentElement.getBoundingClientRect().top + window.pageYOffset;
+            
+            // Calculate height: from top of document to bottom of last visible element
+            const contentHeight = maxBottom - docTop;
+            
+            // Add a small buffer (20px) to prevent cut-off
+            const finalHeight = contentHeight + 20;
+            
+            // Send to parent frame
+            window.parent.postMessage(
+                { type: 'setHeight', height: Math.ceil(finalHeight) },
+                '*'
+            );
         }
+        
+        // Listen for resize events
+        window.addEventListener('resize', debouncedSendHeight);
 
-        // Handle browser back/forward buttons
-        window.addEventListener('popstate', function(event) {
-            if (event.state && event.state.tool) {
-                loadToolPage(event.state.tool);
+        // --- PYODIDE SETUP ---
+        const originalAppendStatus = window.appendStatus || function(msg) { 
+            if (statusDisplay) statusDisplay.textContent = msg; 
+        };
+
+        window.appendStatus = function(msg) {
+            const cleanMsg = msg.replace(/\u001b\[.*?m/g, '').trim(); 
+            if (loadingText) loadingText.textContent = cleanMsg;
+
+            if (cleanMsg.includes('Done') || cleanMsg.includes('ready') || cleanMsg.includes('Ready')) {
+                // Done loading
+                statusDisplay.innerText = 'Search Query loaded…';
+                loader.style.opacity = '0';
+                contentWrapper.style.opacity = '1';
+            
+                setTimeout(() => {
+                    loader.style.display = 'none';
+                    
+                    // CRITICAL: Only lock overflow if embedded
+                    if (isEmbedded) {
+                        document.body.style.overflow = 'hidden';
+                    } else {
+                        document.body.style.overflow = 'auto';
+                    }
+                    
+                    btnLint.disabled = false;
+                    debouncedSendHeight(); // Use debounced version
+                }, 500);
             } else {
-                // If no state, we're at the welcome page
-                currentPage = 'welcome';
-                highlightCurrentPage();
+                document.body.classList.add('loading-active');
+                loader.style.display = 'flex';
+                loader.style.opacity = '1';
+                contentWrapper.style.opacity = '0';
             }
-        });
+            
+            originalAppendStatus(msg);
+            setTimeout(debouncedSendHeight, 50); 
+        };
 
-        // Initialize the application
+        // --- INIT ---
         document.addEventListener('DOMContentLoaded', () => {
-            // Highlight current page in sidebar
-            highlightCurrentPage();
+            // Set initial overflow based on whether embedded
+            if (isEmbedded) {
+                document.body.style.overflow = 'hidden';
+            } else {
+                document.body.style.overflow = 'auto';
+            }
             
-            // Mobile menu toggle
-            DOM.menuToggle.addEventListener('click', () => toggleSidebar());
-            DOM.backdrop.addEventListener('click', () => toggleSidebar(true));
-            DOM.closeMenuBtn.addEventListener('click', () => toggleSidebar(true));
+            document.body.classList.add('loading-active');
+            contentWrapper.style.opacity = '0';
+            loader.style.display = 'flex'; 
+            loadingText.textContent = "Initializing Search Query...";
+
+            document.getElementById('copy-json').addEventListener('click', copyJsonToClipboard);
+            document.getElementById('download-json').addEventListener('click', downloadJson);
             
-            // Add navigation handlers to tool links
-            DOM.sidebarLinks.forEach(link => {
-                link.addEventListener('click', handleToolNavigation);
+            // When lint button is clicked
+            btnLint.addEventListener('click', () => {
+                // Wait for results to render, then update height
+                setTimeout(debouncedSendHeight, 800);
             });
+
+            window.addEventListener('load', debouncedSendHeight);
             
-            // Handle window resize
-            window.addEventListener('resize', () => {
-                if (window.innerWidth >= 1024 && DOM.sidebar.classList.contains('open')) {
-                    toggleSidebar(true);
-                }
+            // Observe DOM changes
+            const observer = new MutationObserver(debouncedSendHeight);
+            observer.observe(document.body, { 
+                attributes: true, 
+                childList: true, 
+                subtree: true 
             });
+
         });
 
     </script>
