@@ -323,7 +323,7 @@
             heightTimeout = setTimeout(sendHeight, 150);
         }
 
-        // SEND HEIGHT FUNCTION - SAME AS LINTER
+        // SEND HEIGHT FUNCTION - EXACT SAME AS LINTER
         function sendHeight() {
             // Only adjust iframe if we're embedded
             if (!isEmbedded) {
@@ -347,8 +347,7 @@
             let maxBottom = 0;
             
             // Find the element with the highest bottom position (last visible element)
-            for (let i = 0; i < allElements.length; i++) {
-                const element = allElements[i];
+            for (let element of allElements) {
                 const style = window.getComputedStyle(element);
                 
                 // Skip hidden elements
@@ -397,7 +396,7 @@
         // Listen for resize events
         window.addEventListener('resize', debouncedSendHeight);
         
-        // --- Pyodide Status Hook and Loader Control - MUST MATCH LINTER EXACTLY ---
+        // --- PYODIDE SETUP - EXACT SAME AS LINTER ---
         
         const originalAppendStatus = window.appendStatus || function(msg) { 
             const statusDiv = document.getElementById('status');
@@ -408,9 +407,8 @@
         };
         
         window.appendStatus = function(msg) {
-            const cleanMsg = msg.replace(/\u001b\[.*?m/g, ''); 
+            const cleanMsg = msg.replace(/\u001b\[.*?m/g, '').trim(); 
             if (loadingText) loadingText.textContent = cleanMsg;
-            statusDisplay.textContent = cleanMsg;
 
             if (cleanMsg.includes('Done') || cleanMsg.includes('ready') || cleanMsg.includes('Ready')) {
                 // Done loading
@@ -429,63 +427,38 @@
                     }
                     
                     btnTokenize.disabled = false;
-                    debouncedSendHeight(); // Final resize
+                    debouncedSendHeight(); // Use debounced version
                 }, 500);
             } else {
-                // Loading: Lock viewport
                 document.body.classList.add('loading-active');
                 loader.style.display = 'flex';
                 loader.style.opacity = '1';
                 contentWrapper.style.opacity = '0';
             }
-
+            
             originalAppendStatus(msg);
             setTimeout(debouncedSendHeight, 50); 
         };
-        
-        // --- Append module with interval stopped after ready - MUST MATCH LINTER ---
-        const appendInterval = setInterval(() => {
-            const statusText = document.getElementById('status');
-            const lines = statusText.innerText.split("\n");
-            const lastLine = lines[lines.length - 1].trim();
 
-            loadingText.innerText = lastLine || "Loading…";
-            statusDisplay.innerText = lastLine || "Loading…";
-
-            if (lastLine.includes("search-query ready.")) {
-                loader.style.display = 'none';
-                contentWrapper.style.display = 'block';
-                contentWrapper.style.opacity = '1';
-                statusText.innerText = 'Search Query Ready';
-                statusDisplay.innerText = 'Search Query Ready';
-                
-                // Enable the tokenize button
-                btnTokenize.disabled = false;
-                
-                // Stop the interval to prevent unnecessary height updates
-                clearInterval(appendInterval);
-
-                // Send final height once
-                debouncedSendHeight();
-            }
-        }, 100);
-
-        // --- Initial Setup and DOM Observer - MUST MATCH LINTER ---
+        // --- INIT - EXACT SAME AS LINTER ---
         document.addEventListener('DOMContentLoaded', () => {
-            // Initial state setup: LOCK VIEWPORT IMMEDIATELY
+            // Set initial overflow based on whether embedded
+            if (isEmbedded) {
+                document.body.style.overflow = 'hidden';
+            } else {
+                document.body.style.overflow = 'auto';
+            }
+            
             document.body.classList.add('loading-active');
             contentWrapper.style.opacity = '0';
-            contentWrapper.style.display = 'none';
             loader.style.display = 'flex'; 
             loadingText.textContent = "Initializing search-query...";
             btnTokenize.disabled = true;
 
-            // Add event listeners if buttons exist
+            // Add event listeners if buttons exist (tokenizer doesn't have these by default)
             const copyBtn = document.getElementById('copy-json');
             const downloadBtn = document.getElementById('download-json');
             
-            // Note: Your tokenizer HTML doesn't have copy/download buttons
-            // If you add them later, these listeners will work
             if (copyBtn) {
                 copyBtn.addEventListener('click', copyJsonToClipboard);
             }
@@ -503,16 +476,16 @@
             // Initialize Highlight.js
             hljs.highlightAll();
 
-            // 1. Send initial minimal height
             window.addEventListener('load', debouncedSendHeight);
             
-            // 2. Observe DOM changes (Crucial for when the output table appears/disappears)
+            // Observe DOM changes
             const observer = new MutationObserver(debouncedSendHeight);
             observer.observe(document.body, { 
                 attributes: true, 
                 childList: true, 
                 subtree: true 
             });
+
         });
     </script>
 </body>
