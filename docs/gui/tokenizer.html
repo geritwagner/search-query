@@ -23,7 +23,7 @@
             --text-secondary: #6b7280;
         }
 
-        /* --- Global Resets & Body Styles for IFRAME --- */
+        /* --- Global Resets & Body Styles --- */
         * { box-sizing: border-box; margin: 0; padding: 0; line-height: 1.5; font-family: 'Inter', sans-serif; }
         
         body {
@@ -33,6 +33,18 @@
             min-height: 100vh;
             overflow-x: hidden;
             position: relative;
+            /* Add some bottom padding to prevent cut-off */
+            padding-bottom: 20px;
+        }
+
+        /* When NOT in iframe, allow scrolling */
+        body:not(.iframe-mode) {
+            overflow-y: auto;
+        }
+        
+        /* When IN iframe, prevent scrolling */
+        body.iframe-mode {
+            overflow-y: hidden;
         }
 
         /* --- Layout & Typography --- */
@@ -174,7 +186,7 @@
             100% { transform: rotate(360deg); }
         }
         
-        /* Content wrapper - ALWAYS VISIBLE */
+        /* Content wrapper */
         #content-wrapper { 
             opacity: 1;
             display: block;
@@ -246,7 +258,7 @@
     <script src="tokenize.js"></script>
     
     <script>
-        // Add this at the beginning of your script
+        // Check if we're in an iframe
         const isEmbedded = window.parent !== window;
         
         const loader = document.getElementById('loading-overlay');
@@ -276,28 +288,30 @@
             console.log('JSON output highlighted with VS Code theme');
         }
 
-        // SIMPLE AND EFFECTIVE sendHeight function
+        // SIMPLE AND ACCURATE sendHeight function
         function sendHeight() {
-            // Only adjust iframe if we're embedded
+            // Only send height if we're in an iframe
             if (!isEmbedded) {
-                document.body.style.overflowY = 'auto';
                 return;
             }
-            
-            // Hide scrollbars when embedded
-            document.body.style.overflow = 'hidden';
             
             // Don't calculate during loading
             if (loader.style.display === 'flex') return;
             
-            // Get the ACTUAL full height of the entire document
+            // Get the exact total height of the document
+            // This includes all content, padding, margins
             const height = document.documentElement.scrollHeight;
             
-            // Send to parent frame with small buffer
+            // Send to parent iframe
             window.parent.postMessage(
-                { type: 'setHeight', height: height + 30 },
+                { 
+                    type: 'setHeight', 
+                    height: height 
+                },
                 '*'
             );
+            
+            console.log('Sent height to parent:', height);
         }
         
         // Debounce to prevent excessive height updates
@@ -309,6 +323,11 @@
         
         // Listen for resize events
         window.addEventListener('resize', debouncedSendHeight);
+        
+        // Listen for button clicks to update height after content changes
+        btnTokenize.addEventListener('click', () => {
+            setTimeout(debouncedSendHeight, 800);
+        });
 
         // --- Pyodide Status Hook and Loader Control ---
         
@@ -327,7 +346,7 @@
             loadingText.textContent = cleanMsg || "Loading...";
             statusDisplay.textContent = cleanMsg || "Loading...";
             
-            // Show loader with content visible behind it
+            // Show loader
             loader.style.display = 'flex';
             setTimeout(() => {
                 loader.style.opacity = '1';
@@ -340,12 +359,14 @@
                     setTimeout(() => {
                         loader.style.display = 'none';
                         btnTokenize.disabled = false;
-                        debouncedSendHeight(); // Update height after loading
+                        // Update height after loading
+                        setTimeout(debouncedSendHeight, 100);
                     }, 500);
                 }, 500);
             }
             
             originalAppendStatus(msg);
+            // Update height periodically during loading
             setTimeout(debouncedSendHeight, 50);
         };
         
@@ -364,17 +385,20 @@
                     loader.style.display = 'none';
                     btnTokenize.disabled = false;
                     clearInterval(appendInterval);
-                    debouncedSendHeight();
+                    // Final height update
+                    setTimeout(debouncedSendHeight, 200);
                 }, 500);
             }
         }, 100);
         
-        // --- Initial Setup and DOM Observer ---
+        // --- Initial Setup ---
         document.addEventListener('DOMContentLoaded', () => {
-            // Set overflow based on whether embedded
+            // Apply iframe-mode class if embedded
             if (isEmbedded) {
+                document.body.classList.add('iframe-mode');
                 document.body.style.overflow = 'hidden';
             } else {
+                document.body.classList.remove('iframe-mode');
                 document.body.style.overflow = 'auto';
             }
             
@@ -382,7 +406,7 @@
             contentWrapper.style.opacity = '1';
             contentWrapper.style.display = 'block';
             
-            // Show loader immediately (it will hide when ready)
+            // Show loader
             loader.style.display = 'flex';
             setTimeout(() => {
                 loader.style.opacity = '1';
@@ -391,20 +415,14 @@
             loadingText.textContent = "Initializing search-query...";
             statusDisplay.textContent = "Initializing search-query...";
             btnTokenize.disabled = true;
-            
-            // When tokenize button is clicked
-            btnTokenize.addEventListener('click', () => {
-                // Wait for results to render, then update height
-                setTimeout(debouncedSendHeight, 800);
-            });
 
             // Initialize Highlight.js
             hljs.highlightAll();
 
-            // Send initial height
-            setTimeout(debouncedSendHeight, 100);
+            // Initial height send
+            setTimeout(debouncedSendHeight, 200);
             
-            // Observe DOM changes
+            // Observe DOM changes for height updates
             const observer = new MutationObserver(debouncedSendHeight);
             observer.observe(document.body, { 
                 attributes: true, 
@@ -412,8 +430,15 @@
                 subtree: true 
             });
             
-            // Also send height on window load
-            window.addEventListener('load', debouncedSendHeight);
+            // Send height on window load
+            window.addEventListener('load', () => {
+                setTimeout(debouncedSendHeight, 300);
+            });
+            
+            // Send height when details (expandable sections) are toggled
+            document.querySelectorAll('details').forEach(details => {
+                details.addEventListener('toggle', debouncedSendHeight);
+            });
         });
     </script>
 </body>
