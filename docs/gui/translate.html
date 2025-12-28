@@ -292,6 +292,9 @@
   <script src="https://cdn.jsdelivr.net/pyodide/v0.26.2/full/pyodide.js"></script>
   
   <script>
+    // Add this near the top with other variables
+    let initialHeight = 0;
+    let contentExpanded = false;
     // Add this at the beginning of your script (right after hljs.configure)
     const isEmbedded = window.parent !== window;
     // In your DOMContentLoaded event or appendStatus function
@@ -358,9 +361,9 @@
 
   function sendHeight() {
       if (!isEmbedded) {
-        document.body.style.overflowY = 'auto';
-        document.body.style.overflowX = 'hidden';
-        return;
+          document.body.style.overflowY = 'auto';
+          document.body.style.overflowX = 'hidden';
+          return;
       }
       
       document.body.style.overflowY = 'hidden';
@@ -372,27 +375,42 @@
       if (!wrapper) return;
       
       // Get the full document height including padding
-      const height = Math.max(
-        document.body.scrollHeight, 
-        document.body.offsetHeight,
-        wrapper.scrollHeight
+      const currentHeight = Math.max(
+          document.body.scrollHeight,
+          document.body.offsetHeight,
+          wrapper.scrollHeight
       );
       
-      // ADD a bit more to ensure no cutoff
-      const paddedHeight = height + 200; // Add 20px safety margin
-      if(paddedHeight => 1400){
-        paddedHeight = 1400
-        window.parent.postMessage(
+      // Store initial height if not set
+      if (initialHeight === 0) {
+          initialHeight = currentHeight;
+      }
+      
+      // Calculate padding only if content has expanded significantly
+      let paddedHeight = currentHeight;
+      
+      // Only add extra padding if content has grown (like when results are shown)
+      // Check if current height is more than initial + some threshold
+      if (currentHeight > initialHeight + 100) {
+          // Content has expanded (probably results shown)
+          contentExpanded = true;
+          paddedHeight = currentHeight + 200; // Add extra padding for results
+      } else {
+          // Normal height, no extra padding needed
+          contentExpanded = false;
+          paddedHeight = currentHeight;
+      }
+      
+      // Optional: Set a maximum height
+      if (paddedHeight >= 1400) {
+          paddedHeight = 1400;
+      }
+      
+      window.parent.postMessage(
           { type: 'setHeight', height: paddedHeight },
           '*'
-        );
-
-      }
-      window.parent.postMessage(
-        { type: 'setHeight', height: paddedHeight },
-        '*'
       );
-    }    
+  }
     const originalAppendStatus = window.appendStatus || function(msg) { 
       const statusDiv = document.getElementById('status');
       if (statusDiv) {
@@ -462,6 +480,16 @@
 
     // --- Initial Setup and DOM Observer ---
     document.addEventListener('DOMContentLoaded', () => {
+       // Add translate button click handler
+      btnTranslate.addEventListener('click', () => {
+          // Set flag that content will expand
+          contentExpanded = true;
+          
+          // Trigger height update after a short delay (to allow content to render)
+          setTimeout(() => {
+              sendHeight();
+          }, 300);
+      });
       // Initial state setup: LOCK VIEWPORT IMMEDIATELY
       document.body.classList.add('loading-active');
       contentWrapper.style.opacity = '0';
@@ -471,6 +499,7 @@
       document.getElementById('download-json').addEventListener('click', downloadJson);
       loadingText.textContent = "Initializing search-query...";
       btnTranslate.disabled = true;
+      
 
       // Initialize Highlight.js
       hljs.highlightAll();
