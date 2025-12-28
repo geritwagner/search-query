@@ -251,16 +251,9 @@
     <script src="search_query_pkg_tree.js"></script>
     <script src="lint.js"></script>
     <script>
-         // Add this at the beginning of your script (right after hljs.configure)
+         // Add this at the beginning of your script
         const isEmbedded = window.parent !== window;
-        // In your DOMContentLoaded event or appendStatus function
-        if (isEmbedded) {
-          // If embedded, lock overflow during loading
-          document.body.style.overflow = 'hidden';
-        } else {
-          // If normal page, allow overflow
-          document.body.style.overflow = 'auto';
-        }
+        
         const PARENT_ORIGIN = window.location.origin;
 
         const loader = document.getElementById('loading-overlay');
@@ -268,6 +261,7 @@
         const contentWrapper = document.getElementById('content-wrapper');
         const statusDisplay = document.getElementById('status-display');
         const codeBlock = document.getElementById('output');
+        const btnLint = document.getElementById('btn-lint');
 
         // --- UTILITIES ---
         function copyJsonToClipboard() {
@@ -297,36 +291,86 @@
             URL.revokeObjectURL(url);
         }
 
-          function sendHeight() {
-              if (!isEmbedded) {
+        // Debounce to prevent excessive height updates
+        let heightTimeout;
+        function debouncedSendHeight() {
+            clearTimeout(heightTimeout);
+            heightTimeout = setTimeout(sendHeight, 150);
+        }
+
+        // CORRECTED sendHeight function - measures the LAST VISIBLE ELEMENT's bottom position
+        function sendHeight() {
+            // Only adjust iframe if we're embedded
+            if (!isEmbedded) {
                 document.body.style.overflowY = 'auto';
-                document.body.style.overflowX = 'hidden';
+                document.body.style.overflowX = 'auto';
                 return;
-              }
-              
-              document.body.style.overflowY = 'hidden';
-              document.body.style.overflowX = 'hidden';
-              
-              if (loader.style.display !== 'none') return;
-              
-              const wrapper = document.getElementById('content-wrapper');
-              if (!wrapper) return;
-              
-              // Get the full document height including padding
-              const height = Math.max(
-                document.body.scrollHeight, 
-                document.body.offsetHeight,
-                wrapper.scrollHeight
-              );
-              
-              // ADD a bit more to ensure no cutoff
-              const paddedHeight = height + 200; // Add 20px safety margin
-              
-              window.parent.postMessage(
-                { type: 'setHeight', height: paddedHeight },
+            }
+            
+            // Hide scrollbars when embedded
+            document.body.style.overflow = 'hidden';
+            
+            // Don't calculate during loading
+            if (loader.style.display !== 'none') return;
+            
+            // Get ALL elements inside content-wrapper
+            const wrapper = document.getElementById('content-wrapper');
+            if (!wrapper) return;
+            
+            const allElements = wrapper.getElementsByTagName('*');
+            let lastVisibleElement = null;
+            let maxBottom = 0;
+            
+            // Find the element with the highest bottom position (last visible element)
+            for (let element of allElements) {
+                const style = window.getComputedStyle(element);
+                
+                // Skip hidden elements
+                if (style.display === 'none' || style.visibility === 'hidden') {
+                    continue;
+                }
+                
+                // Get element's position
+                const rect = element.getBoundingClientRect();
+                
+                // Only consider elements that are actually in the view (have height)
+                if (rect.height > 0) {
+                    const elementBottom = rect.bottom + window.pageYOffset;
+                    
+                    // Track the element with the highest bottom position
+                    if (elementBottom > maxBottom) {
+                        maxBottom = elementBottom;
+                        lastVisibleElement = element;
+                    }
+                }
+            }
+            
+            // If no elements found, use the wrapper itself
+            if (!lastVisibleElement) {
+                lastVisibleElement = wrapper;
+                const rect = wrapper.getBoundingClientRect();
+                maxBottom = rect.bottom + window.pageYOffset;
+            }
+            
+            // Get the top of the document
+            const docTop = document.documentElement.getBoundingClientRect().top + window.pageYOffset;
+            
+            // Calculate height: from top of document to bottom of last visible element
+            const contentHeight = maxBottom - docTop;
+            
+            // Add a small buffer (20px) to prevent cut-off
+            const finalHeight = contentHeight + 20;
+            
+            // Send to parent frame
+            window.parent.postMessage(
+                { type: 'setHeight', height: Math.ceil(finalHeight) },
                 '*'
-              );
-            } 
+            );
+        }
+        
+        // Listen for resize events
+        window.addEventListener('resize', debouncedSendHeight);
+
         // --- PYODIDE SETUP ---
         const originalAppendStatus = window.appendStatus || function(msg) { 
             if (statusDisplay) statusDisplay.textContent = msg; 
@@ -336,37 +380,45 @@
             const cleanMsg = msg.replace(/\u001b\[.*?m/g, '').trim(); 
             if (loadingText) loadingText.textContent = cleanMsg;
 
-              if (cleanMsg.includes('Done') || cleanMsg.includes('ready') || cleanMsg.includes('Ready')) {
-                  // Done loading
-                  statusDisplay.innerText = 'Search Query loaded…';
-                  loader.style.opacity = '0';
-                  contentWrapper.style.opacity = '1';
-              
-                  setTimeout(() => {
+            if (cleanMsg.includes('Done') || cleanMsg.includes('ready') || cleanMsg.includes('Ready')) {
+                // Done loading
+                statusDisplay.innerText = 'Search Query loaded…';
+                loader.style.opacity = '0';
+                contentWrapper.style.opacity = '1';
+            
+                setTimeout(() => {
                     loader.style.display = 'none';
                     
                     // CRITICAL: Only lock overflow if embedded
                     if (isEmbedded) {
-                      document.body.style.overflow = 'hidden';
+                        document.body.style.overflow = 'hidden';
                     } else {
-                      document.body.style.overflow = 'auto';
+                        document.body.style.overflow = 'auto';
                     }
                     
-                    btnTranslate.disabled = false;
-                    sendHeight(); // Final resize
-                  }, 500);
-          } else {
+                    btnLint.disabled = false;
+                    debouncedSendHeight(); // Use debounced version
+                }, 500);
+            } else {
                 document.body.classList.add('loading-active');
                 loader.style.display = 'flex';
                 loader.style.opacity = '1';
                 contentWrapper.style.opacity = '0';
             }
+            
             originalAppendStatus(msg);
-            setTimeout(sendHeight, 50); 
+            setTimeout(debouncedSendHeight, 50); 
         };
 
         // --- INIT ---
         document.addEventListener('DOMContentLoaded', () => {
+            // Set initial overflow based on whether embedded
+            if (isEmbedded) {
+                document.body.style.overflow = 'hidden';
+            } else {
+                document.body.style.overflow = 'auto';
+            }
+            
             document.body.classList.add('loading-active');
             contentWrapper.style.opacity = '0';
             loader.style.display = 'flex'; 
@@ -374,11 +426,22 @@
 
             document.getElementById('copy-json').addEventListener('click', copyJsonToClipboard);
             document.getElementById('download-json').addEventListener('click', downloadJson);
+            
+            // When lint button is clicked
+            btnLint.addEventListener('click', () => {
+                // Wait for results to render, then update height
+                setTimeout(debouncedSendHeight, 800);
+            });
 
-            window.addEventListener('load', sendHeight);
-            const observer = new MutationObserver(sendHeight);
-            observer.observe(document.body, { attributes: true, childList: true, subtree: true });
-
+            window.addEventListener('load', debouncedSendHeight);
+            
+            // Observe DOM changes
+            const observer = new MutationObserver(debouncedSendHeight);
+            observer.observe(document.body, { 
+                attributes: true, 
+                childList: true, 
+                subtree: true 
+            });
 
         });
 
