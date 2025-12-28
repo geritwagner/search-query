@@ -23,7 +23,7 @@
             --text-secondary: #6b7280;
         }
 
-        /* --- Global Resets & Body Styles --- */
+        /* --- Global Resets & Body Styles for IFRAME --- */
         * { box-sizing: border-box; margin: 0; padding: 0; line-height: 1.5; font-family: 'Inter', sans-serif; }
         
         body {
@@ -32,21 +32,15 @@
             padding: 1.5rem; 
             min-height: 100vh;
             overflow-x: hidden;
+            overflow-y: auto;
             position: relative;
-            /* Add some bottom padding to prevent cut-off */
-            padding-bottom: 20px;
         }
 
-        /* When NOT in iframe, allow scrolling */
-        body:not(.iframe-mode) {
-            overflow-y: auto;
+        /* UTILITY CLASS FOR VIEWPORT LOCK */
+        body.loading-active {
+            height: 100vh;    /* Locks height */
         }
         
-        /* When IN iframe, prevent scrolling */
-        body.iframe-mode {
-            overflow-y: hidden;
-        }
-
         /* --- Layout & Typography --- */
         header h1 { font-size: 1.5rem; font-weight: bold; margin-bottom: 0.25rem; }
         header p { color: var(--text-secondary); margin-top: 0; font-size: 0.95rem; }
@@ -159,12 +153,12 @@
             height: 100%;
             background-color: rgba(255, 255, 255, 0.95);
             z-index: 1000;
-            display: none; /* Start hidden */
+            display: flex; 
             flex-direction: column;
             justify-content: center;
             align-items: center;
             transition: opacity 0.5s ease;
-            opacity: 0;
+            opacity: 1;
         }
         .loader {
             border: 4px solid var(--border-color);
@@ -186,11 +180,8 @@
             100% { transform: rotate(360deg); }
         }
         
-        /* Content wrapper */
-        #content-wrapper { 
-            opacity: 1;
-            display: block;
-        }
+        /* Utility to hide the content on load */
+        #content-wrapper { transition: opacity 0.5s ease; opacity: 0; }
         
         /* Narrower platform select */
         #platform {
@@ -258,7 +249,7 @@
     <script src="tokenize.js"></script>
     
     <script>
-        // Check if we're in an iframe
+        // Add this at the beginning of your script
         const isEmbedded = window.parent !== window;
         
         const loader = document.getElementById('loading-overlay');
@@ -266,6 +257,7 @@
         const contentWrapper = document.getElementById('content-wrapper');
         const statusDisplay = document.getElementById('status-display');
         const btnTokenize = document.getElementById('btn-tokenize');
+        const codeBlock = document.getElementById('output');
 
         // --- Highlighting Logic ---
         hljs.configure({ ignoreUnescapedHTML: true });
@@ -288,86 +280,162 @@
             console.log('JSON output highlighted with VS Code theme');
         }
 
-        // SIMPLE AND ACCURATE sendHeight function
-        function sendHeight() {
-            // Only send height if we're in an iframe
-            if (!isEmbedded) {
-                return;
-            }
-            
-            // Don't calculate during loading
-            if (loader.style.display === 'flex') return;
-            
-            // Get the exact total height of the document
-            // This includes all content, padding, margins
-            const height = document.documentElement.scrollHeight;
-            
-            // Send to parent iframe
-            window.parent.postMessage(
-                { 
-                    type: 'setHeight', 
-                    height: height 
-                },
-                '*'
-            );
-            
-            console.log('Sent height to parent:', height);
+        // --- UTILITIES ---
+        function copyJsonToClipboard() {
+            const jsonText = codeBlock.textContent; 
+            navigator.clipboard.writeText(jsonText).then(() => {
+                const copyBtn = document.getElementById('copy-json');
+                const originalHTML = copyBtn.innerHTML;
+                copyBtn.innerHTML = '<i class="fas fa-check"></i>';
+                copyBtn.classList.add('copied');
+                setTimeout(() => {
+                    copyBtn.innerHTML = originalHTML;
+                    copyBtn.classList.remove('copied');
+                }, 2000);
+            });
         }
-        
+
+        function downloadJson() {
+            const jsonText = codeBlock.textContent;
+            const blob = new Blob([jsonText], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'tokenizer-output.json';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
         // Debounce to prevent excessive height updates
         let heightTimeout;
         function debouncedSendHeight() {
             clearTimeout(heightTimeout);
-            heightTimeout = setTimeout(sendHeight, 100);
+            heightTimeout = setTimeout(sendHeight, 150);
+        }
+
+        // SAME sendHeight function as your working linter
+        function sendHeight() {
+            // Only adjust iframe if we're embedded
+            if (!isEmbedded) {
+                document.body.style.overflowY = 'auto';
+                document.body.style.overflowX = 'auto';
+                return;
+            }
+            
+            // Hide scrollbars when embedded
+            document.body.style.overflow = 'hidden';
+            
+            // Don't calculate during loading
+            if (loader.style.display !== 'none') return;
+            
+            // Get ALL elements inside content-wrapper
+            const wrapper = document.getElementById('content-wrapper');
+            if (!wrapper) return;
+            
+            const allElements = wrapper.getElementsByTagName('*');
+            let lastVisibleElement = null;
+            let maxBottom = 0;
+            
+            // Find the element with the highest bottom position (last visible element)
+            for (let element of allElements) {
+                const style = window.getComputedStyle(element);
+                
+                // Skip hidden elements
+                if (style.display === 'none' || style.visibility === 'hidden') {
+                    continue;
+                }
+                
+                // Get element's position
+                const rect = element.getBoundingClientRect();
+                
+                // Only consider elements that are actually in the view (have height)
+                if (rect.height > 0) {
+                    const elementBottom = rect.bottom + window.pageYOffset;
+                    
+                    // Track the element with the highest bottom position
+                    if (elementBottom > maxBottom) {
+                        maxBottom = elementBottom;
+                        lastVisibleElement = element;
+                    }
+                }
+            }
+            
+            // If no elements found, use the wrapper itself
+            if (!lastVisibleElement) {
+                lastVisibleElement = wrapper;
+                const rect = wrapper.getBoundingClientRect();
+                maxBottom = rect.bottom + window.pageYOffset;
+            }
+            
+            // Get the top of the document
+            const docTop = document.documentElement.getBoundingClientRect().top + window.pageYOffset;
+            
+            // Calculate height: from top of document to bottom of last visible element
+            const contentHeight = maxBottom - docTop;
+            
+            // Add a small buffer (20px) to prevent cut-off
+            const finalHeight = contentHeight + 20;
+            
+            // Send to parent frame
+            window.parent.postMessage(
+                { type: 'setHeight', height: Math.ceil(finalHeight) },
+                '*'
+            );
         }
         
         // Listen for resize events
         window.addEventListener('resize', debouncedSendHeight);
         
-        // Listen for button clicks to update height after content changes
-        btnTokenize.addEventListener('click', () => {
-            setTimeout(debouncedSendHeight, 800);
-        });
-
         // --- Pyodide Status Hook and Loader Control ---
         
         const originalAppendStatus = window.appendStatus || function(msg) { 
             const statusDiv = document.getElementById('status');
             if (statusDiv) {
+                // If Pyodide outputs complex status (which includes ANSI codes), write to hidden div
                 statusDiv.textContent = msg; 
             }
             console.log("Pyodide Hook:", msg); 
         };
         
         window.appendStatus = function(msg) {
-            const cleanMsg = msg.replace(/\u001b\[.*?m/g, '').trim(); 
-            
-            // Update loading text
-            loadingText.textContent = cleanMsg || "Loading...";
-            statusDisplay.textContent = cleanMsg || "Loading...";
-            
-            // Show loader
-            loader.style.display = 'flex';
-            setTimeout(() => {
-                loader.style.opacity = '1';
-            }, 10);
-            
-            // When ready, hide loader
+            // 1. Update the visual status text
+            const cleanMsg = msg.replace(/\u001b\[.*?m/g, ''); 
+            if (loadingText) loadingText.textContent = cleanMsg;
+
+            // 2. Control the visual transition state and viewport lock
             if (cleanMsg.includes('Done') || cleanMsg.includes('ready') || cleanMsg.includes('Ready')) {
+                // Done loading: Unlock viewport, fade out loader, show content
+                document.body.classList.remove('loading-active');
+                statusDisplay.innerText = 'Search Query loaded…';
+                loader.style.opacity = '0';
+                contentWrapper.style.opacity = '1';
+
                 setTimeout(() => {
-                    loader.style.opacity = '0';
-                    setTimeout(() => {
-                        loader.style.display = 'none';
-                        btnTokenize.disabled = false;
-                        // Update height after loading
-                        setTimeout(debouncedSendHeight, 100);
-                    }, 500);
+                    loader.style.display = 'none';
+                    
+                    // CRITICAL: Only lock overflow if embedded
+                    if (isEmbedded) {
+                        document.body.style.overflow = 'hidden';
+                    } else {
+                        document.body.style.overflow = 'auto';
+                    }
+                    
+                    btnTokenize.disabled = false;
+                    debouncedSendHeight(); // Final resize
                 }, 500);
+            } else {
+                // Loading: Lock viewport
+                document.body.classList.add('loading-active');
+                loader.style.display = 'flex';
+                loader.style.opacity = '1';
+                contentWrapper.style.opacity = '0';
             }
-            
+
+            // 3. Call the original function and re-trigger height update 
             originalAppendStatus(msg);
-            // Update height periodically during loading
-            setTimeout(debouncedSendHeight, 50);
+            setTimeout(debouncedSendHeight, 50); 
         };
         
         // --- Append module with interval stopped after ready ---
@@ -380,64 +448,63 @@
             statusDisplay.innerText = lastLine || "Loading…";
 
             if (lastLine.includes("search-query ready.")) {
-                loader.style.opacity = '0';
-                setTimeout(() => {
-                    loader.style.display = 'none';
-                    btnTokenize.disabled = false;
-                    clearInterval(appendInterval);
-                    // Final height update
-                    setTimeout(debouncedSendHeight, 200);
-                }, 500);
+                loader.style.display = 'none';
+                contentWrapper.style.display = 'block';
+                contentWrapper.style.opacity = '1';
+                statusText.innerText = 'Search Query Ready';
+                statusDisplay.innerText = 'Search Query Ready';
+                
+                // Enable the tokenize button
+                btnTokenize.disabled = false;
+                
+                // Stop the interval to prevent unnecessary height updates
+                clearInterval(appendInterval);
+
+                // Send final height once
+                sendHeight();
             }
         }, 100);
-        
-        // --- Initial Setup ---
+
+        // --- Initial Setup and DOM Observer ---
         document.addEventListener('DOMContentLoaded', () => {
-            // Apply iframe-mode class if embedded
-            if (isEmbedded) {
-                document.body.classList.add('iframe-mode');
-                document.body.style.overflow = 'hidden';
-            } else {
-                document.body.classList.remove('iframe-mode');
-                document.body.style.overflow = 'auto';
+            // Initial state setup: LOCK VIEWPORT IMMEDIATELY
+            document.body.classList.add('loading-active');
+            contentWrapper.style.opacity = '0';
+            contentWrapper.style.display = 'none';
+            loader.style.display = 'flex'; 
+            loadingText.textContent = "Initializing search-query...";
+            btnTokenize.disabled = true;
+
+            // Add copy/download buttons event listeners if they exist
+            const copyBtn = document.getElementById('copy-json');
+            const downloadBtn = document.getElementById('download-json');
+            
+            if (copyBtn) {
+                copyBtn.addEventListener('click', copyJsonToClipboard);
             }
             
-            // Show content immediately
-            contentWrapper.style.opacity = '1';
-            contentWrapper.style.display = 'block';
+            if (downloadBtn) {
+                downloadBtn.addEventListener('click', downloadJson);
+            }
             
-            // Show loader
-            loader.style.display = 'flex';
-            setTimeout(() => {
-                loader.style.opacity = '1';
-            }, 10);
-            
-            loadingText.textContent = "Initializing search-query...";
-            statusDisplay.textContent = "Initializing search-query...";
-            btnTokenize.disabled = true;
+            // When tokenize button is clicked
+            btnTokenize.addEventListener('click', () => {
+                // Wait for results to render, then update height
+                setTimeout(debouncedSendHeight, 800);
+            });
 
             // Initialize Highlight.js
             hljs.highlightAll();
 
-            // Initial height send
-            setTimeout(debouncedSendHeight, 200);
+            // 1. Send initial minimal height
+            window.addEventListener('load', sendHeight);
             
-            // Observe DOM changes for height updates
+            // 2. Observe DOM changes (Crucial for when the output table appears/disappears)
             const observer = new MutationObserver(debouncedSendHeight);
             observer.observe(document.body, { 
                 attributes: true, 
                 childList: true, 
                 subtree: true 
-            });
-            
-            // Send height on window load
-            window.addEventListener('load', () => {
-                setTimeout(debouncedSendHeight, 300);
-            });
-            
-            // Send height when details (expandable sections) are toggled
-            document.querySelectorAll('details').forEach(details => {
-                details.addEventListener('toggle', debouncedSendHeight);
             });
         });
     </script>
