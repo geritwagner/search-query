@@ -26,20 +26,27 @@
       --text-main: #1f2937;     /* Dark Gray */
       --text-secondary: #6b7280; /* Medium Gray */
     }
-
+    #result, #messages {
+      max-height: none !important; /* Remove the 400px limit if it exists */
+    }
+    
     /* --- Global Resets & Body Styles for IFRAME --- */
     * { box-sizing: border-box; margin: 0; padding: 0; line-height: 1.5; font-family: 'Inter', sans-serif; }
-    
+    html {
+      height: auto !important;
+      min-height: 100% !important;
+    }
     /* Add to your CSS */
     body {
       background-color: var(--bg-card);
       color: var(--text-main);
       padding: 1.5rem; 
-      min-height: 100vh;
       overflow-x: hidden;
       overflow-y: auto;
+      height: auto !important;
+      min-height: 100% !important;
+      margin: 0 !important;
       position: relative;
-      
       /* ADD THIS: Extra bottom padding for iframe safety */
       padding-bottom: 10px !important;
     }    
@@ -371,69 +378,76 @@
   }
   
   function sendHeight() {
-      if (!isEmbedded) {
-          document.body.style.overflowY = 'auto';
-          document.body.style.overflowX = 'hidden';
-          return;
-      }
-      
-      document.body.style.overflowY = 'hidden';
-      document.body.style.overflowX = 'hidden';
-      
-      if (loader.style.display !== 'none') return;
-      
-      // Method 1: Most reliable - get the bottom of the last visible element
-      const allElements = document.body.querySelectorAll('*');
-      let maxBottom = 0;
-      
-      for (const el of allElements) {
-          if (el.offsetParent !== null) { // Only visible elements
-              const rect = el.getBoundingClientRect();
-              const bottom = rect.bottom + window.pageYOffset;
-              if (bottom > maxBottom) {
-                  maxBottom = bottom;
-              }
-          }
-      }
-      
-      // Add padding from body styles
-      const bodyStyle = window.getComputedStyle(document.body);
-      const paddingBottom = parseInt(bodyStyle.paddingBottom) || 0;
-      const marginBottom = parseInt(bodyStyle.marginBottom) || 0;
-      
-      // Calculate final height with small buffer
-      const finalHeight = Math.max(
-          maxBottom + paddingBottom + marginBottom + 10, // 10px extra safety
-          document.documentElement.scrollHeight,
-          document.body.scrollHeight
-      );
-      
-      // Cap at reasonable maximum if needed (optional)
-      const cappedHeight = Math.min(finalHeight, 2000);
-      
-      window.parent.postMessage(
-          { type: 'setHeight', height: cappedHeight },
-          '*'
+    // Only run if embedded in iframe
+    if (!isEmbedded) {
+        document.body.style.overflowY = 'auto';
+        document.body.style.overflowX = 'auto';
+        return;
+    }
+    
+    // Hide scrollbars when embedded
+    document.body.style.overflow = 'hidden';
+    
+    // Don't calculate during loading
+    if (loader.style.display !== 'none') return;
+    
+    // Method 1: Check which sections are visible and find the last one
+    const sections = [
+        document.getElementById('messages'),
+        document.getElementById('result'),
+        document.getElementById('status-display'),
+        document.querySelector('.row'),
+        document.querySelector('header')
+    ];
+    
+    let lastVisibleElement = document.body;
+    
+    // Find the last visible element from bottom up
+    for (let i = sections.length - 1; i >= 0; i--) {
+        const section = sections[i];
+        if (section && section.offsetParent !== null && 
+            window.getComputedStyle(section).display !== 'none') {
+            lastVisibleElement = section;
+            break;
+        }
+    }
+    
+    // Method 2: Fallback to document scrollHeight
+    const scrollHeight = document.documentElement.scrollHeight;
+    
+    // Method 3: Get the actual bottom of the last element
+    const rect = lastVisibleElement.getBoundingClientRect();
+    const elementBottom = rect.bottom + window.pageYOffset;
+    const docTop = document.documentElement.getBoundingClientRect().top + window.pageYOffset;
+    const heightFromElement = elementBottom - docTop;
+    
+    // Use the maximum of all measurements
+    const finalHeight = Math.max(scrollHeight, heightFromElement) + 30;
+    
+    // Cap at reasonable maximum (optional)
+    const cappedHeight = Math.min(finalHeight, 2500);
+    
+    // Send to parent frame
+    window.parent.postMessage(
+        { type: 'setHeight', height: Math.ceil(cappedHeight) },
+        '*'
       );
   }
   
-  // Update your MutationObserver to use debounced version
-  const observer = new MutationObserver(debouncedSendHeight);
-  observer.observe(document.body, { 
-      attributes: true, 
-      childList: true, 
-      subtree: true,
-      characterData: true 
-  });
+  // Use a debounced version to prevent excessive calls
+  let heightTimeout;
+  function debouncedSendHeight() {
+      clearTimeout(heightTimeout);
+      heightTimeout = setTimeout(sendHeight, 150);
+  }
+  
+  
+  
+  
   
   // Also listen for resize events
   window.addEventListener('resize', debouncedSendHeight);
   
-  // Update the translate button click handler
-  btnTranslate.addEventListener('click', () => {
-      // Force a height check after translation completes
-      setTimeout(debouncedSendHeight, 500); // Wait for content to render
-  });    
     const originalAppendStatus = window.appendStatus || function(msg) { 
       const statusDiv = document.getElementById('status');
       if (statusDiv) {
@@ -444,6 +458,9 @@
     };
     
     window.appendStatus = function(msg) {
+      // After status updates, trigger height check
+      setTimeout(debouncedSendHeight, 50);
+  
       // 1. Update the visual status text in status-display
       const cleanMsg = msg.replace(/\u001b\[.*?m/g, ''); 
       if (loadingText) loadingText.textContent = cleanMsg;
@@ -503,16 +520,11 @@
 
     // --- Initial Setup and DOM Observer ---
     document.addEventListener('DOMContentLoaded', () => {
-       // Add translate button click handler
+      // When translate button is clicked
       btnTranslate.addEventListener('click', () => {
-          // Set flag that content will expand
-          contentExpanded = true;
-          
-          // Trigger height update after a short delay (to allow content to render)
-          setTimeout(() => {
-              sendHeight();
-          }, 300);
-      });
+          // Wait for results to render, then update height
+          setTimeout(debouncedSendHeight, 800);
+      });      
       // Initial state setup: LOCK VIEWPORT IMMEDIATELY
       document.body.classList.add('loading-active');
       contentWrapper.style.opacity = '0';
@@ -531,8 +543,14 @@
       window.addEventListener('load', sendHeight);
       
       // 2. Observe DOM changes (Crucial for when the output table appears/disappears)
-      const observer = new MutationObserver(sendHeight);
-      observer.observe(document.body, { attributes: true, childList: true, subtree: true });
+      // In your MutationObserver:
+      const observer = new MutationObserver(debouncedSendHeight);
+      observer.observe(document.body, { 
+          childList: true, 
+          subtree: true,
+          attributes: true 
+      });
+
     });
 
   </script>
