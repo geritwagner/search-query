@@ -22,17 +22,33 @@
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; line-height: 1.5; font-family: 'Inter', sans-serif; }
+        /* Add to your CSS */
         body {
-            background-color: var(--bg-card);
-            color: var(--text-main);
-            padding: 1.5rem; 
-            min-height: 100vh;
-            overflow-x: hidden;
-            overflow-y: hidden; 
-            position: relative;
+          background-color: var(--bg-card);
+          color: var(--text-main);
+          padding: 1.5rem; 
+          min-height: 100vh;
+          overflow-x: hidden;
+          overflow-y: auto;
+          position: relative;
+          
+          /* ADD THIS: Extra bottom padding for iframe safety */
+          padding-bottom: 30px !important;
+        }    
+        #content-wrapper {
+          min-height: 100%;
+          overflow-y: auto;
+          overflow-x: hidden;
+          
+          /* ADD THIS: Extra padding at bottom */
+          padding-bottom: 20px;
+        }
+    
+        /* UTILITY CLASS FOR VIEWPORT LOCK */
+        body.loading-active {
+          height: 100vh;    /* Locks height */
         }
         
-        body.loading-active { overflow: hidden; height: 100vh; }
 
         header h1 { font-size: 1.5rem; font-weight: bold; margin-bottom: 0.25rem; }
         header p { color: var(--text-secondary); margin-top: 0; font-size: 0.95rem; }
@@ -235,6 +251,16 @@
     <script src="search_query_pkg_tree.js"></script>
     <script src="lint.js"></script>
     <script>
+         // Add this at the beginning of your script (right after hljs.configure)
+        const isEmbedded = window.parent !== window;
+        // In your DOMContentLoaded event or appendStatus function
+        if (isEmbedded) {
+          // If embedded, lock overflow during loading
+          document.body.style.overflow = 'hidden';
+        } else {
+          // If normal page, allow overflow
+          document.body.style.overflow = 'auto';
+        }
         const PARENT_ORIGIN = window.location.origin;
 
         const loader = document.getElementById('loading-overlay');
@@ -271,14 +297,36 @@
             URL.revokeObjectURL(url);
         }
 
-        function sendHeight() {
-            if (document.body.classList.contains('loading-active')) return;
-            const height = document.body.scrollHeight;
-            if (window.parent) {
-                window.parent.postMessage({ type: 'setHeight', height: height }, "*");
-            }
-        }
-
+          function sendHeight() {
+              if (!isEmbedded) {
+                document.body.style.overflowY = 'auto';
+                document.body.style.overflowX = 'hidden';
+                return;
+              }
+              
+              document.body.style.overflowY = 'hidden';
+              document.body.style.overflowX = 'hidden';
+              
+              if (loader.style.display !== 'none') return;
+              
+              const wrapper = document.getElementById('content-wrapper');
+              if (!wrapper) return;
+              
+              // Get the full document height including padding
+              const height = Math.max(
+                document.body.scrollHeight, 
+                document.body.offsetHeight,
+                wrapper.scrollHeight
+              );
+              
+              // ADD a bit more to ensure no cutoff
+              const paddedHeight = height + 200; // Add 20px safety margin
+              
+              window.parent.postMessage(
+                { type: 'setHeight', height: paddedHeight },
+                '*'
+              );
+            } 
         // --- PYODIDE SETUP ---
         const originalAppendStatus = window.appendStatus || function(msg) { 
             if (statusDisplay) statusDisplay.textContent = msg; 
@@ -288,17 +336,26 @@
             const cleanMsg = msg.replace(/\u001b\[.*?m/g, '').trim(); 
             if (loadingText) loadingText.textContent = cleanMsg;
 
-            if (cleanMsg.includes('Done') || cleanMsg.includes('ready') || cleanMsg.includes('Ready')) {
-                document.body.classList.remove('loading-active');
-                loader.style.opacity = '0';
-                contentWrapper.style.opacity = '1';
-
-                setTimeout(() => {
+              if (cleanMsg.includes('Done') || cleanMsg.includes('ready') || cleanMsg.includes('Ready')) {
+                  // Done loading
+                  statusDisplay.innerText = 'Search Query loaded…';
+                  loader.style.opacity = '0';
+                  contentWrapper.style.opacity = '1';
+              
+                  setTimeout(() => {
                     loader.style.display = 'none';
-                    document.body.style.overflow = '';
-                    sendHeight();
-                }, 500);
-            } else {
+                    
+                    // CRITICAL: Only lock overflow if embedded
+                    if (isEmbedded) {
+                      document.body.style.overflow = 'hidden';
+                    } else {
+                      document.body.style.overflow = 'auto';
+                    }
+                    
+                    btnTranslate.disabled = false;
+                    sendHeight(); // Final resize
+                  }, 500);
+          } else {
                 document.body.classList.add('loading-active');
                 loader.style.display = 'flex';
                 loader.style.opacity = '1';
