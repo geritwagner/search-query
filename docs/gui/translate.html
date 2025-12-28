@@ -380,7 +380,14 @@
       
       // ADD a bit more to ensure no cutoff
       const paddedHeight = height + 200; // Add 20px safety margin
-      
+      if(paddedHeight => 1400){
+        paddedHeight = 1400
+        window.parent.postMessage(
+          { type: 'setHeight', height: paddedHeight },
+          '*'
+        );
+
+      }
       window.parent.postMessage(
         { type: 'setHeight', height: paddedHeight },
         '*'
