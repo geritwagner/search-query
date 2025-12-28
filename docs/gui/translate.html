@@ -13,6 +13,10 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
   
   <style>
+    html, body {
+    height: auto;
+    min-height: 100%;
+  }
     /* --- CSS Variables (Ensure consistency with Host) --- */
     :root {
       --primary: #4f46e5;       /* Indigo */
@@ -37,7 +41,7 @@
       position: relative;
       
       /* ADD THIS: Extra bottom padding for iframe safety */
-      padding-bottom: 30px !important;
+      padding-bottom: 10px !important;
     }    
     #content-wrapper {
       min-height: 100%;
@@ -359,6 +363,13 @@
       URL.revokeObjectURL(url);
   }
 
+  // Debounce to prevent excessive height updates
+  let resizeTimeout;
+  function debouncedSendHeight() {
+      clearTimeout(resizeTimeout);
+      resizeTimeout = setTimeout(sendHeight, 100);
+  }
+  
   function sendHeight() {
       if (!isEmbedded) {
           document.body.style.overflowY = 'auto';
@@ -371,46 +382,58 @@
       
       if (loader.style.display !== 'none') return;
       
-      const wrapper = document.getElementById('content-wrapper');
-      if (!wrapper) return;
+      // Method 1: Most reliable - get the bottom of the last visible element
+      const allElements = document.body.querySelectorAll('*');
+      let maxBottom = 0;
       
-      // Get the full document height including padding
-      const currentHeight = Math.max(
-          document.body.scrollHeight,
-          document.body.offsetHeight,
-          wrapper.scrollHeight
+      for (const el of allElements) {
+          if (el.offsetParent !== null) { // Only visible elements
+              const rect = el.getBoundingClientRect();
+              const bottom = rect.bottom + window.pageYOffset;
+              if (bottom > maxBottom) {
+                  maxBottom = bottom;
+              }
+          }
+      }
+      
+      // Add padding from body styles
+      const bodyStyle = window.getComputedStyle(document.body);
+      const paddingBottom = parseInt(bodyStyle.paddingBottom) || 0;
+      const marginBottom = parseInt(bodyStyle.marginBottom) || 0;
+      
+      // Calculate final height with small buffer
+      const finalHeight = Math.max(
+          maxBottom + paddingBottom + marginBottom + 10, // 10px extra safety
+          document.documentElement.scrollHeight,
+          document.body.scrollHeight
       );
       
-      // Store initial height if not set
-      if (initialHeight === 0) {
-          initialHeight = currentHeight;
-      }
-      
-      // Calculate padding only if content has expanded significantly
-      let paddedHeight = currentHeight;
-      
-      // Only add extra padding if content has grown (like when results are shown)
-      // Check if current height is more than initial + some threshold
-      if (currentHeight > initialHeight + 100) {
-          // Content has expanded (probably results shown)
-          contentExpanded = true;
-          paddedHeight = currentHeight + 200; // Add extra padding for results
-      } else {
-          // Normal height, no extra padding needed
-          contentExpanded = false;
-          paddedHeight = currentHeight;
-      }
-      
-      // Optional: Set a maximum height
-      if (paddedHeight >= 1400) {
-          paddedHeight = 1400;
-      }
+      // Cap at reasonable maximum if needed (optional)
+      const cappedHeight = Math.min(finalHeight, 2000);
       
       window.parent.postMessage(
-          { type: 'setHeight', height: paddedHeight },
+          { type: 'setHeight', height: cappedHeight },
           '*'
       );
   }
+  
+  // Update your MutationObserver to use debounced version
+  const observer = new MutationObserver(debouncedSendHeight);
+  observer.observe(document.body, { 
+      attributes: true, 
+      childList: true, 
+      subtree: true,
+      characterData: true 
+  });
+  
+  // Also listen for resize events
+  window.addEventListener('resize', debouncedSendHeight);
+  
+  // Update the translate button click handler
+  btnTranslate.addEventListener('click', () => {
+      // Force a height check after translation completes
+      setTimeout(debouncedSendHeight, 500); // Wait for content to render
+  });    
     const originalAppendStatus = window.appendStatus || function(msg) { 
       const statusDiv = document.getElementById('status');
       if (statusDiv) {
