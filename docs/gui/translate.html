@@ -26,6 +26,7 @@
     /* --- Global Resets & Body Styles for IFRAME --- */
     * { box-sizing: border-box; margin: 0; padding: 0; line-height: 1.5; font-family: 'Inter', sans-serif; }
     
+    /* Add to your CSS */
     body {
       background-color: var(--bg-card);
       color: var(--text-main);
@@ -34,13 +35,18 @@
       overflow-x: hidden;
       overflow-y: auto;
       position: relative;
-    }
+      
+      /* ADD THIS: Extra bottom padding for iframe safety */
+      padding-bottom: 30px !important;
+    }    
     #content-wrapper {
       min-height: 100%;
       overflow-y: auto;
       overflow-x: hidden;
+      
+      /* ADD THIS: Extra padding at bottom */
+      padding-bottom: 20px;
     }
-
 
     /* UTILITY CLASS FOR VIEWPORT LOCK */
     body.loading-active {
@@ -373,7 +379,7 @@
       );
       
       // ADD a bit more to ensure no cutoff
-      const paddedHeight = height + 20; // Add 20px safety margin
+      const paddedHeight = height + 50; // Add 20px safety margin
       
       window.parent.postMessage(
         { type: 'setHeight', height: paddedHeight },
