@@ -473,6 +473,10 @@
             DOM.menuToggle.style.display = 'none';
             DOM.closeMenuBtn.style.display = 'none';
             DOM.backdrop.style.display = 'none';
+            // Hide sidebar and header for iframe mode
+            DOM.sidebar.style.display = 'none';
+            document.getElementById('mobile-header').style.display = 'none';
+            document.getElementById('backdrop').style.display = 'none';
         }
 
         // Storage keys
@@ -527,21 +531,64 @@
         function sendHeight() {
             // Only adjust iframe if we're embedded
             if (!isEmbedded) {
+                document.body.style.overflowY = 'auto';
+                document.body.style.overflowX = 'auto';
                 return;
             }
+            
+            // Hide scrollbars when embedded
+            document.body.style.overflow = 'hidden';
             
             // Don't calculate during loading
             if (loader.style.display !== 'none') return;
             
-            // Get the visualizer content wrapper
-            const visualizerContent = document.getElementById('visualizer-content');
-            if (!visualizerContent) return;
+            // Get ALL elements inside content-wrapper
+            const wrapper = document.getElementById('content-wrapper');
+            if (!wrapper) return;
             
-            // Calculate the height of the visualizer content
-            const height = visualizerContent.scrollHeight;
+            const allElements = wrapper.getElementsByTagName('*');
+            let lastVisibleElement = null;
+            let maxBottom = 0;
             
-            // Add some padding
-            const finalHeight = height + 40;
+            // Find the element with the highest bottom position (last visible element)
+            for (let element of allElements) {
+                const style = window.getComputedStyle(element);
+                
+                // Skip hidden elements
+                if (style.display === 'none' || style.visibility === 'hidden') {
+                    continue;
+                }
+                
+                // Get element's position
+                const rect = element.getBoundingClientRect();
+                
+                // Only consider elements that are actually in the view (have height)
+                if (rect.height > 0) {
+                    const elementBottom = rect.bottom + window.pageYOffset;
+                    
+                    // Track the element with the highest bottom position
+                    if (elementBottom > maxBottom) {
+                        maxBottom = elementBottom;
+                        lastVisibleElement = element;
+                    }
+                }
+            }
+            
+            // If no elements found, use the wrapper itself
+            if (!lastVisibleElement) {
+                lastVisibleElement = wrapper;
+                const rect = wrapper.getBoundingClientRect();
+                maxBottom = rect.bottom + window.pageYOffset;
+            }
+            
+            // Get the top of the document
+            const docTop = document.documentElement.getBoundingClientRect().top + window.pageYOffset;
+            
+            // Calculate height: from top of document to bottom of last visible element
+            const contentHeight = maxBottom - docTop;
+            
+            // Add a small buffer (20px) to prevent cut-off
+            const finalHeight = contentHeight + 20;
             
             // Send to parent frame
             window.parent.postMessage(
@@ -568,42 +615,77 @@
             loader.style.display = 'flex'; 
             loadingText.textContent = "Initializing Search Query...";
 
-            // Check if we need to wait for Pyodide or if structure.js loads immediately
-            // Since you said it should work perfectly as is, we'll assume structure.js works immediately
-            // But we'll add a small delay to show the loading animation
-            setTimeout(() => {
-                // Hide loader and show content
-                loader.style.opacity = '0';
-                contentWrapper.style.opacity = '1';
+            // Set initial overflow based on whether embedded
+            if (isEmbedded) {
+                document.body.style.overflow = 'hidden';
+            } else {
+                document.body.style.overflow = 'auto';
+            }
+
+            // Pyodide loading handler
+            const originalAppendStatus = window.appendStatus || function(msg) { 
+                console.log("Pyodide:", msg); 
+            };
+
+            window.appendStatus = function(msg) {
+                const cleanMsg = msg.replace(/\u001b\[.*?m/g, '').trim(); 
+                if (loadingText) loadingText.textContent = cleanMsg;
+
+                if (cleanMsg.includes('Done') || cleanMsg.includes('ready') || cleanMsg.includes('Ready')) {
+                    // Done loading
+                    loader.style.opacity = '0';
+                    contentWrapper.style.opacity = '1';
+
+                    setTimeout(() => {
+                        loader.style.display = 'none';
+                        
+                        // CRITICAL: Only lock overflow if embedded
+                        if (isEmbedded) {
+                            document.body.style.overflow = 'hidden';
+                        } else {
+                            document.body.style.overflow = 'auto';
+                        }
+                        
+                        document.body.classList.remove('loading-active');
+                        debouncedSendHeight();
+                    }, 500);
+                } else {
+                    document.body.classList.add('loading-active');
+                    loader.style.display = 'flex';
+                    loader.style.opacity = '1';
+                    contentWrapper.style.opacity = '0';
+                }
                 
-                setTimeout(() => {
-                    loader.style.display = 'none';
-                    document.body.classList.remove('loading-active');
+                originalAppendStatus(msg);
+                setTimeout(debouncedSendHeight, 50); 
+            };
+
+            // If structure.js doesn't use Pyodide, set a timeout to hide loader
+            setTimeout(() => {
+                if (loader.style.display !== 'none') {
+                    // If loader is still showing after 3 seconds, hide it
+                    loader.style.opacity = '0';
+                    contentWrapper.style.opacity = '1';
                     
-                    // Send initial height
-                    debouncedSendHeight();
-                    
-                    // If embedded, hide overflow
-                    if (isEmbedded) {
-                        document.body.style.overflow = 'hidden';
-                    }
-                }, 500);
-            }, 1000); // 1 second loading time
+                    setTimeout(() => {
+                        loader.style.display = 'none';
+                        document.body.classList.remove('loading-active');
+                        debouncedSendHeight();
+                    }, 500);
+                }
+            }, 3000);
 
             // Listen for resize events
             window.addEventListener('resize', debouncedSendHeight);
             
             // Observe DOM changes for dynamic content
             const observer = new MutationObserver(debouncedSendHeight);
-            observer.observe(document.getElementById('visualizer-content'), { 
+            observer.observe(document.body, { 
                 attributes: true, 
                 childList: true, 
                 subtree: true 
             });
 
-            // Initial height calculation
-            setTimeout(debouncedSendHeight, 1500);
-            
             // Also send height when the visualize button is clicked
             const btnVisualize = document.getElementById('btn-visualize');
             if (btnVisualize) {
@@ -611,13 +693,18 @@
                     setTimeout(debouncedSendHeight, 300);
                 });
             }
-        });
 
-        // Listen for messages from parent iframe (if any)
-        window.addEventListener('message', (event) => {
-            if (event.data && event.data.type === 'getHeight') {
-                debouncedSendHeight();
-            }
+            // Initial height calculation
+            setTimeout(debouncedSendHeight, 100);
+            
+            window.addEventListener('load', debouncedSendHeight);
+            
+            // Listen for messages from parent iframe (if any)
+            window.addEventListener('message', (event) => {
+                if (event.data && event.data.type === 'getHeight') {
+                    debouncedSendHeight();
+                }
+            });
         });
     </script>
 </body>
