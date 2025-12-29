@@ -206,20 +206,14 @@
             height: 100vh;
         }
         
-        /* --- YOUR ORIGINAL VISUALIZER STYLES (KEPT EXACTLY AS IS) --- */
-        /* This section preserves all your original styles */
-        .visualizer-original-styles {
-            /* Your original body style - but we need to override some for the wrapper */
-        }
-        
-        /* We need to target the content inside #visualizer-content specifically */
+        /* --- YOUR ORIGINAL VISUALIZER STYLES --- */
         #visualizer-content {
             background-color: var(--bg-card);
             color: var(--text-main);
             padding: 1.5rem;
-            min-height: 100vh;
+            min-height: auto;
             overflow-x: hidden;
-            overflow-y: auto;
+            overflow-y: visible;
             position: relative;
         }
         
@@ -338,7 +332,6 @@
 </head>
 
 <body>
-    <!-- Mobile Header (Hidden in iframe) -->
     <header id="mobile-header">
         <button id="menu-toggle" class="p-2">
             <i class="fas fa-bars text-xl"></i>
@@ -350,10 +343,8 @@
         </h1>
     </header>
 
-    <!-- Sidebar Backdrop (Hidden in iframe) -->
     <div id="backdrop" style="display:none;"></div>
 
-    <!-- Sidebar Navigation (Hidden in iframe) -->
     <nav id="sidebar">
         <header style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 1rem; border-bottom: 1px solid var(--border-color);">
             <div class="logo-container">
@@ -367,30 +358,30 @@
         <div style="display: flex; flex-direction: column; margin-top: 1rem; color: var(--text-heading);">
             <div style="padding: 1rem 0; font-size: 0.75rem; font-weight: bold; color: var(--text-body); text-transform: uppercase;">Features</div>
             <a href="https://geritwagner.github.io/search-query/gui/lint.html" class="sidebar-tool-link">
-                <i class="fas fa-tasks w-5 mr-3"></i> <p style="display: inline-block; margin: 0 0 0 0; padding-left: 10px;">Lint</p>
+                <i class="fas fa-tasks w-5 mr-3"></i> <p style="display: inline-block; margin: 0; padding-left: 10px;">Lint</p>
             </a>
             <a href="https://geritwagner.github.io/search-query/gui/translate.html" class="sidebar-tool-link">
-                <i class="fas fa-language w-5 mr-3"></i>  <p style="display: inline-block; margin: 0 0 0 0; padding-left: 10px;">Translate</p>
+                <i class="fas fa-language w-5 mr-3"></i>  <p style="display: inline-block; margin: 0; padding-left: 10px;">Translate</p>
             </a>
             
             <div style="padding: 1rem 0; font-size: 0.75rem; font-weight: bold; color: var(--text-body); text-transform: uppercase;">Debug</div>
             <a href="https://geritwagner.github.io/search-query/gui/tokenizer.html" class="sidebar-tool-link">
-                <i class="fas fa-microchip w-5 mr-3"></i>  <p style="display: inline-block; margin: 0 0 0 0; padding-left: 10px;">Tokenize</p>
+                <i class="fas fa-microchip w-5 mr-3"></i>  <p style="display: inline-block; margin: 0; padding-left: 10px;">Tokenize</p>
             </a>
             <a href="https://geritwagner.github.io/search-query/gui/structure.html" class="sidebar-tool-link active">
                 <i class="fas fa-sitemap w-5 mr-3"></i>
-                <p style="display: inline-block; margin: 0 0 0 0; padding-left: 10px;">Structure</p>
+                <p style="display: inline-block; margin: 0; padding-left: 10px;">Structure</p>
             </a>
 
             <div style="padding: 1rem 0; font-size: 0.75rem; font-weight: bold; color: var(--text-body); text-transform: uppercase;">Resources</div>
             <a href="https://github.com/CoLRev-Environment/search-query" target="_blank" class="sidebar-tool-link">
-                <i class="fab fa-github w-5 mr-3"></i><p style="display: inline-block; margin: 0 0 0 0; padding-left: 10px;">GitHub</p>
+                <i class="fab fa-github w-5 mr-3"></i><p style="display: inline-block; margin: 0; padding-left: 10px;">GitHub</p>
             </a>
             <a href="https://colrev-environment.github.io/search-query/" target="_blank" class="sidebar-tool-link">
-                <i class="fas fa-book w-5 mr-3"></i> <p style="display: inline-block; margin: 0 0 0 0; padding-left: 10px;">Documentation</p>
+                <i class="fas fa-book w-5 mr-3"></i> <p style="display: inline-block; margin: 0; padding-left: 10px;">Documentation</p>
             </a>
             <a href="https://github.com/CoLRev-Environment/search-query/blob/main/LICENSE" target="_blank" class="sidebar-tool-link">
-                <i class="fas fa-file-contract w-5 mr-3"></i> <p style="display: inline-block; margin: 0 0 0 0; padding-left: 10px;">License</p>
+                <i class="fas fa-file-contract w-5 mr-3"></i> <p style="display: inline-block; margin: 0; padding-left: 10px;">License</p>
             </a>
         </div>
         
@@ -399,11 +390,9 @@
         </footer>
     </nav>
     
-    <!-- Main Content Area -->
     <div id="main-content">
         <div id="interactive-tool-wrap">
             <div class="main-container">
-                <!-- Hero Section (Hidden in iframe) -->
                 <section id="documentation" style="width: 100%; padding-top: 0;">
                     <h1 id="hero-headline" style="margin-bottom: 0.5rem; color: var(--text-heading); text-align: center;">
                         Search Query Studio
@@ -413,7 +402,6 @@
                     </p>
                 </section>
 
-                <!-- Tool Content Area -->
                 <div id="tool-area-content" style="padding-bottom:50px;">
                     <div id="loading-overlay">
                         <div class="loader"></div>
@@ -421,7 +409,6 @@
                     </div>
                     
                     <div id="content-wrapper">
-                        <!-- YOUR ORIGINAL CONTENT - WRAPPED IN A CONTAINER -->
                         <div id="visualizer-content">
                             <header>
                                 <h1>Search-Query Visualizer</h1>
@@ -435,7 +422,6 @@
                                 <button id="btn-visualize">Visualize structure</button>
                             </div>
 
-                            <!-- AFTER: hidden by default -->
                             <div id="result-container">
                                 <h2 id="pretty-title">Indented structure</h2>
                                 <pre id="pretty-output"></pre>
@@ -450,11 +436,9 @@
         </div>
     </div>
 
-    <!-- YOUR ORIGINAL SCRIPTS -->
     <script src="structure.js"></script>
     
     <script>
-        // --- SIDEBAR AND NAVIGATION FUNCTIONALITY ---
         const DOM = {
             sidebar: document.getElementById('sidebar'),
             menuToggle: document.getElementById('menu-toggle'),
@@ -463,36 +447,19 @@
             sidebarToolLinks: document.querySelectorAll('.sidebar-tool-link')
         };
 
-        // Detect if we're in an iframe
         const isEmbedded = window.parent !== window;
+        let lastSentHeight = 0;
         
-        // Apply iframe mode immediately
         if (isEmbedded) {
             document.body.classList.add('iframe-mode');
             DOM.sidebar.style.display = 'none';
-            DOM.menuToggle.style.display = 'none';
-            DOM.closeMenuBtn.style.display = 'none';
-            DOM.backdrop.style.display = 'none';
-            // Hide sidebar and header for iframe mode
-            DOM.sidebar.style.display = 'none';
             document.getElementById('mobile-header').style.display = 'none';
-            document.getElementById('backdrop').style.display = 'none';
         }
 
-        // Storage keys
-        const STORAGE_KEYS = {
-            TOOL_URL: 'selectedToolUrl',
-            TOOL_NAME: 'selectedToolName'
-        };
-
-        /* --- UI/VISUAL CONTROLS --- */
         function toggleSidebar(forceClose = false) {
-            // Don't toggle sidebar in iframe mode
             if (isEmbedded) return;
-            
             const isOpen = DOM.sidebar.classList.contains('open');
             const shouldOpen = forceClose ? false : !isOpen;
-
             if (shouldOpen) {
                 DOM.sidebar.classList.add('open');
                 DOM.backdrop.style.display = 'block';
@@ -505,291 +472,100 @@
         }
 
         function updateActiveSidebarItem(activeTool) {
-            if (isEmbedded) return; // Skip in iframe mode
-            
+            if (isEmbedded) return;
             DOM.sidebarToolLinks.forEach(link => {
                 link.classList.remove('active');
-                const toolUrl = link.getAttribute('href');
-                if (toolUrl && toolUrl.includes(activeTool)) {
-                    link.classList.add('active');
-                }
+                if (link.getAttribute('href')?.includes(activeTool)) link.classList.add('active');
             });
         }
 
-        // --- LOADING AND IFRAME FUNCTIONALITY ---
         const loader = document.getElementById('loading-overlay');
         const loadingText = document.getElementById('loading-text');
         const contentWrapper = document.getElementById('content-wrapper');
 
-        // ==================== IMPROVED HEIGHT CALCULATION ====================
-        // Debounce to prevent excessive height updates
+        function sendHeight() {
+            if (!isEmbedded) return;
+            
+            // Calculate height based on the main-container's scroll height
+            const mainContainer = document.querySelector('.main-container');
+            if (!mainContainer) return;
+
+            // Use scrollHeight of container which includes all content even if not visible in viewport
+            const contentHeight = mainContainer.offsetHeight + mainContainer.offsetTop;
+            const finalHeight = Math.ceil(contentHeight + 40); // Buffer
+
+            // Only send if height significantly changed to prevent infinite loops
+            if (Math.abs(finalHeight - lastSentHeight) > 5) {
+                lastSentHeight = finalHeight;
+                window.parent.postMessage({ type: 'setHeight', height: finalHeight }, '*');
+            }
+        }
+
         let heightTimeout;
         function debouncedSendHeight() {
             clearTimeout(heightTimeout);
-            heightTimeout = setTimeout(sendHeight, 150);
+            heightTimeout = setTimeout(sendHeight, 100);
         }
 
-        function sendHeight() {
-            // Only adjust iframe if we're embedded
-            if (!isEmbedded) {
-                document.body.style.overflowY = 'auto';
-                document.body.style.overflowX = 'auto';
-                return;
-            }
-            
-            // Hide scrollbars when embedded
-            document.body.style.overflow = 'hidden';
-            
-            // Don't calculate during loading
-            if (loader.style.display !== 'none') return;
-            
-            // Get the main container - this is the container that holds all tool content
-            const mainContainer = document.querySelector('.main-container');
-            if (!mainContainer) return;
-            
-            // Get all direct children of the main container that are visible
-            const containerChildren = Array.from(mainContainer.children);
-            
-            // Find the last visible element in the DOM order
-            let lastVisibleElement = null;
-            let maxBottom = 0;
-            
-            // Look through all children in reverse order to find the last visible one
-            for (let i = containerChildren.length - 1; i >= 0; i--) {
-                const child = containerChildren[i];
-                const style = window.getComputedStyle(child);
-                
-                // Skip hidden elements
-                if (style.display === 'none' || style.visibility === 'hidden' || style.opacity === '0') {
-                    continue;
-                }
-                
-                // Check if this element is actually in the document flow and visible
-                const rect = child.getBoundingClientRect();
-                if (rect.height > 0 && rect.width > 0) {
-                    const elementBottom = rect.bottom + window.pageYOffset;
-                    
-                    // Track the last visible element
-                    if (elementBottom > maxBottom) {
-                        maxBottom = elementBottom;
-                        lastVisibleElement = child;
-                        break; // Found the last visible element
-                    }
-                }
-            }
-            
-            // SPECIAL HANDLING: Check inside #visualizer-content for the actual content
-            const visualizerContent = document.getElementById('visualizer-content');
-            if (visualizerContent && visualizerContent.style.display !== 'none') {
-                // Check for #result-container (might be hidden initially)
-                const resultContainer = document.getElementById('result-container');
-                if (resultContainer && resultContainer.style.display !== 'none') {
-                    const rect = resultContainer.getBoundingClientRect();
-                    if (rect.height > 0) {
-                        const elementBottom = rect.bottom + window.pageYOffset;
-                        if (elementBottom > maxBottom) {
-                            maxBottom = elementBottom;
-                            lastVisibleElement = resultContainer;
-                        }
-                    }
-                }
-                
-                // Also check for pre element inside result container
-                const prettyOutput = document.getElementById('pretty-output');
-                if (prettyOutput && prettyOutput.textContent && prettyOutput.textContent.trim() !== '') {
-                    const rect = prettyOutput.getBoundingClientRect();
-                    if (rect.height > 0) {
-                        const elementBottom = rect.bottom + window.pageYOffset;
-                        if (elementBottom > maxBottom) {
-                            maxBottom = elementBottom;
-                            lastVisibleElement = prettyOutput;
-                        }
-                    }
-                }
-            }
-            
-            // If we didn't find a last element, use the main container itself
-            if (!lastVisibleElement) {
-                lastVisibleElement = mainContainer;
-                const rect = mainContainer.getBoundingClientRect();
-                maxBottom = rect.bottom + window.pageYOffset;
-            }
-            
-            // Get the top of the document
-            const docTop = document.documentElement.getBoundingClientRect().top + window.pageYOffset;
-            
-            // Calculate height: from top of document to bottom of last visible element
-            let contentHeight = maxBottom - docTop;
-            
-            // Ensure we're not getting negative or too small height
-            contentHeight = Math.max(contentHeight, 100);
-            
-            // Add a small buffer (20px) to prevent cut-off
-            const finalHeight = contentHeight + 20;
-            
-            // Debug logging
-            console.log('Height calculation:');
-            console.log('- Last element:', lastVisibleElement?.tagName, lastVisibleElement?.id);
-            console.log('- Content height:', contentHeight);
-            console.log('- Final height:', finalHeight);
-            
-            // Send to parent frame
-            window.parent.postMessage(
-                { type: 'setHeight', height: Math.ceil(finalHeight) },
-                '*'
-            );
-        }
-        // ==================== END OF HEIGHT CALCULATION ====================
-        
-        // --- INITIALIZATION ---
         document.addEventListener('DOMContentLoaded', () => {
-            // Only initialize sidebar functionality if not in iframe
             if (!isEmbedded) {
                 updateActiveSidebarItem('structure.html');
-                
-                // Mobile Menu Toggles
                 DOM.menuToggle.addEventListener('click', () => toggleSidebar());
                 DOM.backdrop.addEventListener('click', () => toggleSidebar(true));
                 DOM.closeMenuBtn.addEventListener('click', () => toggleSidebar(true));
             }
 
-            // Set initial loading state
-            document.body.classList.add('loading-active');
-            contentWrapper.style.opacity = '0';
-            loader.style.display = 'flex'; 
-            loadingText.textContent = "Initializing Search Query...";
-
-            // Set initial overflow based on whether embedded
-            if (isEmbedded) {
-                document.body.style.overflow = 'hidden';
-            } else {
-                document.body.style.overflow = 'auto';
-            }
-
-            // Pyodide loading handler
-            const originalAppendStatus = window.appendStatus || function(msg) { 
-                console.log("Pyodide:", msg); 
-            };
-
+            // Pyodide Logic
             window.appendStatus = function(msg) {
-                const cleanMsg = msg.replace(/\u001b\[.*?m/g, '').trim(); 
+                const cleanMsg = msg.replace(/\u001b\[.*?m/g, '').trim();
                 if (loadingText) loadingText.textContent = cleanMsg;
 
-                if (cleanMsg.includes('Done') || cleanMsg.includes('ready') || cleanMsg.includes('Ready')) {
-                    // Done loading
+                if (cleanMsg.toLowerCase().includes('done') || cleanMsg.toLowerCase().includes('ready')) {
                     loader.style.opacity = '0';
                     contentWrapper.style.opacity = '1';
-
                     setTimeout(() => {
                         loader.style.display = 'none';
-                        
-                        // CRITICAL: Only lock overflow if embedded
-                        if (isEmbedded) {
-                            document.body.style.overflow = 'hidden';
-                        } else {
-                            document.body.style.overflow = 'auto';
-                        }
-                        
                         document.body.classList.remove('loading-active');
                         debouncedSendHeight();
                     }, 500);
-                } else {
-                    document.body.classList.add('loading-active');
-                    loader.style.display = 'flex';
-                    loader.style.opacity = '1';
-                    contentWrapper.style.opacity = '0';
                 }
-                
-                originalAppendStatus(msg);
-                setTimeout(debouncedSendHeight, 50); 
             };
 
-            // If structure.js doesn't use Pyodide, set a timeout to hide loader
-            setTimeout(() => {
-                if (loader.style.display !== 'none') {
-                    // If loader is still showing after 3 seconds, hide it
-                    loader.style.opacity = '0';
-                    contentWrapper.style.opacity = '1';
-                    
-                    setTimeout(() => {
-                        loader.style.display = 'none';
-                        document.body.classList.remove('loading-active');
-                        debouncedSendHeight();
-                    }, 500);
-                }
-            }, 3000);
-
-            // Listen for resize events
-            window.addEventListener('resize', debouncedSendHeight);
-            
-            // Observe DOM changes for dynamic content - MORE TARGETED
+            // Mutation Observer to watch for content changes
             const observer = new MutationObserver((mutations) => {
-                // Check if any mutation affects visible content
                 let shouldUpdate = false;
-                for (const mutation of mutations) {
-                    // Check for changes in display, visibility, or content
-                    if (mutation.type === 'attributes' && 
-                        (mutation.attributeName === 'style' || mutation.attributeName === 'class')) {
+                for (const m of mutations) {
+                    if (m.type === 'childList' || (m.type === 'attributes' && m.attributeName === 'style')) {
                         shouldUpdate = true;
                         break;
                     }
-                    if (mutation.type === 'childList') {
-                        // Check if children were added/removed from visible areas
-                        const target = mutation.target;
-                        if (target.id === 'content-wrapper' || 
-                            target.closest('#content-wrapper') ||
-                            target.id === 'visualizer-content' ||
-                            target.id === 'result-container' ||
-                            target.id === 'pretty-output' ||
-                            target.closest('.main-container')) {
-                            shouldUpdate = true;
-                            break;
-                        }
-                    }
                 }
-                if (shouldUpdate) {
-                    debouncedSendHeight();
-                }
+                if (shouldUpdate) debouncedSendHeight();
             });
-            
-            observer.observe(document.body, { 
-                childList: true, 
-                subtree: true,
-                attributes: true,
-                attributeFilter: ['style', 'class', 'display']
-            });
-            
-            // Also listen for content changes in output
-            const prettyOutput = document.getElementById('pretty-output');
-            if (prettyOutput) {
-                const outputObserver = new MutationObserver(debouncedSendHeight);
-                outputObserver.observe(prettyOutput, { 
-                    characterData: true,
-                    childList: true,
-                    subtree: true 
-                });
-            }
-            
-            // Also send height when the visualize button is clicked
-            const btnVisualize = document.getElementById('btn-visualize');
-            if (btnVisualize) {
-                btnVisualize.addEventListener('click', () => {
-                    setTimeout(debouncedSendHeight, 300);
-                });
-            }
 
-            // Initial height calculation
-            setTimeout(debouncedSendHeight, 100);
-            
-            window.addEventListener('load', debouncedSendHeight);
-            
-            // Listen for messages from parent iframe (if any)
-            window.addEventListener('message', (event) => {
-                if (event.data && event.data.type === 'getHeight') {
+            observer.observe(document.querySelector('.main-container'), { 
+                childList: true, 
+                subtree: true, 
+                attributes: true, 
+                attributeFilter: ['style', 'class'] 
+            });
+
+            document.getElementById('btn-visualize')?.addEventListener('click', () => {
+                setTimeout(debouncedSendHeight, 200);
+            });
+
+            // Initial and fallback
+            setTimeout(debouncedSendHeight, 500);
+            setTimeout(() => {
+                if (loader.style.display !== 'none') {
+                    loader.style.display = 'none';
+                    contentWrapper.style.opacity = '1';
                     debouncedSendHeight();
                 }
-            });
+            }, 4000);
         });
+
+        window.addEventListener('resize', debouncedSendHeight);
     </script>
 </body>
 </html>
