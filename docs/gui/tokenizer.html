@@ -5,6 +5,11 @@
     <title>Search-Query Tokenizer</title>
     <meta name="viewport" content="width=device-width,initial-scale=1" />
     
+    <!-- Highlight.js for JSON coloring -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/vs2015.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/json.min.js"></script>
+
     <script src="https://cdn.jsdelivr.net/pyodide/v0.26.2/full/pyodide.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
     
@@ -23,8 +28,6 @@
             --font-stack: 'Inter', sans-serif;
             --font-display: 'Space Grotesk', sans-serif;
             --sidebar-width: 280px;
-            --error-red: #dc2626;     
-            --warning-yellow: #d97706;
         }
 
         /* --- Global Resets & Body --- */
@@ -148,7 +151,10 @@
             color: white;
         }
 
-        /* --- CORE LINTER CSS --- */
+        /* --- CORE TOKENIZER CSS --- */
+        .tool-header h1 { font-size: 1.5rem; font-weight: bold; margin-bottom: 0.25rem; }
+        .tool-header p { color: var(--text-body); margin-top: 0; font-size: 0.95rem; }
+        
         .main-content-card {
             margin-top: 1.5rem;
             background: var(--bg-card);
@@ -171,7 +177,7 @@
         textarea, select { 
             display: block; width: 100%; padding: 0.75rem; border: 1px solid var(--border-color); 
             border-radius: 0.5rem; box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.07); 
-            transition: border-color 0.2s, box-shadow 0.2s; color: var(--text-main);
+            transition: border-color 0.2s, box-shadow 0.2s; color: var(--text-heading);
             max-width: 100%;
         }
         
@@ -180,10 +186,22 @@
         }
 
         #btn-tokenize {
-            width: auto; min-width: 200px; padding: 0.75rem 2rem; border: none; border-radius: 0.5rem; 
-            font-weight: 600; color: white; background-color: var(--primary); cursor: pointer; 
-            transition: background-color 0.2s; box-shadow: 0 2px 4px rgba(79, 70, 229, 0.4); 
-            margin-top: 1.5rem; font-size: 1rem; display: block; margin-left: auto; margin-right: auto;
+            width: auto;
+            min-width: 200px;
+            padding: 0.75rem 2rem;
+            border: none; 
+            border-radius: 0.5rem; 
+            font-weight: 600; 
+            color: white; 
+            background-color: var(--primary); 
+            cursor: pointer; 
+            transition: background-color 0.2s; 
+            box-shadow: 0 2px 4px rgba(79, 70, 229, 0.4);
+            margin-top: 1.5rem;
+            font-size: 1rem;
+            display: block;
+            margin-left: auto;
+            margin-right: auto;
         }
         #btn-tokenize:hover:not(:disabled) { background-color: var(--primary-dark); }
         #btn-tokenize:disabled { opacity: 0.6; cursor: not-allowed; box-shadow: none; }
@@ -191,123 +209,99 @@
         #platform { max-width: 300px; }
 
         #status { display:none; } 
-        #status-display { margin-top: 1rem; padding: 0.5rem 1rem; background: #fff3e0; border: 1px solid #ffcc80; border-radius: 0.375rem; font-size: 0.875rem; color: #a55a00; font-weight: 500; }
-        #output-wrap { margin-top: 1.5rem; position: relative; }
-        
-        /* --- JSON OUTPUT WINDOW --- */
-        pre {
-            background-color: #f6f8fa;
-            color: #24292e;
-            font-family: Consolas, "Liberation Mono", Menlo, monospace;
-            font-size: 14px;
-            padding: 12px 16px;
-            border-radius: 6px;
-            border: 1px solid #d0d7de;
-            display: block;
-            overflow-x: auto;
-            line-height: 1.5;
+        #status-display { 
+            margin-top: 1rem; padding: 0.5rem 1rem; background: #fff3e0; border: 1px solid #ffcc80; 
+            border-radius: 0.375rem; font-size: 0.875rem; color: #a55a00; font-weight: 500; 
         }
-        
+
+        /* --- Output Table Styles --- */
+        #tokens-table {
+            width: 100%; border-collapse: collapse; margin-top: 1rem; background: var(--bg-card); 
+            border: 1px solid var(--border-color); border-radius: 0.5rem; overflow: hidden; 
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        }
+        #tokens-table th, #tokens-table td { padding: 0.75rem; border-bottom: 1px solid #f3f4f6; font-size: 0.9rem; }
+        #tokens-table th { text-align: left; background: #f3f4f6; font-weight: 700; color: #374151; }
+        #tokens-table tr:last-child td { border-bottom: none; }
+
+        /* === JSON Output Styling (VS Code Dark Theme Look) === */
+        pre {
+            background-color: #1e1e1e !important;
+            border: 1px solid #333;
+            border-radius: 0.5rem;
+            margin: 0;
+            padding: 1rem;
+            max-height: 400px;
+            overflow: auto;
+            color: #d4d4d4; /* Default Text Color */
+        }
+
         #output {
             font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
             font-size: 0.85rem;
             background: transparent !important;
             margin: 0;
             padding: 0;
-            white-space: pre; 
         }
 
-        .json-actions { position: absolute; top: 15px; right: 15px; display: flex; gap: 8px; z-index: 20; }
-        .json-btn { background: transparent !important; border: none !important; border-radius: 4px; color: #d4d4d4; padding: 6px 8px; cursor: pointer; font-size: 14px; transition: all 0.2s ease; backdrop-filter: none; }
-        .json-btn:hover { background: rgba(255, 255, 255, 0.1) !important; color: #ffffff; }
-        .json-btn.copied { color: #4CAF50 !important; }
-
-        #lint-view { 
-            padding: 1rem; 
-            margin-bottom: 10px; 
-            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-            background-color: #f6f8fa;
-            color: #24292e;
-            font-family: Consolas, "Liberation Mono", Menlo, monospace;
-            font-size: 14px;
-            padding: 12px 16px;
-            border-radius: 6px;
-            border: 1px solid #d0d7de;
-            display: block;
-            overflow-x: auto;
-            line-height: 1.5;
-        }
-
-        #lint-view .ansi-red { color: var(--error-red); font-weight: 600; }
-        #lint-view .ansi-yellow { color: var(--warning-yellow); font-weight: 600; }
-        #lint-view .lint-title { font-weight: 700; font-size: 1rem; margin-bottom: 0.5rem;}
-       
-        #loading-overlay { 
-            position: fixed; 
-            inset: 0; 
-            background-color: rgba(255, 255, 255, 0.95); 
-            z-index: 1000; 
+        /* Custom Syntax Highlighting (VS Code Style) */
+        .hljs-attr { color: #9cdcfe !important; }      /* Keys: Light Blue */
+        .hljs-string { color: #ce9178 !important; }    /* Strings: Orange/Salmon */
+        .hljs-number { color: #b5cea8 !important; }    /* Numbers: Light Green */
+        .hljs-literal, .hljs-keyword { color: #569cd6 !important; } /* Booleans: Blue */
+        .hljs-punctuation { color: #d4d4d4 !important; } /* Punctuation: Light Gray */
+        
+        /* --- LOADING OVERLAY STYLES --- */
+        #loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(255, 255, 255, 0.95);
+            z-index: 1000;
             display: flex; 
-            flex-direction: column; 
-            justify-content: center; 
-            align-items: center; 
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            transition: opacity 0.5s ease;
+            opacity: 1;
+        }
+        .loader {
+            border: 4px solid var(--border-color);
+            border-top: 4px solid var(--primary);
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin-bottom: 1rem;
+        }
+        #loading-text {
+            font-size: 1.1rem;
+            color: var(--text-heading);
+            font-weight: 500;
+            text-align: center;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        /* Content wrapper */
+        #content-wrapper { 
             transition: opacity 0.5s ease; 
-            opacity: 1; 
-        }
-        .loader { border: 4px solid var(--border-color); border-top: 4px solid var(--primary); border-radius: 50%; width: 50px; height: 50px; animation: spin 1s linear infinite; margin-bottom: 1rem; }
-        #loading-text { font-size: 1.1rem; color: var(--text-heading); font-weight: 500; text-align: center; }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        #content-wrapper { transition: opacity 0.5s ease; opacity: 0; }
-        
-        .lint-item { border-top: 1px solid #e5e7eb; margin-top: 16px; padding-top: 8px; background-color: inherit; }
-        .lint-message { font-size: 0.95rem; color: #374151; white-space: pre-wrap; margin-bottom: 4px; }
-        .lint-separator { border-top: 1px solid #e5e7eb; margin: 8px 0; }
-
-        #lint-container { margin-top: 18px; }
-        .lint-card {
-            padding: 14px;
-            box-shadow: 0 6px 18px rgba(0,0,0,0.35);
-            background-color: #f6f8fa;
-            color: #24292e;
-            font-family: Consolas, "Liberation Mono", Menlo, monospace;
-            font-size: 14px;
-            padding: 12px 16px;
-            border-radius: 6px;
-            border: 1px solid #d0d7de;
+            opacity: 0;
             display: block;
-            overflow-x: auto;
-            line-height: 1.5;
         }
-        .lint-title { color: #ff7474; font-weight: 700; margin-bottom: px; font-size: 1rem; }
-        .lint-meta { color: #cfcfcf; margin-bottom: 8px; }
-        .lint-details { color: #d3c48c; margin-bottom: 10px; white-space: pre-wrap; }
-        .lint-links a { color: #4fc1ff; text-decoration: none; margin-right: 8px; font-weight: 600; }
-        .lint-links a:hover { text-decoration: underline; }
-        .lint-report { color: #ffb74d !important; }
-        .lint-links-spacer { display:inline-block; width:8px; }
-
-        .lint-query {
-            background: #0f0f0f;
-            color: #fff;
-            padding: 10px;
-            border-radius: 8px;
-            border: 1px solid #2b2b2b;
-            margin-top: 10px;
-            margin-bottom: 70px;
-            overflow-x: auto;
-            font-family: Consolas, monospace;
-            font-size: 13px;
-        }
-        .lint-hl-0 { color: #ff6b6b; font-weight:700; }
-        .lint-hl-1 { color: #ffd86b; font-weight:700; }
-
-        /* Tool content styles */
-        .tool-header h1 { font-size: 1.5rem; font-weight: bold; margin-bottom: 0.25rem; }
-        .tool-header p { color: var(--text-body); margin-top: 0; font-size: 0.95rem; }
         
-        /* Ensure content is visible in iframe context */
-        body.loading-active {
-            height: 100vh;
+        /* Tool content container */
+        .tool-content {
+            padding: 1rem; 
+            background: var(--bg-card); 
+            border: 1px solid var(--border-color); 
+            border-radius: 0.75rem; 
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+            margin-top: 1.5rem;
         }
         
         /* Footer Links */
@@ -325,46 +319,58 @@
         .footer-links a:hover {
             color: var(--primary);
         }
-
-        /* --- IFRAME MODE STYLES --- */
+        
+        /* Ensure content is visible in iframe context */
+        body.loading-active {
+            height: 100vh;
+        }
+        
+        /* Iframe mode styling - HIDE navigation elements */
         body.iframe-mode #mobile-header,
         body.iframe-mode #sidebar,
         body.iframe-mode #backdrop {
             display: none !important;
         }
-
+        
+        /* Iframe mode - adjust main content */
         body.iframe-mode #main-content {
-            padding-left: 0 !important;
+            padding: 0 !important;
+            margin-left: 0 !important;
             padding-top: 0 !important;
         }
-
+        
         body.iframe-mode .main-container {
-            padding: 0 1rem 1.5rem !important;
+            max-width: 100% !important;
+            padding: 1rem !important;
         }
-
-        body.iframe-mode #hero-headline,
-        body.iframe-mode #documentation p {
+        
+        /* Hide hero section in iframe mode */
+        body.iframe-mode #documentation {
             display: none !important;
         }
-
-        body.iframe-mode #interactive-tool-wrap {
-            padding-top: 0 !important;
+        
+        /* Normal webpage mode - SHOW navigation elements */
+        body:not(.iframe-mode) #mobile-header,
+        body:not(.iframe-mode) #sidebar {
+            display: block;
         }
-
-        body.iframe-mode .tool-header h1 {
-            font-size: 1.25rem !important;
-            margin-top: 0.5rem !important;
+        
+        /* Adjust main content for normal webpage */
+        body:not(.iframe-mode) #main-content {
+            padding-top: 64px;
+            padding-left: 0;
         }
-
-        body.iframe-mode .tool-header p {
-            font-size: 0.875rem !important;
-            margin-bottom: 1rem !important;
+        
+        @media (min-width: 1024px) {
+            body:not(.iframe-mode) #mobile-header { display: none; }
+            body:not(.iframe-mode) #sidebar { transform: translateX(0); }
+            body:not(.iframe-mode) #main-content { padding-left: var(--sidebar-width); padding-top: 2rem; }
         }
     </style>
 </head>
 
 <body>
-    <!-- Mobile Header (Hidden in iframe) -->
+    <!-- Mobile Header - HIDDEN in iframe mode -->
     <header id="mobile-header">
         <button id="menu-toggle" class="p-2">
             <i class="fas fa-bars text-xl"></i>
@@ -376,10 +382,10 @@
         </h1>
     </header>
 
-    <!-- Sidebar Backdrop (Hidden in iframe) -->
+    <!-- Sidebar Backdrop - HIDDEN in iframe mode -->
     <div id="backdrop" style="display:none;"></div>
 
-    <!-- Sidebar Navigation (Hidden in iframe) -->
+    <!-- Sidebar Navigation - HIDDEN in iframe mode -->
     <nav id="sidebar">
         <header style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 1rem; border-bottom: 1px solid var(--border-color);">
             <div class="logo-container">
@@ -429,7 +435,7 @@
     <div id="main-content">
         <div id="interactive-tool-wrap">
             <div class="main-container">
-                <!-- Hero Section (Hidden in iframe) -->
+                <!-- Hero Section - HIDDEN in iframe mode -->
                 <section id="documentation" style="width: 100%; padding-top: 0;">
                     <h1 id="hero-headline" style="margin-bottom: 0.5rem; color: var(--text-heading); text-align: center;">
                         Search Query Studio
@@ -443,13 +449,13 @@
                 <div id="tool-area-content" style="padding-bottom:50px;">
                     <div id="loading-overlay">
                         <div class="loader"></div>
-                        <div id="loading-text">Initializing Search Query...</div>
+                        <div id="loading-text">Initializing search-query...</div>
                     </div>
                     
                     <div id="content-wrapper">
                         <div class="tool-header">
                             <h1>Search-Query Tokenizer</h1>
-                            <p>Paste a query, select a platform, and see the tokenized structure of your query.</p>
+                            <p>Paste a query, select a platform, and see the raw tokens from <code>tokenize()</code>.</p>
                         </div>
 
                         <div id="status">Loading Search Query…</div> 
@@ -457,7 +463,7 @@
 
                         <div class="main-content-card">
                             <label for="query">Query</label>
-                            <textarea id="query">(TI=(platform* OR "digital work") AND PY=2020-2025)</textarea>
+                            <textarea id="query" rows="6">(TI=(platform* OR "digital work") AND PY=2020-2025)</textarea>
 
                             <label for="platform">Platform</label>
                             <select id="platform">
@@ -471,25 +477,21 @@
                             </div>
                         </div>
 
-                        <div style="margin-top: 1.5rem;">
-                            <details id="output-wrap" style="margin-bottom: 1rem;">
-                                <summary style="font-weight: 600; color: var(--text-body); cursor: pointer; padding: 0.5rem 0; position: relative;">
-                                    Raw Tokenizer Output (JSON)
-                                </summary>
-                                <div style="position: relative;">
-                                    <div class="json-actions">
-                                        <button class="json-btn" id="copy-json" title="Copy JSON">
-                                            <i class="far fa-copy"></i>
-                                        </button>
-                                        <button class="json-btn" id="download-json" title="Download JSON">
-                                            <i class="fas fa-download"></i>
-                                        </button>
-                                    </div>
-                                    <pre id="pre"><code style="font-size: 16px; font-family: 'Consolas', 'Monaco', monospace;" id="output"></code></pre>
-                                </div>
+                        <div class="tool-content">
+                            <details style="margin-top: 0;">
+                                <summary style="font-weight: 600; color: var(--text-body); cursor: pointer; padding: 0.5rem 0;">Raw JSON</summary>
+                                <pre><code id="output" class="language-json">Waiting for input...</code></pre>
                             </details>
-                            <h2 id="messages-title" style="display:none; font-size: 1.25rem; font-weight: 600; margin-top: 1rem;">Tokens</h2>
-                            <div id="lint-view" style="display:none;"></div>
+
+                            <h2 id="tokens-title" style="display:none; margin-top: 1rem; font-size: 1.25rem;">Tokens</h2>
+                            <div id="tokens-container">
+                                <table id="tokens-table" style="display: none;">
+                                    <thead>
+                                        <tr><th>Index</th><th>Type</th><th>Value</th></tr>
+                                    </thead>
+                                    <tbody id="tokens-table-body"></tbody>
+                                </table>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -498,106 +500,61 @@
     </div>
 
     <script src="search_query_pkg_tree.js"></script>
-    <script src="lint.js"></script>
+    <script src="tokenize.js"></script>
+    
     <script>
-        // --- SIDEBAR AND NAVIGATION FUNCTIONALITY ---
-        const DOM = {
-            sidebar: document.getElementById('sidebar'),
-            menuToggle: document.getElementById('menu-toggle'),
-            closeMenuBtn: document.getElementById('close-menu'),
-            backdrop: document.getElementById('backdrop'),
-            sidebarToolLinks: document.querySelectorAll('.sidebar-tool-link')
-        };
-
-        // Detect if we're in an iframe
+        // --- TOKENIZER FUNCTIONALITY ---
         const isEmbedded = window.parent !== window;
-        
-        // Apply iframe mode immediately
-        if (isEmbedded) {
-            document.body.classList.add('iframe-mode');
-            DOM.sidebar.style.display = 'none';
-            DOM.menuToggle.style.display = 'none';
-            DOM.closeMenuBtn.style.display = 'none';
-            DOM.backdrop.style.display = 'none';
-            // Hide sidebar and header for iframe mode
-            DOM.sidebar.style.display = 'none';
-            document.getElementById('mobile-header').style.display = 'none';
-            document.getElementById('backdrop').style.display = 'none';
-        }
+        const PARENT_ORIGIN = window.location.origin;
 
-        // Storage keys
-        const STORAGE_KEYS = {
-            TOOL_URL: 'selectedToolUrl',
-            TOOL_NAME: 'selectedToolName'
-        };
+        const loader = document.getElementById('loading-overlay');
+        const loadingText = document.getElementById('loading-text');
+        const contentWrapper = document.getElementById('content-wrapper');
+        const statusDisplay = document.getElementById('status-display');
+        const btnTokenize = document.getElementById('btn-tokenize');
 
-        /* --- UI/VISUAL CONTROLS --- */
-        function toggleSidebar(forceClose = false) {
-            // Don't toggle sidebar in iframe mode
-            if (isEmbedded) return;
+        // --- Highlighting Logic ---
+        hljs.configure({ ignoreUnescapedHTML: true });
+
+        function updateJsonOutput(jsonData) {
+            const codeElement = document.getElementById('output');
             
-            const isOpen = DOM.sidebar.classList.contains('open');
-            const shouldOpen = forceClose ? false : !isOpen;
-
-            if (shouldOpen) {
-                DOM.sidebar.classList.add('open');
-                DOM.backdrop.style.display = 'block';
-                document.body.style.overflow = 'hidden'; 
-            } else {
-                DOM.sidebar.classList.remove('open');
-                DOM.backdrop.style.display = 'none';
-                document.body.style.overflow = '';
-            }
-        }
-
-        function updateActiveSidebarItem(activeTool) {
-            if (isEmbedded) return; // Skip in iframe mode
+            // 1. Convert to Pretty String
+            const formattedJson = JSON.stringify(jsonData, null, 2);
             
-            DOM.sidebarToolLinks.forEach(link => {
-                link.classList.remove('active');
-                const toolUrl = link.getAttribute('data-tool-url');
-                if (toolUrl && toolUrl === activeTool) {
-                    link.classList.add('active');
-                }
-            });
-        }
-
-        function saveSelectedTool(toolUrl, toolName) {
-            if (isEmbedded) return; // Skip in iframe mode
-            localStorage.setItem(STORAGE_KEYS.TOOL_URL, toolUrl);
-            localStorage.setItem(STORAGE_KEYS.TOOL_NAME, toolName);
-        }
-
-        function getSelectedTool() {
-            if (isEmbedded) return { toolUrl: null, toolName: null };
-            const toolUrl = localStorage.getItem(STORAGE_KEYS.TOOL_URL);
-            const toolName = localStorage.getItem(STORAGE_KEYS.TOOL_NAME);
-            return { toolUrl, toolName };
-        }
-
-        function clearSelectedTool() {
-            if (isEmbedded) return; // Skip in iframe mode
-            localStorage.removeItem(STORAGE_KEYS.TOOL_URL);
-            localStorage.removeItem(STORAGE_KEYS.TOOL_NAME);
+            // 2. Set text content
+            codeElement.textContent = formattedJson;
+            
+            // 3. Clear markers
+            codeElement.removeAttribute('data-highlighted');
+            
+            // 4. Trigger Highlight.js
+            hljs.highlightElement(codeElement);
+            
+            console.log('JSON output highlighted with VS Code theme');
         }
 
         // --- UTILITIES ---
         function copyJsonToClipboard() {
-            const jsonText = codeBlock.textContent; 
+            const codeElement = document.getElementById('output');
+            const jsonText = codeElement.textContent; 
             navigator.clipboard.writeText(jsonText).then(() => {
                 const copyBtn = document.getElementById('copy-json');
-                const originalHTML = copyBtn.innerHTML;
-                copyBtn.innerHTML = '<i class="fas fa-check"></i>';
-                copyBtn.classList.add('copied');
-                setTimeout(() => {
-                    copyBtn.innerHTML = originalHTML;
-                    copyBtn.classList.remove('copied');
-                }, 2000);
+                if (copyBtn) {
+                    const originalHTML = copyBtn.innerHTML;
+                    copyBtn.innerHTML = '<i class="fas fa-check"></i>';
+                    copyBtn.classList.add('copied');
+                    setTimeout(() => {
+                        copyBtn.innerHTML = originalHTML;
+                        copyBtn.classList.remove('copied');
+                    }, 2000);
+                }
             });
         }
 
         function downloadJson() {
-            const jsonText = codeBlock.textContent;
+            const codeElement = document.getElementById('output');
+            const jsonText = codeElement.textContent;
             const blob = new Blob([jsonText], { type: 'application/json' });
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
@@ -609,7 +566,7 @@
             URL.revokeObjectURL(url);
         }
 
-        // --- HEIGHT MANAGEMENT FUNCTIONS (ADDED FROM LINTER PATTERN) ---
+        // ==================== EXACT HEIGHT CALCULATION FROM WORKING EXAMPLE ====================
         // Debounce to prevent excessive height updates
         let heightTimeout;
         function debouncedSendHeight() {
@@ -685,137 +642,199 @@
                 '*'
             );
         }
+        // ==================== END OF HEIGHT CALCULATION ====================
+        
+        // --- PYODIDE SETUP ---
+        const originalAppendStatus = window.appendStatus || function(msg) { 
+            const statusDiv = document.getElementById('status');
+            if (statusDiv) {
+                statusDiv.textContent = msg; 
+            }
+            console.log("Pyodide Hook:", msg); 
+        };
+        
+        window.appendStatus = function(msg) {
+            const cleanMsg = msg.replace(/\u001b\[.*?m/g, '').trim(); 
+            if (loadingText) loadingText.textContent = cleanMsg;
+
+            if (cleanMsg.includes('Done') || cleanMsg.includes('ready') || cleanMsg.includes('Ready')) {
+                // Done loading
+                statusDisplay.innerText = 'Search Query loaded…';
+                loader.style.opacity = '0';
+                contentWrapper.style.opacity = '1';
+
+                setTimeout(() => {
+                    loader.style.display = 'none';
+                    
+                    // CRITICAL: Only lock overflow if embedded
+                    if (isEmbedded) {
+                        document.body.style.overflow = 'hidden';
+                        // Apply iframe mode class
+                        document.body.classList.add('iframe-mode');
+                    } else {
+                        document.body.style.overflow = 'auto';
+                        // Remove iframe mode class if it exists
+                        document.body.classList.remove('iframe-mode');
+                    }
+                    
+                    btnTokenize.disabled = false;
+                    debouncedSendHeight();
+                }, 500);
+            } else {
+                document.body.classList.add('loading-active');
+                loader.style.display = 'flex';
+                loader.style.opacity = '1';
+                contentWrapper.style.opacity = '0';
+            }
+            
+            originalAppendStatus(msg);
+            setTimeout(debouncedSendHeight, 50); 
+        };
+
+        // --- SIDEBAR AND NAVIGATION FUNCTIONALITY ---
+        const DOM = {
+            sidebar: document.getElementById('sidebar'),
+            menuToggle: document.getElementById('menu-toggle'),
+            closeMenuBtn: document.getElementById('close-menu'),
+            backdrop: document.getElementById('backdrop'),
+            sidebarToolLinks: document.querySelectorAll('.sidebar-tool-link')
+        };
+                // Apply iframe mode immediately
+        if (isEmbedded) {
+            document.body.classList.add('iframe-mode');
+            DOM.sidebar.style.display = 'none';
+            DOM.menuToggle.style.display = 'none';
+            DOM.closeMenuBtn.style.display = 'none';
+            DOM.backdrop.style.display = 'none';
+            // Hide sidebar and header for iframe mode
+            DOM.sidebar.style.display = 'none';
+            document.getElementById('mobile-header').style.display = 'none';
+            document.getElementById('backdrop').style.display = 'none';
+        }
+
+
+         /* --- UI/VISUAL CONTROLS --- */
+        function toggleSidebar(forceClose = false) {
+            // Don't toggle sidebar in iframe mode
+            if (isEmbedded) return;
+            
+            const isOpen = DOM.sidebar.classList.contains('open');
+            const shouldOpen = forceClose ? false : !isOpen;
+
+            if (shouldOpen) {
+                DOM.sidebar.classList.add('open');
+                DOM.backdrop.style.display = 'block';
+                document.body.style.overflow = 'hidden'; 
+            } else {
+                DOM.sidebar.classList.remove('open');
+                DOM.backdrop.style.display = 'none';
+                document.body.style.overflow = '';
+            }
+        }
+
+        function updateActiveSidebarItem(activeTool) {
+            DOM.sidebarToolLinks.forEach(link => {
+                link.classList.remove('active');
+                const toolUrl = link.getAttribute('data-tool-url');
+                if (toolUrl && toolUrl === activeTool) {
+                    link.classList.add('active');
+                }
+            });
+        }
 
         // --- INIT ---
         document.addEventListener('DOMContentLoaded', () => {
-            // Get DOM elements
-            const contentWrapper = document.getElementById('content-wrapper');
-            const loader = document.getElementById('loading-overlay');
-            const loadingText = document.getElementById('loading-text');
-            const btnTokenize = document.getElementById('btn-tokenize');
-            const statusDisplay = document.getElementById('status-display');
-            const codeBlock = document.getElementById('output');
-
-            // Only initialize sidebar functionality if not in iframe
-            if (!isEmbedded) {
+            // Apply iframe mode immediately if embedded
+            if (isEmbedded) {
+                document.body.classList.add('iframe-mode');
+                document.body.style.overflow = 'hidden';
+            } else {
+                document.body.classList.remove('iframe-mode');
+                document.body.style.overflow = 'auto';
+                
+                // Initialize sidebar only in normal webpage mode
                 updateActiveSidebarItem('tokenizer.html');
                 
-                // Mobile Menu Toggles
+                // Mobile Menu Toggles - only in normal webpage
                 DOM.menuToggle.addEventListener('click', () => toggleSidebar());
                 DOM.backdrop.addEventListener('click', () => toggleSidebar(true));
                 DOM.closeMenuBtn.addEventListener('click', () => toggleSidebar(true));
 
-                // Sidebar Navigation Handler
-                const handleToolSwitch = (e) => {
-                    const link = e.target.closest('[data-tool-url]');
-                    if (link) {
-                        e.preventDefault();
-                        const relativeUrl = link.getAttribute('data-tool-url');
-                        const toolName = relativeUrl;
-                        
-                        // Save selection to localStorage
-                        saveSelectedTool(relativeUrl, toolName);
-                        
-                        // Close mobile sidebar if open
-                        if (window.innerWidth < 1024) {
-                            toggleSidebar(true);
-                        }
-                        
-                        // In a standalone context, we would navigate to the tool
-                        // For now, just update the active state
-                        console.log('Would navigate to:', relativeUrl);
-                        updateActiveSidebarItem(relativeUrl);
-                    }
-                };
-                
-                // Attach handler to sidebar links
+                // Sidebar Navigation Handler - only in normal webpage
                 DOM.sidebarToolLinks.forEach(link => {
-                    link.addEventListener('click', handleToolSwitch);
+                    link.addEventListener('click', (e) => {
+                        // Allow normal navigation in standalone mode
+                        // No need to prevent default
+                        console.log('Navigating to:', link.href);
+                    });
                 });
-            }
-
-            // Set initial overflow based on whether embedded
-            if (isEmbedded) {
-                document.body.style.overflow = 'hidden';
-            } else {
-                document.body.style.overflow = 'auto';
             }
             
             document.body.classList.add('loading-active');
             contentWrapper.style.opacity = '0';
             loader.style.display = 'flex'; 
-            loadingText.textContent = "Initializing Search Query...";
+            loadingText.textContent = "Initializing search-query...";
             btnTokenize.disabled = true;
 
-            document.getElementById('copy-json').addEventListener('click', copyJsonToClipboard);
-            document.getElementById('download-json').addEventListener('click', downloadJson);
+            // Add event listeners if buttons exist
+            const copyBtn = document.getElementById('copy-json');
+            const downloadBtn = document.getElementById('download-json');
+            
+            if (copyBtn) {
+                copyBtn.addEventListener('click', copyJsonToClipboard);
+            }
+            
+            if (downloadBtn) {
+                downloadBtn.addEventListener('click', downloadJson);
+            }
             
             // When tokenize button is clicked
             btnTokenize.addEventListener('click', () => {
                 setTimeout(debouncedSendHeight, 800);
             });
 
-            // Initialize Highlight.js if available
-            if (typeof hljs !== 'undefined') {
-                hljs.highlightAll();
-            }
+            // Initialize Highlight.js
+            hljs.highlightAll();
 
-            // Setup pyodide status handler with height updates
-            const originalAppendStatus = window.appendStatus || function(msg) { 
-                if (statusDisplay) statusDisplay.textContent = msg; 
-            };
-
-            window.appendStatus = function(msg) {
-                const cleanMsg = msg.replace(/\u001b\[.*?m/g, '').trim(); 
-                if (loadingText) loadingText.textContent = cleanMsg;
-
-                if (cleanMsg.includes('Done') || cleanMsg.includes('ready') || cleanMsg.includes('Ready')) {
-                    // Done loading
-                    statusDisplay.innerText = 'Search Query loaded…';
-                    loader.style.opacity = '0';
-                    contentWrapper.style.opacity = '1';
-                
-                    setTimeout(() => {
-                        loader.style.display = 'none';
-                        
-                        // CRITICAL: Only lock overflow if embedded
-                        if (isEmbedded) {
-                            document.body.style.overflow = 'hidden';
-                        } else {
-                            document.body.style.overflow = 'auto';
-                        }
-                        
-                        btnTokenize.disabled = false;
-                        debouncedSendHeight();
-                    }, 500);
-                } else {
-                    document.body.classList.add('loading-active');
-                    loader.style.display = 'flex';
-                    loader.style.opacity = '1';
-                    contentWrapper.style.opacity = '0';
-                }
-                
-                originalAppendStatus(msg);
-                setTimeout(debouncedSendHeight, 50); 
-            };
-
-            window.addEventListener('load', debouncedSendHeight);
-            
-            // Observe DOM changes
-            const observer = new MutationObserver(debouncedSendHeight);
-            observer.observe(document.body, { 
-                attributes: true, 
-                childList: true, 
-                subtree: true 
-            });
-
-            // Also listen for details toggle (expand/collapse)
-            document.querySelectorAll('details').forEach(details => {
-                details.addEventListener('toggle', debouncedSendHeight);
+            window.addEventListener('load', () => {
+                setTimeout(debouncedSendHeight, 100);
             });
             
             // Listen for resize events
             window.addEventListener('resize', debouncedSendHeight);
+            
+            // Observe DOM changes
+            const observer = new MutationObserver((mutations) => {
+                // Only trigger height updates for mutations that affect visible content
+                let shouldUpdate = false;
+                for (const mutation of mutations) {
+                    const target = mutation.target;
+                    // Check if mutation is in the main content area
+                    if (target.id === 'content-wrapper' || 
+                        target.closest('#content-wrapper') ||
+                        target.id === 'output' || 
+                        target.id === 'tokens-table' ||
+                        target.closest('.tool-content')) {
+                        shouldUpdate = true;
+                        break;
+                    }
+                }
+                if (shouldUpdate) {
+                    debouncedSendHeight();
+                }
+            });
+            
+            observer.observe(document.body, { 
+                childList: true, 
+                subtree: true,
+                attributes: true,
+                attributeFilter: ['style', 'class']
+            });
+            
+            // Also listen for details toggle (expand/collapse)
+            document.querySelectorAll('details').forEach(details => {
+                details.addEventListener('toggle', debouncedSendHeight);
+            });
             
             // Initial height calculation
             setTimeout(debouncedSendHeight, 100);
