@@ -1,563 +1,816 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <title>search-query translator</title>
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  
-  <!-- Highlight.js for JSON coloring -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/vs2015.min.css">
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/json.min.js"></script>
-
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
-  
-  <style>
-    html, body {
-    height: auto;
-    min-height: 100%;
-  }
-    /* --- CSS Variables (Ensure consistency with Host) --- */
-    :root {
-      --primary: #4f46e5;       /* Indigo */
-      --primary-dark: #3f35c5;
-      --bg-card: #ffffff;
-      --border-color: #e5e7eb;  /* Gray-200 */
-      --text-main: #1f2937;     /* Dark Gray */
-      --text-secondary: #6b7280; /* Medium Gray */
-    }
-    #result, #messages {
-      max-height: none !important; /* Remove the 400px limit if it exists */
-    }
+    <meta charset="UTF-8" />
+    <title>Search-Query Translator</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
     
-    /* --- Global Resets & Body Styles for IFRAME --- */
-    * { box-sizing: border-box; margin: 0; padding: 0; line-height: 1.5; font-family: 'Inter', sans-serif; }
-    html {
-      height: auto !important;
-      min-height: 100% !important;
-    }
-    /* Add to your CSS */
-    body {
-      background-color: var(--bg-card);
-      color: var(--text-main);
-      padding: 1.5rem; 
-      overflow-x: hidden;
-      overflow-y: auto;
-      height: auto !important;
-      min-height: 100% !important;
-      margin: 0 !important;
-      position: relative;
-      /* ADD THIS: Extra bottom padding for iframe safety */
-      padding-bottom: 10px !important;
-    }    
-    #content-wrapper {
-      min-height: 100%;
-      overflow-y: auto;
-      overflow-x: hidden;
-      
-      /* ADD THIS: Extra padding at bottom */
-      padding-bottom: 20px;
-    }
+    <!-- Highlight.js for JSON coloring -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/vs2015.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/json.min.js"></script>
 
-    /* UTILITY CLASS FOR VIEWPORT LOCK */
-    body.loading-active {
-      height: 100vh;    /* Locks height */
-    }
+    <script src="https://cdn.jsdelivr.net/pyodide/v0.26.2/full/pyodide.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
     
-    /* --- Layout & Typography --- */
-    header h1 { font-size: 1.5rem; font-weight: bold; margin-bottom: 0.25rem; }
-    header p { color: var(--text-secondary); margin-top: 0; font-size: 0.95rem; }
-    
-    /* --- Form Elements --- */
-    label { display: block; margin-top: 1.25rem; margin-bottom: 0.25rem; font-weight: 600; font-size: 0.875rem; }
-    
-    /* Query textarea with larger font size */
-    #query {
-      font-size: 1.1rem !important;
-      line-height: 1.6;
-      padding: 1rem;
-      min-height: 120px;
-      font-family: 'Courier New', monospace;
-      width: 100%;
-      
-      border: 1px solid var(--border-color);
-      border-radius: 0.5rem;
-      box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.07);
-      transition: border-color 0.2s, box-shadow 0.2s;
-    }
-    
-    #query:focus {
-      border-color: var(--primary);
-      box-shadow: 0 0 0 1px var(--primary);
-      outline: none;
-    }
-    
-    /* Narrower form elements */
-    select { 
-      display: block; width: 100%; padding: 0.75rem; border: 1px solid var(--border-color); 
-      border-radius: 0.5rem; box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.07); 
-      transition: border-color 0.2s, box-shadow 0.2s; color: var(--text-main);
-      max-width: 300px;
-    }
-    
-    select:focus { 
-      border-color: var(--primary); box-shadow: 0 0 0 1px var(--primary); outline: none; 
-    }
+    <style>
+        /* --- CSS VARIABLES --- */
+        :root {
+            --primary: #4f46e5;
+            --primary-dark: #3f35c5;
+            --primary-accent: #6366f1;
+            --bg-base: #f9fafb;
+            --bg-base-lighter: #eef2ff;
+            --bg-card: #ffffff;
+            --border-color: #e5e7eb;
+            --text-heading: #1f2937;
+            --text-body: #6b7280;
+            --font-stack: 'Inter', sans-serif;
+            --font-display: 'Space Grotesk', sans-serif;
+            --sidebar-width: 280px;
+        }
 
-    /* --- Button --- */
-    #btn-translate {
-      width: auto;
-      min-width: 200px;
-      padding: 0.75rem 2rem;
-      border: none; 
-      border-radius: 0.5rem; 
-      font-weight: 600; 
-      color: white; 
-      background-color: var(--primary); 
-      cursor: pointer; 
-      transition: background-color 0.2s; 
-      box-shadow: 0 2px 4px rgba(79, 70, 229, 0.4);
-      margin-top: 1rem;
-      font-size: 1rem;
-      display: block;
-      margin-left: auto;
-      margin-right: auto;
-    }
-    #btn-translate:hover:not(:disabled) { background-color: var(--primary-dark); }
-    #btn-translate:disabled { opacity: 0.6; cursor: not-allowed; box-shadow: none; }
+        /* --- Global Resets & Body --- */
+        * { box-sizing: border-box; margin: 0; padding: 0; line-height: 1.5; font-family: var(--font-stack); }
+        body { 
+            background-color: var(--bg-base); 
+            color: var(--text-heading); 
+            min-height: 100vh; 
+            scroll-behavior: smooth;
+            overflow-x: hidden;
+        }
+        
+        /* --- Custom Scrollbar --- */
+        body::-webkit-scrollbar { width: 8px; }
+        body::-webkit-scrollbar-thumb { background-color: var(--primary-accent); border-radius: 10px; }
 
-    /* --- Status & Loading --- */
-    #status { 
-      display: none; /* Hidden as per original setup */
-    }
+        /* --- Layout & Responsiveness --- */
+        #mobile-header { 
+            position: fixed; top: 0; left: 0; width: 100%; height: 64px; 
+            background-color: var(--bg-card); border-bottom: 1px solid var(--border-color); 
+            z-index: 50; display: flex; align-items: center; padding: 0 1rem; 
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1); 
+        }
+        #mobile-header h1 { 
+            font-size: 1.25rem; font-weight: bold; margin-left: 1rem; 
+            display: flex; align-items: center;
+        }
+        #menu-toggle { border: none; background: none; color: var(--text-heading); cursor: pointer; padding: 0.5rem; }
 
-    #status-display { 
-      margin-top: 1rem; padding: 0.5rem 1rem; background: #fff3e0; border: 1px solid #ffcc80; 
-      border-radius: 0.375rem; font-size: 0.875rem; color: #a55a00; font-weight: 500; 
-      white-space: pre-wrap;
-    }
+        #sidebar { 
+            position: fixed; top: 0; left: 0; height: 100vh; width: var(--sidebar-width); background-color: var(--bg-card); 
+            border-right: 1px solid var(--border-color); z-index: 60; transform: translateX(-100%); 
+            transition: transform 0.3s ease-out; box-shadow: 4px 0 15px rgba(0, 0, 0, 0.2); 
+            padding: 1.5rem 1rem; overflow-y: auto; display: flex; flex-direction: column; 
+        }
+        #sidebar.open { transform: translateX(0); }
+        #backdrop { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.5); z-index: 55; display: none; }
+        
+        #main-content { padding-top: 64px; transition: margin-left 0.3s ease-out; padding-left: 0; }
+        .main-container { max-width: 76rem; margin: 0 auto; padding: 2.5rem 1.5rem; }
 
-    /* === JSON Output Styling (VS Code Dark Theme Look) === */
-    pre {
-      background-color: #f6f8fa;
-      color: #24292e;
-      font-family: Consolas, "Liberation Mono", Menlo, monospace;
-      font-size: 14px;
-      padding: 12px 16px;
-      border-radius: 6px;
-      border: 1px solid #d0d7de;
-      display: block;
-      overflow-x: auto;
-      line-height: 1.5;
+        @media (min-width: 1024px) {
+            #mobile-header { display: none; }
+            #sidebar { transform: translateX(0); width: var(--sidebar-width); position: fixed; padding-top: 2rem; }
+            #main-content { padding-left: var(--sidebar-width); padding-top: 2rem; }
+            .main-container { padding: 0 1.5rem 2.5rem; }
+            #close-menu { display: none !important; }
+        }
+        
+        /* --- Mobile Specific Styles --- */
+        #close-menu {
+            display: block !important;
+            border: none; background: none; color: var(--text-heading); cursor: pointer; padding: 0.5rem;
+        }
+        
+        /* --- Logo and Branding --- */
+        .logo-container {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 1.5rem;
+        }
+        .logo-icon {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, #4f46e5, #6366f1);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 1.2rem;
+        }
+        .logo-text {
+            font-size: 1.5rem;
+            font-weight: 700;
+            background: linear-gradient(90deg, #4f46e5, #6366f1);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
 
-      margin: 0;
-      max-height: 400px;
-    }
+        /* --- Hero Section --- */
+        #hero-headline { 
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin: 0;
+            line-height: 1.1;
+            background: linear-gradient(90deg, var(--text-heading), var(--primary), var(--primary-accent));
+            background-size: 200% auto;
+            animation: text-flow 4s linear infinite;
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            color: transparent;
+        }
+        
+        @keyframes text-flow {
+            0% { background-position: 0% 50%; }
+            100% { background-position: 100% 50%; }
+        }
 
-    #result {
-      background-color: #f6f8fa;
-      color: #24292e;
-      font-family: Consolas, "Liberation Mono", Menlo, monospace;
-      font-size: 14px;
-      padding: 12px 16px;
-      border-radius: 6px;
-      border: 1px solid #d0d7de;
-      display: block;
-      overflow-x: auto;
-      line-height: 1.5; 
-      word-wrap: break-word;
-      margin-top: 0.5rem;
-    }
+        /* --- Sidebar Navigation --- */
+        .sidebar-tool-link {
+            display: flex;
+            align-items: center;
+            padding: 0.5rem 0.75rem;
+            border-radius: 0.375rem;
+            color: var(--text-heading);
+            transition: all 0.2s ease;
+            margin-bottom: 0.25rem;
+            text-decoration: none;
+        }
+        .sidebar-tool-link:hover {
+            background-color: var(--bg-base-lighter);
+            color: var(--primary);
+        }
+        .sidebar-tool-link.active {
+            background-color: var(--primary);
+            color: white;
+        }
 
-    #messages {
-      background-color: #f6f8fa;
-      color: #24292e;
-      font-family: Consolas, "Liberation Mono", Menlo, monospace;
-      font-size: 14px;
-      padding: 12px 16px;
-      border-radius: 6px;
-      border: 1px solid #d0d7de;
-      display: block;
-      overflow-x: auto;
-      line-height: 1.5; 
-      margin: 0;
-      padding: 0;
-      white-space: pre-wrap;
-      word-wrap: break-word;
-    }
+        /* --- CORE TRANSLATOR CSS --- */
+        .tool-header h1 { font-size: 1.5rem; font-weight: bold; margin-bottom: 0.25rem; }
+        .tool-header p { color: var(--text-body); margin-top: 0; font-size: 0.95rem; }
+        
+        /* --- Form Elements --- */
+        label { display: block; margin-top: 1.25rem; margin-bottom: 0.25rem; font-weight: 600; font-size: 0.875rem; }
+        
+        #query {
+            font-size: 1.1rem !important;
+            line-height: 1.6;
+            padding: 1rem;
+            min-height: 120px;
+            font-family: 'Courier New', monospace;
+            width: 100%;
+            border: 1px solid var(--border-color);
+            border-radius: 0.5rem;
+            box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.07);
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        
+        #query:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 1px var(--primary);
+            outline: none;
+        }
+        
+        select { 
+            display: block; width: 100%; padding: 0.75rem; border: 1px solid var(--border-color); 
+            border-radius: 0.5rem; box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.07); 
+            transition: border-color 0.2s, box-shadow 0.2s; color: var(--text-heading);
+            max-width: 300px;
+        }
+        
+        select:focus { 
+            border-color: var(--primary); box-shadow: 0 0 0 1px var(--primary); outline: none; 
+        }
 
-    /* Custom Syntax Highlighting (VS Code Style) */
-    .hljs-attr { color: #9cdcfe !important; }      /* Keys: Light Blue */
-    .hljs-string { color: #ce9178 !important; }    /* Strings: Orange/Salmon */
-    .hljs-number { color: #b5cea8 !important; }    /* Numbers: Light Green */
-    .hljs-literal, .hljs-keyword { color: #569cd6 !important; } /* Booleans: Blue */
-    .hljs-punctuation { color: #d4d4d4 !important; } /* Punctuation: Light Gray */
-    
-    /* --- LOADING OVERLAY STYLES (Fixed and Centered) --- */
-    #loading-overlay {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background-color: rgba(255, 255, 255, 0.95);
-      z-index: 1000;
-      display: flex; 
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-      transition: opacity 0.5s ease;
-      opacity: 1;
-    }
-    .loader {
-      border: 4px solid var(--border-color);
-      border-top: 4px solid var(--primary);
-      border-radius: 50%;
-      width: 50px;
-      height: 50px;
-      animation: spin 1s linear infinite;
-      margin-bottom: 1rem;
-    }
-    #loading-text {
-      font-size: 1.1rem;
-      color: var(--text-main);
-      font-weight: 500;
-      text-align: center;
-    }
-    @keyframes spin {
-      0% { transform: rotate(0deg); }
-      100% { transform: rotate(360deg); }
-    }
-    .json-actions { position: absolute; top: 15px; right: 15px; display: flex; gap: 8px; z-index: 20; }
-    .json-btn { background: transparent !important; border: none !important; border-radius: 4px; color: #d4d4d4; padding: 0px 4px; cursor: pointer; font-size: 14px; transition: all 0.2s ease; backdrop-filter: none; }
-    .json-btn:hover { background: rgba(255, 255, 255, 0.1) !important; color: #ffffff; }
-    .json-btn.copied { color: #4CAF50 !important; }
+        /* --- Button --- */
+        #btn-translate {
+            width: auto;
+            min-width: 200px;
+            padding: 0.75rem 2rem;
+            border: none; 
+            border-radius: 0.5rem; 
+            font-weight: 600; 
+            color: white; 
+            background-color: var(--primary); 
+            cursor: pointer; 
+            transition: background-color 0.2s; 
+            box-shadow: 0 2px 4px rgba(79, 70, 229, 0.4);
+            margin-top: 1.5rem;
+            font-size: 1rem;
+            display: block;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        #btn-translate:hover:not(:disabled) { background-color: var(--primary-dark); }
+        #btn-translate:disabled { opacity: 0.6; cursor: not-allowed; box-shadow: none; }
 
-    /* Headings */
-    #result-title, #messages-title {
-      margin-top: 1.5rem;
-      font-size: 1.25rem;
-      font-weight: 600;
-    }
-    
-  </style>
+        /* --- Status & Loading --- */
+        #status { display: none; }
+        #status-display { 
+            margin-top: 1rem; padding: 0.5rem 1rem; background: #fff3e0; border: 1px solid #ffcc80; 
+            border-radius: 0.375rem; font-size: 0.875rem; color: #a55a00; font-weight: 500; 
+            white-space: pre-wrap;
+        }
+
+        /* === JSON Output Styling === */
+        pre {
+            background-color: #f6f8fa;
+            color: #24292e;
+            font-family: Consolas, "Liberation Mono", Menlo, monospace;
+            font-size: 14px;
+            padding: 12px 16px;
+            border-radius: 6px;
+            border: 1px solid #d0d7de;
+            display: block;
+            overflow-x: auto;
+            line-height: 1.5;
+            margin: 0;
+            max-height: 400px;
+        }
+
+        #result {
+            background-color: #f6f8fa;
+            color: #24292e;
+            font-family: Consolas, "Liberation Mono", Menlo, monospace;
+            font-size: 14px;
+            padding: 12px 16px;
+            border-radius: 6px;
+            border: 1px solid #d0d7de;
+            display: block;
+            overflow-x: auto;
+            line-height: 1.5; 
+            word-wrap: break-word;
+            margin-top: 0.5rem;
+        }
+
+        #messages {
+            background-color: #f6f8fa;
+            color: #24292e;
+            font-family: Consolas, "Liberation Mono", Menlo, monospace;
+            font-size: 14px;
+            padding: 12px 16px;
+            border-radius: 6px;
+            border: 1px solid #d0d7de;
+            display: block;
+            overflow-x: auto;
+            line-height: 1.5; 
+            margin: 0;
+            padding: 0;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+
+        /* Custom Syntax Highlighting (VS Code Style) */
+        .hljs-attr { color: #9cdcfe !important; }      /* Keys: Light Blue */
+        .hljs-string { color: #ce9178 !important; }    /* Strings: Orange/Salmon */
+        .hljs-number { color: #b5cea8 !important; }    /* Numbers: Light Green */
+        .hljs-literal, .hljs-keyword { color: #569cd6 !important; } /* Booleans: Blue */
+        .hljs-punctuation { color: #d4d4d4 !important; } /* Punctuation: Light Gray */
+        
+        /* --- LOADING OVERLAY STYLES --- */
+        #loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(255, 255, 255, 0.95);
+            z-index: 1000;
+            display: flex; 
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            transition: opacity 0.5s ease;
+            opacity: 1;
+        }
+        .loader {
+            border: 4px solid var(--border-color);
+            border-top: 4px solid var(--primary);
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin-bottom: 1rem;
+        }
+        #loading-text {
+            font-size: 1.1rem;
+            color: var(--text-heading);
+            font-weight: 500;
+            text-align: center;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        /* Content wrapper */
+        #content-wrapper { 
+            transition: opacity 0.5s ease; 
+            opacity: 0;
+            display: block;
+        }
+        
+        /* Tool content container */
+        .tool-content {
+            padding: 1rem; 
+            background: var(--bg-card); 
+            border: 1px solid var(--border-color); 
+            border-radius: 0.75rem; 
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+            margin-top: 1.5rem;
+        }
+        
+        /* JSON actions */
+        .json-actions { position: absolute; top: 15px; right: 15px; display: flex; gap: 8px; z-index: 20; }
+        .json-btn { background: transparent !important; border: none !important; border-radius: 4px; color: #d4d4d4; padding: 0px 4px; cursor: pointer; font-size: 14px; transition: all 0.2s ease; backdrop-filter: none; }
+        .json-btn:hover { background: rgba(255, 255, 255, 0.1) !important; color: #ffffff; }
+        .json-btn.copied { color: #4CAF50 !important; }
+
+        /* Headings */
+        #result-title, #messages-title {
+            margin-top: 1.5rem;
+            font-size: 1.25rem;
+            font-weight: 600;
+        }
+        
+        /* Ensure content is visible in iframe context */
+        body.loading-active {
+            height: 100vh;
+        }
+        
+        /* Footer Links */
+        .footer-links {
+            display: flex;
+            gap: 1.5rem;
+            justify-content: center;
+            margin-top: 1rem;
+        }
+        .footer-links a {
+            color: var(--text-body);
+            font-size: 0.875rem;
+            transition: color 0.2s;
+        }
+        .footer-links a:hover {
+            color: var(--primary);
+        }
+        
+        /* --- Iframe mode CSS --- */
+        /* Hide navigation elements in iframe mode */
+        body.iframe-mode #mobile-header,
+        body.iframe-mode #sidebar,
+        body.iframe-mode #backdrop {
+            display: none !important;
+        }
+        
+        /* Adjust main content for iframe mode */
+        body.iframe-mode #main-content {
+            padding: 0 !important;
+            margin-left: 0 !important;
+            padding-top: 0 !important;
+        }
+        
+        body.iframe-mode .main-container {
+            max-width: 100% !important;
+            padding: 1rem !important;
+        }
+        
+        /* Hide hero section in iframe mode */
+        body.iframe-mode #documentation {
+            display: none !important;
+        }
+        
+        /* Show navigation elements in normal webpage mode */
+        body:not(.iframe-mode) #mobile-header,
+        body:not(.iframe-mode) #sidebar {
+            display: block;
+        }
+        
+        /* Adjust main content for normal webpage */
+        body:not(.iframe-mode) #main-content {
+            padding-top: 64px;
+            padding-left: 0;
+        }
+        
+        @media (min-width: 1024px) {
+            body:not(.iframe-mode) #mobile-header { display: none; }
+            body:not(.iframe-mode) #sidebar { transform: translateX(0); }
+            body:not(.iframe-mode) #main-content { padding-left: var(--sidebar-width); padding-top: 2rem; }
+        }
+    </style>
 </head>
-<body>
 
-  <div id="loading-overlay">
-    <div class="loader"></div>
-    <div id="loading-text">Initializing search-query...</div>
-  </div>
-  
-  <div id="content-wrapper">
-    <header>
-      <h1>search-query translator</h1>
-      <p>Translate a database/search-platform query into another platform using the <code>search-query</code> package (running in Pyodide).</p>
+<body>
+    <!-- Mobile Header -->
+    <header id="mobile-header">
+        <button id="menu-toggle" class="p-2">
+            <i class="fas fa-bars text-xl"></i>
+        </button>
+        <h1 class="text-xl font-bold ml-4" style="padding-top: 25px;">
+            <div class="logo-container">
+                <img src="https://raw.githubusercontent.com/CoLRev-Environment/search-query/refs/heads/main/docs/source/_static/search_query_logo.svg" width="100px" >
+            </div>
+        </h1>
     </header>
 
-    <div id="status">Loading Pyodide…</div>
-    <div id="status-display">Loading Search Query…</div>
+    <!-- Sidebar Backdrop -->
+    <div id="backdrop" style="display:none;"></div>
 
-    <label for="query">Query</label>
-    <textarea id="query" rows="6">(TI=(platform* OR "digital work") AND PY=2020-2025)</textarea>
-
-    <label for="platform-source">Source platform</label>
-    <select id="platform-source">
-      <option value="wos">wos</option>
-      <option value="pubmed">pubmed</option>
-      <option value="ebscohost">ebscohost</option>
-      <option value="scopus">scopus</option>
-    </select>
-
-    <label for="platform-target">Target platform</label>
-    <select id="platform-target">
-      <option value="wos">wos</option>
-      <option value="pubmed" selected>pubmed</option>
-      <option value="ebscohost">ebscohost</option>
-      <option value="scopus">scopus</option>
-    </select>
-
-    <div class="row" style="margin-top:1rem;">
-      <button id="btn-translate" disabled>Translate</button>
-    </div>
-
-    <h2 id="result-title" style="display:none; margin-top:1.5rem;">Translated query</h2>
-    <div style="position: relative;">
-        <div class="json-actions" id="json-actions" style="display:none;">
-            <button class="json-btn" id="copy-json" title="Copy JSON">
-                <i class="far fa-copy"></i>
+    <!-- Sidebar Navigation -->
+    <nav id="sidebar">
+        <header style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 1rem; border-bottom: 1px solid var(--border-color);">
+            <div class="logo-container">
+                <img src="https://raw.githubusercontent.com/CoLRev-Environment/search-query/refs/heads/main/docs/source/_static/search_query_logo.svg" width="200px" >
+            </div>
+            <button id="close-menu" style="border: none; background: none; color: var(--text-heading); cursor: pointer; padding: 0.5rem;" class="lg:hidden">
+                <i class="fas fa-times text-xl"></i>
             </button>
-            <button class="json-btn" id="download-json" title="Download JSON">
-                <i class="fas fa-download"></i>
-            </button>
+        </header>
+        
+        <div style="display: flex; flex-direction: column; margin-top: 1rem; color: var(--text-heading);">
+            <div style="padding: 1rem 0; font-size: 0.75rem; font-weight: bold; color: var(--text-body); text-transform: uppercase;">Features</div>
+            <a href="#" data-tool-url="lint.html" class="sidebar-tool-link">
+                <i class="fas fa-tasks w-5 mr-3"></i> <p style="display: inline-block; margin: 0 0 0 0; padding-left: 10px;">Lint</p>
+            </a>
+            <a href="#" data-tool-url="translate.html" class="sidebar-tool-link active">
+                <i class="fas fa-language w-5 mr-3"></i>  <p style="display: inline-block; margin: 0 0 0 0; padding-left: 10px;">Translate</p>
+            </a>
+            
+            <div style="padding: 1rem 0; font-size: 0.75rem; font-weight: bold; color: var(--text-body); text-transform: uppercase;">Debug</div>
+            <a href="#" data-tool-url="tokenizer.html" class="sidebar-tool-link">
+                <i class="fas fa-microchip w-5 mr-3"></i>  <p style="display: inline-block; margin: 0 0 0 0; padding-left: 10px;">Tokenize</p>
+            </a>
+            <a href="#" data-tool-url="structure.html" class="sidebar-tool-link">
+                <i class="fas fa-sitemap w-5 mr-3"></i>
+                <p style="display: inline-block; margin: 0 0 0 0; padding-left: 10px;">Structure</p>
+            </a>
+
+            <div style="padding: 1rem 0; font-size: 0.75rem; font-weight: bold; color: var(--text-body); text-transform: uppercase;">Resources</div>
+            <a href="https://github.com/CoLRev-Environment/search-query" target="_blank" class="sidebar-tool-link">
+                <i class="fab fa-github w-5 mr-3"></i><p style="display: inline-block; margin: 0 0 0 0; padding-left: 10px;">GitHub</p>
+            </a>
+            <a href="https://colrev-environment.github.io/search-query/" target="_blank" class="sidebar-tool-link">
+                <i class="fas fa-book w-5 mr-3"></i> <p style="display: inline-block; margin: 0 0 0 0; padding-left: 10px;">Documentation</p>
+            </a>
+            <a href="https://github.com/CoLRev-Environment/search-query/blob/main/LICENSE" target="_blank" class="sidebar-tool-link">
+                <i class="fas fa-file-contract w-5 mr-3"></i> <p style="display: inline-block; margin: 0 0 0 0; padding-left: 10px;">License</p>
+            </a>
         </div>
-        <pre id="result" style="display:none;"></pre>
+        
+        <footer style="margin-top: auto; padding-top: 1rem; border-top: 1px solid var(--border-color); font-size: 0.75rem; color: var(--text-body);">
+            Search-Query Studio © 2025
+        </footer>
+    </nav>
+    
+    <!-- Main Content Area -->
+    <div id="main-content">
+        <div id="interactive-tool-wrap">
+            <div class="main-container">
+                <!-- Hero Section -->
+                <section id="documentation" style="width: 100%; padding-top: 0;">
+                    <h1 id="hero-headline" style="margin-bottom: 0.5rem; color: var(--text-heading); text-align: center;">
+                        Search Query Studio
+                    </h1>
+                    <p style="font-size: 1.25rem; color: var(--text-body); text-align: center; max-width: 42rem; margin: 0 auto 2rem;">
+                        The web interface for search-query.
+                    </p>
+                </section>
+
+                <!-- Tool Content Area -->
+                <div id="tool-area-content" style="padding-bottom:50px;">
+                    <div id="loading-overlay">
+                        <div class="loader"></div>
+                        <div id="loading-text">Initializing search-query...</div>
+                    </div>
+                    
+                    <div id="content-wrapper">
+                        <div class="tool-header">
+                            <h1>Search-Query Translator</h1>
+                            <p>Translate a database/search-platform query into another platform using the <code>search-query</code> package (running in Pyodide).</p>
+                        </div>
+
+                        <div id="status">Loading Pyodide…</div>
+                        <div id="status-display">Loading Search Query…</div>
+
+                        <label for="query">Query</label>
+                        <textarea id="query" rows="6">(TI=(platform* OR "digital work") AND PY=2020-2025)</textarea>
+
+                        <label for="platform-source">Source platform</label>
+                        <select id="platform-source">
+                            <option value="wos">wos</option>
+                            <option value="pubmed">pubmed</option>
+                            <option value="ebscohost">ebscohost</option>
+                            <option value="scopus">scopus</option>
+                        </select>
+
+                        <label for="platform-target">Target platform</label>
+                        <select id="platform-target">
+                            <option value="wos">wos</option>
+                            <option value="pubmed" selected>pubmed</option>
+                            <option value="ebscohost">ebscohost</option>
+                            <option value="scopus">scopus</option>
+                        </select>
+
+                        <div class="row" style="margin-top:1.5rem;">
+                            <button id="btn-translate" disabled>Translate</button>
+                        </div>
+
+                        <h2 id="result-title" style="display:none; margin-top:1.5rem;">Translated query</h2>
+                        <div style="position: relative;">
+                            <div class="json-actions" id="json-actions" style="display:none;">
+                                <button class="json-btn" id="copy-json" title="Copy JSON">
+                                    <i class="far fa-copy"></i>
+                                </button>
+                                <button class="json-btn" id="download-json" title="Download JSON">
+                                    <i class="fas fa-download"></i>
+                                </button>
+                            </div>
+                            <pre id="result" style="display:none;"></pre>
+                        </div>
+
+                        <h2 id="messages-title" style="display:none; margin-top:1.5rem;">Messages</h2>
+                        <div id="messages" style="display:none;"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
-
-    <h2 id="messages-title" style="display:none; margin-top:1.5rem;">Messages</h2>
-    <div id="messages" style="display:none;"></div>
-  </div>
-
-  <!-- Pyodide runtime -->
-  <script src="https://cdn.jsdelivr.net/pyodide/v0.26.2/full/pyodide.js"></script>
-  
-  <script>
-    // Add this at the beginning of your script
-    const isEmbedded = window.parent !== window;
+    <script src="search_query_pkg_tree.js"></script>
+    <script src="translate.js"></script>
     
-    // Initialize Highlight.js
-    hljs.configure({ ignoreUnescapedHTML: true });
+    <script>
+        // --- TRANSLATOR FUNCTIONALITY ---
+        const isEmbedded = window.parent !== window;
+        
+        const loader = document.getElementById('loading-overlay');
+        const loadingText = document.getElementById('loading-text');
+        const contentWrapper = document.getElementById('content-wrapper');
+        const statusDisplay = document.getElementById('status-display');
+        const btnTranslate = document.getElementById('btn-translate');
+        const codeBlock = document.getElementById('result');
+        
+        // --- SIDEBAR AND NAVIGATION FUNCTIONALITY ---
+        const DOM = {
+            sidebar: document.getElementById('sidebar'),
+            menuToggle: document.getElementById('menu-toggle'),
+            closeMenuBtn: document.getElementById('close-menu'),
+            backdrop: document.getElementById('backdrop'),
+            sidebarToolLinks: document.querySelectorAll('.sidebar-tool-link')
+        };
 
-    const loader = document.getElementById('loading-overlay');
-    const loadingText = document.getElementById('loading-text');
-    const contentWrapper = document.getElementById('content-wrapper');
-    const statusDisplay = document.getElementById('status-display');
-    const btnTranslate = document.getElementById('btn-translate');
-    const codeBlock = document.getElementById('result');
-    
-    // Function to update JSON output with highlighting
-    function updateJsonOutput(jsonData) {
-      const codeElement = document.getElementById('messages').querySelector('code');
-      
-      // 1. Convert to Pretty String
-      const formattedJson = JSON.stringify(jsonData, null, 2);
-      
-      // 2. Set text content
-      codeElement.textContent = formattedJson;
-      
-      // 3. Clear markers
-      codeElement.removeAttribute('data-highlighted');
-      
-      // 4. Trigger Highlight.js
-      hljs.highlightElement(codeElement);
-      
-      console.log('JSON output highlighted with VS Code theme');
-    }
-    
-    function copyJsonToClipboard() {
-      const jsonText = codeBlock.textContent; 
-      navigator.clipboard.writeText(jsonText).then(() => {
-          const copyBtn = document.getElementById('copy-json');
-          const originalHTML = copyBtn.innerHTML;
-          copyBtn.innerHTML = '<i class="fas fa-check"></i>';
-          copyBtn.classList.add('copied');
-          setTimeout(() => {
-              copyBtn.innerHTML = originalHTML;
-              copyBtn.classList.remove('copied');
-          }, 2000);
-      });
-    }
+        // Apply iframe mode immediately
+        if (isEmbedded) {
+            document.body.classList.add('iframe-mode');
+            DOM.sidebar.style.display = 'none';
+            DOM.menuToggle.style.display = 'none';
+            DOM.closeMenuBtn.style.display = 'none';
+            DOM.backdrop.style.display = 'none';
+            // Hide sidebar and header for iframe mode
+            DOM.sidebar.style.display = 'none';
+            document.getElementById('mobile-header').style.display = 'none';
+            document.getElementById('backdrop').style.display = 'none';
+        } else {
+            document.body.classList.remove('iframe-mode');
+        }
 
-    function downloadJson() {
-      const jsonText = codeBlock.textContent;
-      const blob = new Blob([jsonText], { type: 'application/json' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = 'linter-output.json';
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-    }
+        // --- Highlighting Logic ---
+        hljs.configure({ ignoreUnescapedHTML: true });
 
-    // Debounce to prevent excessive height updates
-    let heightTimeout;
-    function debouncedSendHeight() {
-        clearTimeout(heightTimeout);
-        heightTimeout = setTimeout(sendHeight, 150);
-    }
-
-    // CORRECTED sendHeight function - measures the LAST VISIBLE ELEMENT's bottom position
-    function sendHeight() {
-        // Only adjust iframe if we're embedded
-        if (!isEmbedded) {
-            document.body.style.overflowY = 'auto';
-            document.body.style.overflowX = 'auto';
-            return;
+        function updateJsonOutput(jsonData) {
+            const codeElement = document.getElementById('messages').querySelector('code');
+            
+            // 1. Convert to Pretty String
+            const formattedJson = JSON.stringify(jsonData, null, 2);
+            
+            // 2. Set text content
+            codeElement.textContent = formattedJson;
+            
+            // 3. Clear markers
+            codeElement.removeAttribute('data-highlighted');
+            
+            // 4. Trigger Highlight.js
+            hljs.highlightElement(codeElement);
+            
+            console.log('JSON output highlighted with VS Code theme');
         }
         
-        // Hide scrollbars when embedded
-        document.body.style.overflow = 'hidden';
-        
-        // Don't calculate during loading
-        if (loader.style.display !== 'none') return;
-        
-        // Get ALL elements inside content-wrapper
-        const wrapper = document.getElementById('content-wrapper');
-        if (!wrapper) return;
-        
-        const allElements = wrapper.getElementsByTagName('*');
-        let lastVisibleElement = null;
-        let maxBottom = 0;
-        
-        // Find the element with the highest bottom position (last visible element)
-        for (let element of allElements) {
-            const style = window.getComputedStyle(element);
-            
-            // Skip hidden elements
-            if (style.display === 'none' || style.visibility === 'hidden') {
-                continue;
+        function copyJsonToClipboard() {
+            const jsonText = codeBlock.textContent; 
+            navigator.clipboard.writeText(jsonText).then(() => {
+                const copyBtn = document.getElementById('copy-json');
+                const originalHTML = copyBtn.innerHTML;
+                copyBtn.innerHTML = '<i class="fas fa-check"></i>';
+                copyBtn.classList.add('copied');
+                setTimeout(() => {
+                    copyBtn.innerHTML = originalHTML;
+                    copyBtn.classList.remove('copied');
+                }, 2000);
+            });
+        }
+
+        function downloadJson() {
+            const jsonText = codeBlock.textContent;
+            const blob = new Blob([jsonText], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'translator-output.json';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        // Debounce to prevent excessive height updates
+        let heightTimeout;
+        function debouncedSendHeight() {
+            clearTimeout(heightTimeout);
+            heightTimeout = setTimeout(sendHeight, 150);
+        }
+
+        // SEND HEIGHT FUNCTION
+        function sendHeight() {
+            // Only adjust iframe if we're embedded
+            if (!isEmbedded) {
+                document.body.style.overflowY = 'auto';
+                document.body.style.overflowX = 'auto';
+                return;
             }
             
-            // Get element's position
-            const rect = element.getBoundingClientRect();
+            // Hide scrollbars when embedded
+            document.body.style.overflow = 'hidden';
             
-            // Only consider elements that are actually in the view (have height)
-            if (rect.height > 0) {
-                const elementBottom = rect.bottom + window.pageYOffset;
+            // Don't calculate during loading
+            if (loader.style.display !== 'none') return;
+            
+            // Get the exact total height of the document content
+            const height = document.documentElement.scrollHeight;
+            
+            // Send to parent frame with small buffer
+            window.parent.postMessage(
+                { type: 'setHeight', height: height + 30 },
+                '*'
+            );
+        }
+        
+        // --- PYODIDE SETUP ---
+        const originalAppendStatus = window.appendStatus || function(msg) { 
+            const statusDiv = document.getElementById('status');
+            if (statusDiv) {
+                statusDiv.textContent = msg; 
+            }
+            console.log("Pyodide Hook:", msg); 
+        };
+        
+        window.appendStatus = function(msg) {
+            // 1. Update the visual status text in status-display
+            const cleanMsg = msg.replace(/\u001b\[.*?m/g, ''); 
+            if (loadingText) loadingText.textContent = cleanMsg;
+            statusDisplay.textContent = cleanMsg;
+
+            if (cleanMsg.includes('Done') || cleanMsg.includes('ready') || cleanMsg.includes('Ready')) {
+                // Done loading
+                statusDisplay.innerText = 'Search Query loaded…';
+                loader.style.opacity = '0';
+                contentWrapper.style.opacity = '1';
+            
+                setTimeout(() => {
+                    loader.style.display = 'none';
+                    
+                    // CRITICAL: Only lock overflow if embedded
+                    if (isEmbedded) {
+                        document.body.style.overflow = 'hidden';
+                    } else {
+                        document.body.style.overflow = 'auto';
+                    }
+                    
+                    btnTranslate.disabled = false;
+                    debouncedSendHeight();
+                }, 500);
+            } else {
+                document.body.classList.add('loading-active');
+                loader.style.display = 'flex';
+                loader.style.opacity = '1';
+                contentWrapper.style.opacity = '0';
+            }
+            
+            // Call the original function
+            originalAppendStatus(msg);
+            
+            // Trigger height check
+            debouncedSendHeight();
+        };
+        
+        // --- Append module with interval stopped after ready ---
+        const appendInterval = setInterval(() => {
+            const statusText = document.getElementById('status');
+            const lines = statusText.innerText.split("\n");
+            const lastLine = lines[lines.length - 1].trim();
+
+            loadingText.innerText = lastLine || "Loading…";
+            statusDisplay.innerText = lastLine || "Loading…";
+
+            if (lastLine.includes("search-query ready.")) {
+                loader.style.display = 'none';
+                contentWrapper.style.display = 'block';
+                contentWrapper.style.opacity = '1';
+                statusText.innerText = 'Search Query Ready';
+                statusDisplay.innerText = 'Search Query Ready';
                 
-                // Track the element with the highest bottom position
-                if (elementBottom > maxBottom) {
-                    maxBottom = elementBottom;
-                    lastVisibleElement = element;
+                // Enable the translate button
+                btnTranslate.disabled = false;
+                
+                // Stop the interval to prevent unnecessary height updates
+                clearInterval(appendInterval);
+
+                // Send final height once
+                debouncedSendHeight();
+            }
+        }, 100);
+
+        // --- INIT ---
+        document.addEventListener('DOMContentLoaded', () => {
+            // Initialize sidebar only in normal webpage mode
+            if (!isEmbedded) {
+                // Update active sidebar item
+                const sidebarLinks = document.querySelectorAll('.sidebar-tool-link');
+                sidebarLinks.forEach(link => {
+                    if (link.classList.contains('active')) {
+                        link.classList.remove('active');
+                    }
+                    if (link.getAttribute('data-tool-url') === 'translate.html') {
+                        link.classList.add('active');
+                    }
+                });
+                
+                // Mobile Menu Toggles
+                DOM.menuToggle.addEventListener('click', () => toggleSidebar());
+                DOM.backdrop.addEventListener('click', () => toggleSidebar(true));
+                DOM.closeMenuBtn.addEventListener('click', () => toggleSidebar(true));
+
+                /* --- UI/VISUAL CONTROLS --- */
+                function toggleSidebar(forceClose = false) {
+                    const isOpen = DOM.sidebar.classList.contains('open');
+                    const shouldOpen = forceClose ? false : !isOpen;
+
+                    if (shouldOpen) {
+                        DOM.sidebar.classList.add('open');
+                        DOM.backdrop.style.display = 'block';
+                        document.body.style.overflow = 'hidden'; 
+                    } else {
+                        DOM.sidebar.classList.remove('open');
+                        DOM.backdrop.style.display = 'none';
+                        document.body.style.overflow = '';
+                    }
                 }
             }
-        }
-        
-        // If no elements found, use the wrapper itself
-        if (!lastVisibleElement) {
-            lastVisibleElement = wrapper;
-            const rect = wrapper.getBoundingClientRect();
-            maxBottom = rect.bottom + window.pageYOffset;
-        }
-        
-        // Get the top of the document
-        const docTop = document.documentElement.getBoundingClientRect().top + window.pageYOffset;
-        
-        // Calculate height: from top of document to bottom of last visible element
-        const contentHeight = maxBottom - docTop;
-        
-        // Add a small buffer (20px) to prevent cut-off
-        const finalHeight = contentHeight + 20;
-        
-        console.log('Last element:', lastVisibleElement.tagName, 
-                   'Bottom position:', maxBottom, 
-                   'Calculated height:', Math.ceil(finalHeight));
-        
-        // Send to parent frame
-        window.parent.postMessage(
-            { type: 'setHeight', height: Math.ceil(finalHeight) },
-            '*'
-        );
-    }
-    
-    // Listen for resize events
-    window.addEventListener('resize', debouncedSendHeight);
-  
-    const originalAppendStatus = window.appendStatus || function(msg) { 
-      const statusDiv = document.getElementById('status');
-      if (statusDiv) {
-        statusDiv.textContent = msg; 
-      }
-      console.log("Pyodide Hook:", msg); 
-    };
-    
-    window.appendStatus = function(msg) {
-      // 1. Update the visual status text in status-display
-      const cleanMsg = msg.replace(/\u001b\[.*?m/g, ''); 
-      if (loadingText) loadingText.textContent = cleanMsg;
-      statusDisplay.textContent = cleanMsg;
 
-      if (cleanMsg.includes('Done') || cleanMsg.includes('ready') || cleanMsg.includes('Ready')) {
-          // Done loading
-          statusDisplay.innerText = 'Search Query loaded…';
-          loader.style.opacity = '0';
-          contentWrapper.style.opacity = '1';
-      
-          setTimeout(() => {
-            loader.style.display = 'none';
-            
-            // CRITICAL: Only lock overflow if embedded
+            // Set initial overflow based on whether embedded
             if (isEmbedded) {
-              document.body.style.overflow = 'hidden';
+                document.body.style.overflow = 'hidden';
             } else {
-              document.body.style.overflow = 'auto';
+                document.body.style.overflow = 'auto';
             }
             
-            btnTranslate.disabled = false;
-            debouncedSendHeight(); // Use debounced version
-          }, 500);
-      }
-      
-      // Call the original function
-      originalAppendStatus(msg);
-      
-      // Trigger height check
-      debouncedSendHeight();
-    };
-    
-    // --- Append module with interval stopped after ready ---
-    const appendInterval = setInterval(() => {
-      const statusText = document.getElementById('status');
-      const lines = statusText.innerText.split("\n");
-      const lastLine = lines[lines.length - 1].trim();
+            // When translate button is clicked
+            btnTranslate.addEventListener('click', () => {
+                setTimeout(debouncedSendHeight, 800);
+            });
+            
+            // Initial state setup
+            document.body.classList.add('loading-active');
+            contentWrapper.style.opacity = '0';
+            contentWrapper.style.display = 'none';
+            loader.style.display = 'flex';
+            document.getElementById('copy-json').addEventListener('click', copyJsonToClipboard);
+            document.getElementById('download-json').addEventListener('click', downloadJson);
+            loadingText.textContent = "Initializing search-query...";
+            btnTranslate.disabled = true;
 
-      loadingText.innerText = lastLine || "Loading…";
-      statusDisplay.innerText = lastLine || "Loading…";
+            // Initialize Highlight.js
+            hljs.highlightAll();
 
-      if (lastLine.includes("search-query ready.")) {
-        loader.style.display = 'none';
-        contentWrapper.style.display = 'block';
-        contentWrapper.style.opacity = '1';
-        statusText.innerText = 'Search Query Ready';
-        statusDisplay.innerText = 'Search Query Ready';
-        
-        // Enable the translate button
-        btnTranslate.disabled = false;
-        
-        // Stop the interval to prevent unnecessary height updates
-        clearInterval(appendInterval);
+            // Send initial minimal height
+            window.addEventListener('load', debouncedSendHeight);
+            
+            // Listen for resize events
+            window.addEventListener('resize', debouncedSendHeight);
+            
+            // Observe DOM changes
+            const observer = new MutationObserver(debouncedSendHeight);
+            observer.observe(document.body, { 
+                childList: true, 
+                subtree: true,
+                attributes: true 
+            });
+        });
 
-        // Send final height once
-        debouncedSendHeight();
-      }
-    }, 100);
-
-    // --- Initial Setup and DOM Observer ---
-    document.addEventListener('DOMContentLoaded', () => {
-      // Set initial overflow based on whether embedded
-      if (isEmbedded) {
-        document.body.style.overflow = 'hidden';
-      } else {
-        document.body.style.overflow = 'auto';
-      }
-      
-      // When translate button is clicked
-      btnTranslate.addEventListener('click', () => {
-          // Wait for results to render, then update height
-          setTimeout(debouncedSendHeight, 800);
-      });
-      
-      // Initial state setup
-      document.body.classList.add('loading-active');
-      contentWrapper.style.opacity = '0';
-      contentWrapper.style.display = 'none';
-      loader.style.display = 'flex';
-      document.getElementById('copy-json').addEventListener('click', copyJsonToClipboard);
-      document.getElementById('download-json').addEventListener('click', downloadJson);
-      loadingText.textContent = "Initializing search-query...";
-      btnTranslate.disabled = true;
-
-      // Initialize Highlight.js
-      hljs.highlightAll();
-
-      // Send initial minimal height
-      window.addEventListener('load', debouncedSendHeight);
-      
-      // Observe DOM changes
-      const observer = new MutationObserver(debouncedSendHeight);
-      observer.observe(document.body, { 
-          childList: true, 
-          subtree: true,
-          attributes: true 
-      });
-    });
-
-  </script>
-  
-  <script src="search_query_pkg_tree.js"></script>
-  <script src="translate.js"></script>
+    </script>
 </body>
 </html>
