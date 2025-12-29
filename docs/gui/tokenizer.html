@@ -566,84 +566,196 @@
             URL.revokeObjectURL(url);
         }
 
-        // ==================== FIXED HEIGHT CALCULATION ====================
-        // This is the only part that has been significantly changed
-        
-        // Track height state to prevent infinite growth
-        let heightTimeout;
-        let lastStableHeight = 0;
-        let heightStabilizationCounter = 0;
-        const MAX_HEIGHT_INCREASES = 3; // Maximum consecutive height increases
-        
-        // Debounce with stabilization logic
-        function debouncedSendHeight() {
-            clearTimeout(heightTimeout);
-            heightTimeout = setTimeout(sendHeight, 250); // Increased from 150 to 250ms
-        }
-
-        // Stabilized sendHeight function
-        function sendHeight() {
-            // Only adjust iframe if we're embedded
-            if (!isEmbedded) {
-                document.body.style.overflowY = 'auto';
-                document.body.style.overflowX = 'auto';
-                return;
-            }
+        // ==================== ADVANCED HEIGHT MONITORING ====================
+        // Monitor the last element in the DOM for accurate height tracking
+        let heightManager = {
+            timeoutId: null,
+            lastHeight: 0,
+            lastElement: null,
+            lastElementRect: null,
+            mutationObserver: null,
+            resizeObserver: null,
+            isMonitoring: false,
             
-            // Hide scrollbars when embedded
-            document.body.style.overflow = 'hidden';
-            
-            // Don't calculate during loading
-            if (loader.style.display !== 'none') return;
-            
-            // Wait for content to be fully visible
-            if (contentWrapper.style.opacity !== '1') return;
-            
-            // Get the exact total height of the document content
-            const currentHeight = document.documentElement.scrollHeight;
-            
-            // Calculate viewport height to set reasonable limits
-            const viewportHeight = window.innerHeight;
-            
-            // Set maximum reasonable height (2x viewport or 2500px, whichever is smaller)
-            const maxReasonableHeight = Math.min(viewportHeight * 2, 2500);
-            
-            // Cap the height to prevent excessive growth
-            const cappedHeight = Math.min(currentHeight, maxReasonableHeight);
-            
-            // Check if height is increasing abnormally
-            if (cappedHeight > lastStableHeight) {
-                heightStabilizationCounter++;
+            init() {
+                if (!isEmbedded || this.isMonitoring) return;
                 
-                // If height increases too many times consecutively, stop and use last stable height
-                if (heightStabilizationCounter > MAX_HEIGHT_INCREASES) {
-                    console.log('Height stabilization: Using last stable height');
-                    // Send the last stable height with minimal buffer
-                    window.parent.postMessage(
-                        { type: 'setHeight', height: lastStableHeight + 5 },
-                        '*'
-                    );
+                // Find the deepest/last element in the content area
+                this.findLastElement();
+                
+                // Start monitoring
+                this.startMonitoring();
+                this.isMonitoring = true;
+            },
+            
+            findLastElement() {
+                const contentArea = document.getElementById('tool-area-content');
+                if (!contentArea) {
+                    this.lastElement = document.body;
                     return;
                 }
-            } else {
-                // Reset counter when height stabilizes or decreases
-                heightStabilizationCounter = 0;
-            }
+                
+                // Get all elements in content area
+                const allElements = contentArea.querySelectorAll('*');
+                
+                // Find the deepest/last element
+                let deepestElement = contentArea;
+                let maxDepth = 0;
+                
+                allElements.forEach(element => {
+                    if (element.offsetParent && 
+                        element.offsetHeight > 0 && 
+                        element.offsetWidth > 0 &&
+                        !element.hidden) {
+                        
+                        const depth = this.getElementDepth(element);
+                        if (depth > maxDepth) {
+                            maxDepth = depth;
+                            deepestElement = element;
+                        }
+                    }
+                });
+                
+                this.lastElement = deepestElement;
+                console.log('Monitoring element:', this.lastElement.tagName, this.lastElement.id || this.lastElement.className);
+            },
             
-            // Only send if height changed significantly (more than 10 pixels)
-            if (Math.abs(cappedHeight - lastStableHeight) > 10) {
-                // Add small, fixed buffer (reduced from +30 to +5)
-                const finalHeight = Math.ceil(cappedHeight + 5);
+            getElementDepth(element) {
+                let depth = 0;
+                let current = element;
+                while (current && current !== document.body) {
+                    depth++;
+                    current = current.parentElement;
+                }
+                return depth;
+            },
+            
+            startMonitoring() {
+                // Monitor last element with MutationObserver
+                if (this.lastElement && 'MutationObserver' in window) {
+                    this.mutationObserver = new MutationObserver(() => {
+                        this.queueHeightUpdate();
+                    });
+                    
+                    this.mutationObserver.observe(this.lastElement, {
+                        childList: true,
+                        subtree: true,
+                        characterData: true,
+                        attributes: true,
+                        attributeFilter: ['style', 'class']
+                    });
+                }
+                
+                // Monitor window resize
+                window.addEventListener('resize', () => {
+                    this.queueHeightUpdate();
+                });
+                
+                // Monitor details toggle
+                document.querySelectorAll('details').forEach(details => {
+                    details.addEventListener('toggle', () => {
+                        this.queueHeightUpdate();
+                    });
+                });
+                
+                // Initial height calculation
+                setTimeout(() => this.calculateAndSendHeight(), 100);
+            },
+            
+            queueHeightUpdate() {
+                clearTimeout(this.timeoutId);
+                this.timeoutId = setTimeout(() => {
+                    this.calculateAndSendHeight();
+                }, 100);
+            },
+            
+            calculateAndSendHeight() {
+                if (!isEmbedded) {
+                    document.body.style.overflow = 'auto';
+                    return;
+                }
+                
+                if (loader.style.display !== 'none') return;
+                
+                // Use multiple methods to get accurate height
+                const heights = [
+                    document.documentElement.scrollHeight,
+                    document.body.scrollHeight,
+                    this.getContentHeight(),
+                    this.getElementBottomPosition()
+                ];
+                
+                // Use the maximum height
+                const currentHeight = Math.max(...heights);
+                
+                // Add small buffer (5-10px)
+                const finalHeight = Math.ceil(currentHeight + 10);
+                
+                // Only send if height changed significantly (more than 5px)
+                if (Math.abs(finalHeight - this.lastHeight) > 5) {
+                    window.parent.postMessage(
+                        { type: 'setHeight', height: finalHeight },
+                        '*'
+                    );
+                    
+                    this.lastHeight = finalHeight;
+                    console.log('Height updated:', finalHeight);
+                }
+            },
+            
+            getContentHeight() {
+                const contentArea = document.getElementById('tool-area-content');
+                if (!contentArea) return 0;
+                
+                // Get content area position
+                const rect = contentArea.getBoundingClientRect();
+                const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+                
+                return rect.bottom + scrollTop;
+            },
+            
+            getElementBottomPosition() {
+                if (!this.lastElement) return 0;
+                
+                const rect = this.lastElement.getBoundingClientRect();
+                const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+                
+                return rect.bottom + scrollTop + 20; // Add margin
+            },
+            
+            stopMonitoring() {
+                if (this.mutationObserver) {
+                    this.mutationObserver.disconnect();
+                }
+                
+                if (this.resizeObserver) {
+                    this.resizeObserver.disconnect();
+                }
+                
+                clearTimeout(this.timeoutId);
+                this.isMonitoring = false;
+            }
+        };
+
+        // Simple debounced sendHeight for initial setup
+        let simpleHeightTimeout;
+        function debouncedSendHeight() {
+            clearTimeout(simpleHeightTimeout);
+            simpleHeightTimeout = setTimeout(() => {
+                if (!isEmbedded) return;
+                
+                if (loader.style.display !== 'none') return;
+                
+                const currentHeight = document.documentElement.scrollHeight;
+                const finalHeight = Math.ceil(currentHeight + 10);
                 
                 window.parent.postMessage(
                     { type: 'setHeight', height: finalHeight },
                     '*'
                 );
-                
-                lastStableHeight = finalHeight;
-            }
+            }, 150);
         }
-        // ==================== END OF FIX ====================
+        // ==================== END OF HEIGHT MONITORING ====================
         
         // Listen for resize events
         window.addEventListener('resize', debouncedSendHeight);
@@ -673,18 +785,19 @@
                     // CRITICAL: Only lock overflow if embedded
                     if (isEmbedded) {
                         document.body.style.overflow = 'hidden';
-                        // Apply iframe mode class
                         document.body.classList.add('iframe-mode');
+                        
+                        // Initialize advanced height monitoring
+                        setTimeout(() => {
+                            heightManager.init();
+                        }, 300);
                     } else {
                         document.body.style.overflow = 'auto';
-                        // Remove iframe mode class if it exists
                         document.body.classList.remove('iframe-mode');
                     }
                     
                     btnTokenize.disabled = false;
-                    
-                    // Wait a bit before initial height calculation
-                    setTimeout(debouncedSendHeight, 500);
+                    debouncedSendHeight();
                 }, 500);
             } else {
                 document.body.classList.add('loading-active');
@@ -694,7 +807,7 @@
             }
             
             originalAppendStatus(msg);
-            setTimeout(debouncedSendHeight, 100); 
+            setTimeout(debouncedSendHeight, 50); 
         };
 
         // --- SIDEBAR AND NAVIGATION FUNCTIONALITY ---
@@ -796,48 +909,31 @@
             
             // When tokenize button is clicked
             btnTokenize.addEventListener('click', () => {
-                setTimeout(debouncedSendHeight, 800);
+                // Use the advanced height manager if available
+                if (isEmbedded && heightManager.isMonitoring) {
+                    heightManager.queueHeightUpdate();
+                } else {
+                    setTimeout(debouncedSendHeight, 800);
+                }
             });
 
             // Initialize Highlight.js
             hljs.highlightAll();
 
             window.addEventListener('load', () => {
-                setTimeout(debouncedSendHeight, 1000);
-            });
-            
-            // Observe DOM changes with more selective observation
-            const observer = new MutationObserver((mutations) => {
-                // Only trigger if mutations are in the content area
-                const contentMutated = mutations.some(mutation => {
-                    const target = mutation.target;
-                    return target.id === 'tool-area-content' || 
-                           target.closest('#tool-area-content') ||
-                           target.id === 'output' ||
-                           target.closest('.tool-content');
-                });
-                
-                if (contentMutated) {
-                    debouncedSendHeight();
-                }
-            });
-            
-            observer.observe(document.body, { 
-                attributes: false, // Disable attribute observation
-                childList: true, 
-                subtree: true,
-                characterData: false // Disable text content observation
-            });
-            
-            // Also listen for details toggle (expand/collapse)
-            document.querySelectorAll('details').forEach(details => {
-                details.addEventListener('toggle', debouncedSendHeight);
+                setTimeout(() => {
+                    if (isEmbedded) {
+                        heightManager.init();
+                    } else {
+                        debouncedSendHeight();
+                    }
+                }, 1000);
             });
             
             // Cleanup on page unload
             window.addEventListener('beforeunload', () => {
-                clearTimeout(heightTimeout);
-                if (observer) observer.disconnect();
+                clearTimeout(simpleHeightTimeout);
+                heightManager.stopMonitoring();
             });
         });
 
