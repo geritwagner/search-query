@@ -324,11 +324,53 @@
         body.loading-active {
             height: 100vh;
         }
+        
+        /* Iframe mode styling - HIDE navigation elements */
+        body.iframe-mode #mobile-header,
+        body.iframe-mode #sidebar,
+        body.iframe-mode #backdrop {
+            display: none !important;
+        }
+        
+        /* Iframe mode - adjust main content */
+        body.iframe-mode #main-content {
+            padding: 0 !important;
+            margin-left: 0 !important;
+            padding-top: 0 !important;
+        }
+        
+        body.iframe-mode .main-container {
+            max-width: 100% !important;
+            padding: 1rem !important;
+        }
+        
+        /* Hide hero section in iframe mode */
+        body.iframe-mode #documentation {
+            display: none !important;
+        }
+        
+        /* Normal webpage mode - SHOW navigation elements */
+        body:not(.iframe-mode) #mobile-header,
+        body:not(.iframe-mode) #sidebar {
+            display: block;
+        }
+        
+        /* Adjust main content for normal webpage */
+        body:not(.iframe-mode) #main-content {
+            padding-top: 64px;
+            padding-left: 0;
+        }
+        
+        @media (min-width: 1024px) {
+            body:not(.iframe-mode) #mobile-header { display: none; }
+            body:not(.iframe-mode) #sidebar { transform: translateX(0); }
+            body:not(.iframe-mode) #main-content { padding-left: var(--sidebar-width); padding-top: 2rem; }
+        }
     </style>
 </head>
 
 <body>
-    <!-- Mobile Header -->
+    <!-- Mobile Header - HIDDEN in iframe mode -->
     <header id="mobile-header">
         <button id="menu-toggle" class="p-2">
             <i class="fas fa-bars text-xl"></i>
@@ -340,10 +382,10 @@
         </h1>
     </header>
 
-    <!-- Sidebar Backdrop -->
+    <!-- Sidebar Backdrop - HIDDEN in iframe mode -->
     <div id="backdrop" style="display:none;"></div>
 
-    <!-- Sidebar Navigation -->
+    <!-- Sidebar Navigation - HIDDEN in iframe mode -->
     <nav id="sidebar">
         <header style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 1rem; border-bottom: 1px solid var(--border-color);">
             <div class="logo-container">
@@ -356,7 +398,7 @@
         
         <div style="display: flex; flex-direction: column; margin-top: 1rem; color: var(--text-heading);">
             <div style="padding: 1rem 0; font-size: 0.75rem; font-weight: bold; color: var(--text-body); text-transform: uppercase;">Features</div>
-            <a href="https://geritwagner.github.io/search-query/gui/lint.html"  class="sidebar-tool-link active">
+            <a href="https://geritwagner.github.io/search-query/gui/lint.html" class="sidebar-tool-link">
                 <i class="fas fa-tasks w-5 mr-3"></i> <p style="display: inline-block; margin: 0 0 0 0; padding-left: 10px;">Lint</p>
             </a>
             <a href="https://geritwagner.github.io/search-query/gui/translate.html" class="sidebar-tool-link">
@@ -364,7 +406,7 @@
             </a>
             
             <div style="padding: 1rem 0; font-size: 0.75rem; font-weight: bold; color: var(--text-body); text-transform: uppercase;">Debug</div>
-            <a href="https://geritwagner.github.io/search-query/gui/tokenizer.html"  class="sidebar-tool-link">
+            <a href="https://geritwagner.github.io/search-query/gui/tokenizer.html" class="sidebar-tool-link active">
                 <i class="fas fa-microchip w-5 mr-3"></i>  <p style="display: inline-block; margin: 0 0 0 0; padding-left: 10px;">Tokenize</p>
             </a>
             <a href="https://geritwagner.github.io/search-query/gui/structure.html" class="sidebar-tool-link">
@@ -393,7 +435,7 @@
     <div id="main-content">
         <div id="interactive-tool-wrap">
             <div class="main-container">
-                <!-- Hero Section -->
+                <!-- Hero Section - HIDDEN in iframe mode -->
                 <section id="documentation" style="width: 100%; padding-top: 0;">
                     <h1 id="hero-headline" style="margin-bottom: 0.5rem; color: var(--text-heading); text-align: center;">
                         Search Query Studio
@@ -461,63 +503,6 @@
     <script src="tokenize.js"></script>
     
     <script>
-        // --- SIDEBAR AND NAVIGATION FUNCTIONALITY ---
-        const DOM = {
-            sidebar: document.getElementById('sidebar'),
-            menuToggle: document.getElementById('menu-toggle'),
-            closeMenuBtn: document.getElementById('close-menu'),
-            backdrop: document.getElementById('backdrop'),
-            sidebarToolLinks: document.querySelectorAll('.sidebar-tool-link')
-        };
-
-        // Storage keys
-        const STORAGE_KEYS = {
-            TOOL_URL: 'selectedToolUrl',
-            TOOL_NAME: 'selectedToolName'
-        };
-
-        /* --- UI/VISUAL CONTROLS --- */
-        function toggleSidebar(forceClose = false) {
-            const isOpen = DOM.sidebar.classList.contains('open');
-            const shouldOpen = forceClose ? false : !isOpen;
-
-            if (shouldOpen) {
-                DOM.sidebar.classList.add('open');
-                DOM.backdrop.style.display = 'block';
-                document.body.style.overflow = 'hidden'; 
-            } else {
-                DOM.sidebar.classList.remove('open');
-                DOM.backdrop.style.display = 'none';
-                document.body.style.overflow = '';
-            }
-        }
-
-        function updateActiveSidebarItem(activeTool) {
-            DOM.sidebarToolLinks.forEach(link => {
-                link.classList.remove('active');
-                const toolUrl = link.getAttribute('data-tool-url');
-                if (toolUrl && toolUrl === activeTool) {
-                    link.classList.add('active');
-                }
-            });
-        }
-
-        function saveSelectedTool(toolUrl, toolName) {
-            localStorage.setItem(STORAGE_KEYS.TOOL_URL, toolUrl);
-            localStorage.setItem(STORAGE_KEYS.TOOL_NAME, toolName);
-        }
-
-        function getSelectedTool() {
-            const toolUrl = localStorage.getItem(STORAGE_KEYS.TOOL_URL);
-            const toolName = localStorage.getItem(STORAGE_KEYS.TOOL_NAME);
-            return { toolUrl, toolName };
-        }
-
-        function clearSelectedTool() {
-            localStorage.removeItem(STORAGE_KEYS.TOOL_URL);
-            localStorage.removeItem(STORAGE_KEYS.TOOL_NAME);
-        }
-
         // --- TOKENIZER FUNCTIONALITY ---
         const isEmbedded = window.parent !== window;
         const PARENT_ORIGIN = window.location.origin;
@@ -594,11 +579,6 @@
             if (!isEmbedded) {
                 document.body.style.overflowY = 'auto';
                 document.body.style.overflowX = 'auto';
-                document.body.classList.add('iframe-mode');
-                DOM.sidebar.style.display = 'none';
-                DOM.menuToggle.style.display = 'none';
-                DOM.closeMenuBtn.style.display = 'none';
-                DOM.backdrop.style.display = 'none';
                 return;
             }
             
@@ -608,60 +588,18 @@
             // Don't calculate during loading
             if (loader.style.display !== 'none') return;
             
-            // Get ALL elements inside content-wrapper
-            const wrapper = document.getElementById('content-wrapper');
-            if (!wrapper) return;
+            // Get the exact total height of the document content
+            const height = document.documentElement.scrollHeight;
             
-            const allElements = wrapper.getElementsByTagName('*');
-            let lastVisibleElement = null;
-            let maxBottom = 0;
-            
-            // Find the element with the highest bottom position (last visible element)
-            for (let element of allElements) {
-                const style = window.getComputedStyle(element);
-                
-                // Skip hidden elements
-                if (style.display === 'none' || style.visibility === 'hidden') {
-                    continue;
-                }
-                
-                // Get element's position
-                const rect = element.getBoundingClientRect();
-                
-                // Only consider elements that are actually in the view (have height)
-                if (rect.height > 0) {
-                    const elementBottom = rect.bottom + window.pageYOffset;
-                    
-                    // Track the element with the highest bottom position
-                    if (elementBottom > maxBottom) {
-                        maxBottom = elementBottom;
-                        lastVisibleElement = element;
-                    }
-                }
-            }
-            
-            // If no elements found, use the wrapper itself
-            if (!lastVisibleElement) {
-                lastVisibleElement = wrapper;
-                const rect = wrapper.getBoundingClientRect();
-                maxBottom = rect.bottom + window.pageYOffset;
-            }
-            
-            // Get the top of the document
-            const docTop = document.documentElement.getBoundingClientRect().top + window.pageYOffset;
-            
-            // Calculate height: from top of document to bottom of last visible element
-            const contentHeight = maxBottom - docTop;
-            
-            // Add a small buffer (20px) to prevent cut-off
-            const finalHeight = contentHeight + 20;
-            
-            // Send to parent frame
+            // Send to parent frame with small buffer
             window.parent.postMessage(
-                { type: 'setHeight', height: Math.ceil(finalHeight) },
+                { type: 'setHeight', height: height + 30 },
                 '*'
             );
         }
+        
+        // Listen for resize events
+        window.addEventListener('resize', debouncedSendHeight);
         
         // --- PYODIDE SETUP ---
         const originalAppendStatus = window.appendStatus || function(msg) { 
@@ -688,8 +626,12 @@
                     // CRITICAL: Only lock overflow if embedded
                     if (isEmbedded) {
                         document.body.style.overflow = 'hidden';
+                        // Apply iframe mode class
+                        document.body.classList.add('iframe-mode');
                     } else {
                         document.body.style.overflow = 'auto';
+                        // Remove iframe mode class if it exists
+                        document.body.classList.remove('iframe-mode');
                     }
                     
                     btnTokenize.disabled = false;
@@ -706,49 +648,70 @@
             setTimeout(debouncedSendHeight, 50); 
         };
 
+        // --- SIDEBAR AND NAVIGATION FUNCTIONALITY ---
+        const DOM = {
+            sidebar: document.getElementById('sidebar'),
+            menuToggle: document.getElementById('menu-toggle'),
+            closeMenuBtn: document.getElementById('close-menu'),
+            backdrop: document.getElementById('backdrop'),
+            sidebarToolLinks: document.querySelectorAll('.sidebar-tool-link')
+        };
+
+        /* --- UI/VISUAL CONTROLS --- */
+        function toggleSidebar(forceClose = false) {
+            // Only work in normal webpage mode
+            if (isEmbedded) return;
+            
+            const isOpen = DOM.sidebar.classList.contains('open');
+            const shouldOpen = forceClose ? false : !isOpen;
+
+            if (shouldOpen) {
+                DOM.sidebar.classList.add('open');
+                DOM.backdrop.style.display = 'block';
+                document.body.style.overflow = 'hidden'; 
+            } else {
+                DOM.sidebar.classList.remove('open');
+                DOM.backdrop.style.display = 'none';
+                document.body.style.overflow = '';
+            }
+        }
+
+        function updateActiveSidebarItem(activeTool) {
+            DOM.sidebarToolLinks.forEach(link => {
+                link.classList.remove('active');
+                const toolUrl = link.getAttribute('data-tool-url');
+                if (toolUrl && toolUrl === activeTool) {
+                    link.classList.add('active');
+                }
+            });
+        }
+
         // --- INIT ---
         document.addEventListener('DOMContentLoaded', () => {
-            // Initialize sidebar
-            updateActiveSidebarItem('tokenizer.html');
-            
-            // Mobile Menu Toggles
-            DOM.menuToggle.addEventListener('click', () => toggleSidebar());
-            DOM.backdrop.addEventListener('click', () => toggleSidebar(true));
-            DOM.closeMenuBtn.addEventListener('click', () => toggleSidebar(true));
-
-            // Sidebar Navigation Handler
-            const handleToolSwitch = (e) => {
-                const link = e.target.closest('[data-tool-url]');
-                if (link) {
-                    e.preventDefault();
-                    const relativeUrl = link.getAttribute('data-tool-url');
-                    const toolName = relativeUrl;
-                    
-                    // Save selection to localStorage
-                    saveSelectedTool(relativeUrl, toolName);
-                    
-                    // Close mobile sidebar if open
-                    if (window.innerWidth < 1024) {
-                        toggleSidebar(true);
-                    }
-                    
-                    // In a standalone context, we would navigate to the tool
-                    // For now, just update the active state
-                    console.log('Would navigate to:', relativeUrl);
-                    updateActiveSidebarItem(relativeUrl);
-                }
-            };
-            
-            // Attach handler to sidebar links
-            DOM.sidebarToolLinks.forEach(link => {
-                link.addEventListener('click', handleToolSwitch);
-            });
-
-            // Set initial overflow based on whether embedded
+            // Apply iframe mode immediately if embedded
             if (isEmbedded) {
+                document.body.classList.add('iframe-mode');
                 document.body.style.overflow = 'hidden';
             } else {
+                document.body.classList.remove('iframe-mode');
                 document.body.style.overflow = 'auto';
+                
+                // Initialize sidebar only in normal webpage mode
+                updateActiveSidebarItem('tokenizer.html');
+                
+                // Mobile Menu Toggles - only in normal webpage
+                DOM.menuToggle.addEventListener('click', () => toggleSidebar());
+                DOM.backdrop.addEventListener('click', () => toggleSidebar(true));
+                DOM.closeMenuBtn.addEventListener('click', () => toggleSidebar(true));
+
+                // Sidebar Navigation Handler - only in normal webpage
+                DOM.sidebarToolLinks.forEach(link => {
+                    link.addEventListener('click', (e) => {
+                        // Allow normal navigation in standalone mode
+                        // No need to prevent default
+                        console.log('Navigating to:', link.href);
+                    });
+                });
             }
             
             document.body.classList.add('loading-active');
@@ -779,15 +742,17 @@
 
             window.addEventListener('load', debouncedSendHeight);
             
-            // Listen for resize events
-            window.addEventListener('resize', debouncedSendHeight);
-            
             // Observe DOM changes
             const observer = new MutationObserver(debouncedSendHeight);
             observer.observe(document.body, { 
                 attributes: true, 
                 childList: true, 
                 subtree: true 
+            });
+            
+            // Also listen for details toggle (expand/collapse)
+            document.querySelectorAll('details').forEach(details => {
+                details.addEventListener('toggle', debouncedSendHeight);
             });
         });
 
