@@ -521,6 +521,7 @@
         const loadingText = document.getElementById('loading-text');
         const contentWrapper = document.getElementById('content-wrapper');
 
+        // ==================== IMPROVED HEIGHT CALCULATION ====================
         // Debounce to prevent excessive height updates
         let heightTimeout;
         function debouncedSendHeight() {
@@ -542,42 +543,75 @@
             // Don't calculate during loading
             if (loader.style.display !== 'none') return;
             
-            // Get ALL elements inside content-wrapper
-            const wrapper = document.getElementById('content-wrapper');
-            if (!wrapper) return;
+            // Get the main container - this is the container that holds all tool content
+            const mainContainer = document.querySelector('.main-container');
+            if (!mainContainer) return;
             
-            const allElements = wrapper.getElementsByTagName('*');
+            // Get all direct children of the main container that are visible
+            const containerChildren = Array.from(mainContainer.children);
+            
+            // Find the last visible element in the DOM order
             let lastVisibleElement = null;
             let maxBottom = 0;
             
-            // Find the element with the highest bottom position (last visible element)
-            for (let element of allElements) {
-                const style = window.getComputedStyle(element);
+            // Look through all children in reverse order to find the last visible one
+            for (let i = containerChildren.length - 1; i >= 0; i--) {
+                const child = containerChildren[i];
+                const style = window.getComputedStyle(child);
                 
                 // Skip hidden elements
-                if (style.display === 'none' || style.visibility === 'hidden') {
+                if (style.display === 'none' || style.visibility === 'hidden' || style.opacity === '0') {
                     continue;
                 }
                 
-                // Get element's position
-                const rect = element.getBoundingClientRect();
-                
-                // Only consider elements that are actually in the view (have height)
-                if (rect.height > 0) {
+                // Check if this element is actually in the document flow and visible
+                const rect = child.getBoundingClientRect();
+                if (rect.height > 0 && rect.width > 0) {
                     const elementBottom = rect.bottom + window.pageYOffset;
                     
-                    // Track the element with the highest bottom position
+                    // Track the last visible element
                     if (elementBottom > maxBottom) {
                         maxBottom = elementBottom;
-                        lastVisibleElement = element;
+                        lastVisibleElement = child;
+                        break; // Found the last visible element
                     }
                 }
             }
             
-            // If no elements found, use the wrapper itself
+            // SPECIAL HANDLING: Check inside #visualizer-content for the actual content
+            const visualizerContent = document.getElementById('visualizer-content');
+            if (visualizerContent && visualizerContent.style.display !== 'none') {
+                // Check for #result-container (might be hidden initially)
+                const resultContainer = document.getElementById('result-container');
+                if (resultContainer && resultContainer.style.display !== 'none') {
+                    const rect = resultContainer.getBoundingClientRect();
+                    if (rect.height > 0) {
+                        const elementBottom = rect.bottom + window.pageYOffset;
+                        if (elementBottom > maxBottom) {
+                            maxBottom = elementBottom;
+                            lastVisibleElement = resultContainer;
+                        }
+                    }
+                }
+                
+                // Also check for pre element inside result container
+                const prettyOutput = document.getElementById('pretty-output');
+                if (prettyOutput && prettyOutput.textContent && prettyOutput.textContent.trim() !== '') {
+                    const rect = prettyOutput.getBoundingClientRect();
+                    if (rect.height > 0) {
+                        const elementBottom = rect.bottom + window.pageYOffset;
+                        if (elementBottom > maxBottom) {
+                            maxBottom = elementBottom;
+                            lastVisibleElement = prettyOutput;
+                        }
+                    }
+                }
+            }
+            
+            // If we didn't find a last element, use the main container itself
             if (!lastVisibleElement) {
-                lastVisibleElement = wrapper;
-                const rect = wrapper.getBoundingClientRect();
+                lastVisibleElement = mainContainer;
+                const rect = mainContainer.getBoundingClientRect();
                 maxBottom = rect.bottom + window.pageYOffset;
             }
             
@@ -585,10 +619,19 @@
             const docTop = document.documentElement.getBoundingClientRect().top + window.pageYOffset;
             
             // Calculate height: from top of document to bottom of last visible element
-            const contentHeight = maxBottom - docTop;
+            let contentHeight = maxBottom - docTop;
+            
+            // Ensure we're not getting negative or too small height
+            contentHeight = Math.max(contentHeight, 100);
             
             // Add a small buffer (20px) to prevent cut-off
             const finalHeight = contentHeight + 20;
+            
+            // Debug logging
+            console.log('Height calculation:');
+            console.log('- Last element:', lastVisibleElement?.tagName, lastVisibleElement?.id);
+            console.log('- Content height:', contentHeight);
+            console.log('- Final height:', finalHeight);
             
             // Send to parent frame
             window.parent.postMessage(
@@ -596,6 +639,7 @@
                 '*'
             );
         }
+        // ==================== END OF HEIGHT CALCULATION ====================
         
         // --- INITIALIZATION ---
         document.addEventListener('DOMContentLoaded', () => {
@@ -678,14 +722,54 @@
             // Listen for resize events
             window.addEventListener('resize', debouncedSendHeight);
             
-            // Observe DOM changes for dynamic content
-            const observer = new MutationObserver(debouncedSendHeight);
-            observer.observe(document.body, { 
-                attributes: true, 
-                childList: true, 
-                subtree: true 
+            // Observe DOM changes for dynamic content - MORE TARGETED
+            const observer = new MutationObserver((mutations) => {
+                // Check if any mutation affects visible content
+                let shouldUpdate = false;
+                for (const mutation of mutations) {
+                    // Check for changes in display, visibility, or content
+                    if (mutation.type === 'attributes' && 
+                        (mutation.attributeName === 'style' || mutation.attributeName === 'class')) {
+                        shouldUpdate = true;
+                        break;
+                    }
+                    if (mutation.type === 'childList') {
+                        // Check if children were added/removed from visible areas
+                        const target = mutation.target;
+                        if (target.id === 'content-wrapper' || 
+                            target.closest('#content-wrapper') ||
+                            target.id === 'visualizer-content' ||
+                            target.id === 'result-container' ||
+                            target.id === 'pretty-output' ||
+                            target.closest('.main-container')) {
+                            shouldUpdate = true;
+                            break;
+                        }
+                    }
+                }
+                if (shouldUpdate) {
+                    debouncedSendHeight();
+                }
             });
-
+            
+            observer.observe(document.body, { 
+                childList: true, 
+                subtree: true,
+                attributes: true,
+                attributeFilter: ['style', 'class', 'display']
+            });
+            
+            // Also listen for content changes in output
+            const prettyOutput = document.getElementById('pretty-output');
+            if (prettyOutput) {
+                const outputObserver = new MutationObserver(debouncedSendHeight);
+                outputObserver.observe(prettyOutput, { 
+                    characterData: true,
+                    childList: true,
+                    subtree: true 
+                });
+            }
+            
             // Also send height when the visualize button is clicked
             const btnVisualize = document.getElementById('btn-visualize');
             if (btnVisualize) {
