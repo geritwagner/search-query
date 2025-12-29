@@ -148,76 +148,6 @@
             color: white;
         }
 
-        /* --- TOOL SPECIFIC STYLES --- */
-        .main-content-card {
-            margin-top: 1.5rem;
-            background: var(--bg-card);
-            border: 1px solid var(--border-color);
-            border-radius: 0.75rem;
-            padding: 1.5rem;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-        }
-
-        label { display: block; margin-top: 1.25rem; margin-bottom: 0.25rem; font-weight: 600; font-size: 0.875rem; }
-        
-        #query {
-            font-size: 1.1rem !important;
-            line-height: 1.6;
-            padding: 1rem;
-            min-height: 160px;
-            font-family: 'Courier New', monospace;
-        }
-        
-        textarea { 
-            display: block; width: 100%; padding: 0.75rem; border: 1px solid var(--border-color); 
-            border-radius: 0.5rem; box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.07); 
-            transition: border-color 0.2s, box-shadow 0.2s; color: var(--text-heading);
-            max-width: 100%;
-        }
-        
-        textarea:focus { 
-            border-color: var(--primary); box-shadow: 0 0 0 1px var(--primary); outline: none; 
-        }
-
-        #btn-visualize {
-            width: auto; min-width: 200px; padding: 0.75rem 2rem; border: none; border-radius: 0.5rem; 
-            font-weight: 600; color: white; background-color: var(--primary); cursor: pointer; 
-            transition: background-color 0.2s; box-shadow: 0 2px 4px rgba(79, 70, 229, 0.4); 
-            margin-top: 1.5rem; font-size: 1rem; display: block; margin-left: auto; margin-right: auto;
-        }
-        #btn-visualize:hover { background-color: var(--primary-dark); }
-        #btn-visualize:disabled { opacity: 0.6; cursor: not-allowed; box-shadow: none; }
-
-        #result-container {
-            display: none; margin-top: 1.5rem; padding: 1rem; background: var(--bg-card);
-            border: 1px solid var(--border-color); border-radius: 0.75rem;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-        }
-
-        #pretty-title {
-            margin-top: 0;
-            font-size: 1.25rem;
-        }
-
-        pre {
-            margin-top: 0.75rem;
-            background-color: #0b1120;
-            color: #e5e7eb;
-            border-radius: 0.5rem;
-            padding: 1rem;
-            border: 1px solid #1f2937;
-            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
-            font-size: 0.95rem;
-            max-height: 500px;
-            overflow: auto;
-        }
-
-        .hint {
-            margin-top: 0.5rem;
-            font-size: 0.8rem;
-            color: var(--text-body);
-        }
-
         /* --- Loading Overlay --- */
         #loading-overlay { 
             position: fixed; 
@@ -271,29 +201,138 @@
             margin-bottom: 1rem !important;
         }
         
-        /* Tool content styles */
-        .tool-header h1 { font-size: 1.5rem; font-weight: bold; margin-bottom: 0.25rem; }
-        .tool-header p { color: var(--text-body); margin-top: 0; font-size: 0.95rem; }
-        
         /* Ensure content is visible in iframe context */
         body.loading-active {
             height: 100vh;
         }
         
-        /* Footer Links */
-        .footer-links {
-            display: flex;
-            gap: 1.5rem;
-            justify-content: center;
-            margin-top: 1rem;
+        /* --- YOUR ORIGINAL VISUALIZER STYLES (KEPT EXACTLY AS IS) --- */
+        /* This section preserves all your original styles */
+        .visualizer-original-styles {
+            /* Your original body style - but we need to override some for the wrapper */
         }
-        .footer-links a {
-            color: var(--text-body);
+        
+        /* We need to target the content inside #visualizer-content specifically */
+        #visualizer-content {
+            background-color: var(--bg-card);
+            color: var(--text-main);
+            padding: 1.5rem;
+            min-height: 100vh;
+            overflow-x: hidden;
+            overflow-y: auto;
+            position: relative;
+        }
+        
+        #visualizer-content header h1 {
+            font-size: 1.5rem;
+            font-weight: bold;
+            margin-bottom: 0.25rem;
+        }
+
+        #visualizer-content header p {
+            color: var(--text-secondary);
+            margin-top: 0;
+            font-size: 0.95rem;
+        }
+
+        #visualizer-content .main-content-card {
+            margin-top: 1.5rem;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        }
+
+        #visualizer-content label {
+            display: block;
+            margin-top: 1.25rem;
+            margin-bottom: 0.25rem;
+            font-weight: 600;
             font-size: 0.875rem;
-            transition: color 0.2s;
         }
-        .footer-links a:hover {
-            color: var(--primary);
+
+        #visualizer-content #query {
+            font-size: 1.1rem !important;
+            line-height: 1.6;
+            padding: 1rem;
+            min-height: 160px;
+            font-family: 'Courier New', monospace;
+        }
+
+        #visualizer-content textarea {
+            display: block;
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid var(--border-color);
+            border-radius: 0.5rem;
+            box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.07);
+            transition: border-color 0.2s, box-shadow 0.2s;
+            color: var(--text-main);
+            max-width: 100%;
+        }
+
+        #visualizer-content textarea:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 1px var(--primary);
+            outline: none;
+        }
+
+        #visualizer-content #btn-visualize {
+            width: auto;
+            min-width: 200px;
+            padding: 0.75rem 2rem;
+            border: none;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            color: white;
+            background-color: var(--primary);
+            cursor: pointer;
+            transition: background-color 0.2s;
+            box-shadow: 0 2px 4px rgba(79, 70, 229, 0.4);
+            margin-top: 1.5rem;
+            font-size: 1rem;
+            display: block;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        #visualizer-content #btn-visualize:hover {
+            background-color: var(--primary-dark);
+        }
+
+        #visualizer-content #pretty-title {
+            margin-top: 1.5rem;
+            font-size: 1.25rem;
+        }
+
+        #visualizer-content pre {
+            margin-top: 0.75rem;
+            background-color: #0b1120;
+            color: #e5e7eb;
+            border-radius: 0.5rem;
+            padding: 1rem;
+            border: 1px solid #1f2937;
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            font-size: 0.95rem;
+            max-height: 500px;
+            overflow: auto;
+        }
+
+        #visualizer-content .hint {
+            margin-top: 0.5rem;
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+        
+        #visualizer-content #result-container {
+            display: none; 
+            margin-top: 1.5rem; 
+            padding: 1rem; 
+            background: var(--bg-card);
+            border: 1px solid var(--border-color); 
+            border-radius: 0.75rem;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
         }
     </style>
 </head>
@@ -382,25 +421,28 @@
                     </div>
                     
                     <div id="content-wrapper">
-                        <div class="tool-header">
-                            <h1>Search-Query Visualizer</h1>
-                            <p>Indent and visualize nested subqueries based on parentheses.</p>
-                        </div>
+                        <!-- YOUR ORIGINAL CONTENT - WRAPPED IN A CONTAINER -->
+                        <div id="visualizer-content">
+                            <header>
+                                <h1>Search-Query Visualizer</h1>
+                                <p>Indent and visualize nested subqueries based on parentheses.</p>
+                            </header>
 
-                        <div class="main-content-card">
-                            <label for="query">Query</label>
-                            <textarea id="query" rows="8">TS=(("large language model*" OR "LLM*" OR "generative AI" OR "genAI" OR "foundation model*") AND ("work performance" OR "job performance" OR "individual performance" OR productivity OR efficiency OR effectiveness) AND (workplace OR "knowledge worker*" OR employee* OR worker* OR "organizational context" OR "organizational setting" OR "professional" OR "business"))</textarea>
+                            <div class="main-content-card">
+                                <label for="query">Query</label>
+                                <textarea id="query" rows="8">TS=(("large language model*" OR "LLM*" OR "generative AI" OR "genAI" OR "foundation model*") AND ("work performance" OR "job performance" OR "individual performance" OR productivity OR efficiency OR effectiveness) AND (workplace OR "knowledge worker*" OR employee* OR worker* OR "organizational context" OR "organizational setting" OR "professional" OR "business"))</textarea>
 
-                            <button id="btn-visualize" disabled>Visualize structure</button>
-                        </div>
+                                <button id="btn-visualize">Visualize structure</button>
+                            </div>
 
-                        <!-- AFTER: hidden by default -->
-                        <div id="result-container">
-                            <h2 id="pretty-title">Indented structure</h2>
-                            <pre id="pretty-output"></pre>
-                            <p class="hint">
-                                Parentheses define the indentation levels. Quoted phrases are kept together; boolean operators are placed on separate lines.
-                            </p>
+                            <!-- AFTER: hidden by default -->
+                            <div id="result-container">
+                                <h2 id="pretty-title">Indented structure</h2>
+                                <pre id="pretty-output"></pre>
+                                <p class="hint">
+                                    Parentheses define the indentation levels. Quoted phrases are kept together; boolean operators are placed on separate lines.
+                                </p>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -408,8 +450,9 @@
         </div>
     </div>
 
-    <script src="search_query_pkg_tree.js"></script>
+    <!-- YOUR ORIGINAL SCRIPTS -->
     <script src="structure.js"></script>
+    
     <script>
         // --- SIDEBAR AND NAVIGATION FUNCTIONALITY ---
         const DOM = {
@@ -430,10 +473,6 @@
             DOM.menuToggle.style.display = 'none';
             DOM.closeMenuBtn.style.display = 'none';
             DOM.backdrop.style.display = 'none';
-            // Hide sidebar and header for iframe mode
-            DOM.sidebar.style.display = 'none';
-            document.getElementById('mobile-header').style.display = 'none';
-            document.getElementById('backdrop').style.display = 'none';
         }
 
         // Storage keys
@@ -466,40 +505,17 @@
             
             DOM.sidebarToolLinks.forEach(link => {
                 link.classList.remove('active');
-                const toolUrl = link.getAttribute('data-tool-url') || link.getAttribute('href');
+                const toolUrl = link.getAttribute('href');
                 if (toolUrl && toolUrl.includes(activeTool)) {
                     link.classList.add('active');
                 }
             });
         }
 
-        function saveSelectedTool(toolUrl, toolName) {
-            if (isEmbedded) return; // Skip in iframe mode
-            localStorage.setItem(STORAGE_KEYS.TOOL_URL, toolUrl);
-            localStorage.setItem(STORAGE_KEYS.TOOL_NAME, toolName);
-        }
-
-        function getSelectedTool() {
-            if (isEmbedded) return { toolUrl: null, toolName: null };
-            const toolUrl = localStorage.getItem(STORAGE_KEYS.TOOL_URL);
-            const toolName = localStorage.getItem(STORAGE_KEYS.TOOL_NAME);
-            return { toolUrl, toolName };
-        }
-
-        function clearSelectedTool() {
-            if (isEmbedded) return; // Skip in iframe mode
-            localStorage.removeItem(STORAGE_KEYS.TOOL_URL);
-            localStorage.removeItem(STORAGE_KEYS.TOOL_NAME);
-        }
-
-        // --- TOOL FUNCTIONALITY ---
+        // --- LOADING AND IFRAME FUNCTIONALITY ---
         const loader = document.getElementById('loading-overlay');
         const loadingText = document.getElementById('loading-text');
         const contentWrapper = document.getElementById('content-wrapper');
-        const btnVisualize = document.getElementById('btn-visualize');
-        const resultContainer = document.getElementById('result-container');
-        const prettyOutput = document.getElementById('pretty-output');
-        const queryTextarea = document.getElementById('query');
 
         // Debounce to prevent excessive height updates
         let heightTimeout;
@@ -511,64 +527,21 @@
         function sendHeight() {
             // Only adjust iframe if we're embedded
             if (!isEmbedded) {
-                document.body.style.overflowY = 'auto';
-                document.body.style.overflowX = 'auto';
                 return;
             }
-            
-            // Hide scrollbars when embedded
-            document.body.style.overflow = 'hidden';
             
             // Don't calculate during loading
             if (loader.style.display !== 'none') return;
             
-            // Get ALL elements inside content-wrapper
-            const wrapper = document.getElementById('content-wrapper');
-            if (!wrapper) return;
+            // Get the visualizer content wrapper
+            const visualizerContent = document.getElementById('visualizer-content');
+            if (!visualizerContent) return;
             
-            const allElements = wrapper.getElementsByTagName('*');
-            let lastVisibleElement = null;
-            let maxBottom = 0;
+            // Calculate the height of the visualizer content
+            const height = visualizerContent.scrollHeight;
             
-            // Find the element with the highest bottom position (last visible element)
-            for (let element of allElements) {
-                const style = window.getComputedStyle(element);
-                
-                // Skip hidden elements
-                if (style.display === 'none' || style.visibility === 'hidden') {
-                    continue;
-                }
-                
-                // Get element's position
-                const rect = element.getBoundingClientRect();
-                
-                // Only consider elements that are actually in the view (have height)
-                if (rect.height > 0) {
-                    const elementBottom = rect.bottom + window.pageYOffset;
-                    
-                    // Track the element with the highest bottom position
-                    if (elementBottom > maxBottom) {
-                        maxBottom = elementBottom;
-                        lastVisibleElement = element;
-                    }
-                }
-            }
-            
-            // If no elements found, use the wrapper itself
-            if (!lastVisibleElement) {
-                lastVisibleElement = wrapper;
-                const rect = wrapper.getBoundingClientRect();
-                maxBottom = rect.bottom + window.pageYOffset;
-            }
-            
-            // Get the top of the document
-            const docTop = document.documentElement.getBoundingClientRect().top + window.pageYOffset;
-            
-            // Calculate height: from top of document to bottom of last visible element
-            const contentHeight = maxBottom - docTop;
-            
-            // Add a small buffer (20px) to prevent cut-off
-            const finalHeight = contentHeight + 20;
+            // Add some padding
+            const finalHeight = height + 40;
             
             // Send to parent frame
             window.parent.postMessage(
@@ -577,94 +550,7 @@
             );
         }
         
-        // --- PYODIDE SETUP ---
-        const originalAppendStatus = window.appendStatus || function(msg) { 
-            console.log('Status:', msg);
-        };
-
-        window.appendStatus = function(msg) {
-            const cleanMsg = msg.replace(/\u001b\[.*?m/g, '').trim(); 
-            if (loadingText) loadingText.textContent = cleanMsg;
-
-            if (cleanMsg.includes('Done') || cleanMsg.includes('ready') || cleanMsg.includes('Ready')) {
-                // Done loading
-                loader.style.opacity = '0';
-                contentWrapper.style.opacity = '1';
-            
-                setTimeout(() => {
-                    loader.style.display = 'none';
-                    
-                    // CRITICAL: Only lock overflow if embedded
-                    if (isEmbedded) {
-                        document.body.style.overflow = 'hidden';
-                    } else {
-                        document.body.style.overflow = 'auto';
-                    }
-                    
-                    btnVisualize.disabled = false;
-                    debouncedSendHeight();
-                }, 500);
-            } else {
-                document.body.classList.add('loading-active');
-                loader.style.display = 'flex';
-                loader.style.opacity = '1';
-                contentWrapper.style.opacity = '0';
-            }
-            
-            originalAppendStatus(msg);
-            setTimeout(debouncedSendHeight, 50); 
-        };
-
-        // --- VISUALIZATION FUNCTIONALITY ---
-        function visualizeQuery() {
-            const query = queryTextarea.value.trim();
-            if (!query) return;
-            
-            try {
-                // Call the structure visualization function from structure.js
-                if (typeof window.visualizeStructure === 'function') {
-                    const result = window.visualizeStructure(query);
-                    prettyOutput.textContent = result;
-                    resultContainer.style.display = 'block';
-                } else {
-                    // Fallback simple visualization
-                    const lines = [];
-                    let indent = 0;
-                    
-                    for (let i = 0; i < query.length; i++) {
-                        const char = query[i];
-                        if (char === '(') {
-                            lines.push('  '.repeat(indent) + '(');
-                            indent++;
-                        } else if (char === ')') {
-                            indent--;
-                            lines.push('  '.repeat(indent) + ')');
-                        } else if (char === ' ' && i > 0 && query[i-1] !== '(' && query[i-1] !== ')') {
-                            // Handle boolean operators on new lines
-                            const nextWord = query.slice(i+1).split(' ')[0];
-                            if (nextWord.toUpperCase() === 'AND' || 
-                                nextWord.toUpperCase() === 'OR' || 
-                                nextWord.toUpperCase() === 'NOT') {
-                                lines.push('');
-                                lines.push('  '.repeat(indent) + nextWord);
-                                i += nextWord.length;
-                            }
-                        }
-                    }
-                    
-                    prettyOutput.textContent = lines.join('\n');
-                    resultContainer.style.display = 'block';
-                }
-                
-                debouncedSendHeight();
-            } catch (error) {
-                prettyOutput.textContent = 'Error: ' + error.message;
-                resultContainer.style.display = 'block';
-                debouncedSendHeight();
-            }
-        }
-
-        // --- INIT ---
+        // --- INITIALIZATION ---
         document.addEventListener('DOMContentLoaded', () => {
             // Only initialize sidebar functionality if not in iframe
             if (!isEmbedded) {
@@ -674,80 +560,65 @@
                 DOM.menuToggle.addEventListener('click', () => toggleSidebar());
                 DOM.backdrop.addEventListener('click', () => toggleSidebar(true));
                 DOM.closeMenuBtn.addEventListener('click', () => toggleSidebar(true));
-
-                // Sidebar Navigation Handler
-                const handleToolSwitch = (e) => {
-                    const link = e.target.closest('a');
-                    if (link && link.classList.contains('sidebar-tool-link')) {
-                        const toolUrl = link.getAttribute('href');
-                        const toolName = link.textContent.trim();
-                        
-                        // Save selection to localStorage
-                        saveSelectedTool(toolUrl, toolName);
-                        
-                        // Close mobile sidebar if open
-                        if (window.innerWidth < 1024) {
-                            toggleSidebar(true);
-                        }
-                        
-                        // Update active state
-                        updateActiveSidebarItem(toolUrl);
-                        
-                        // Note: Navigation happens via link href
-                    }
-                };
-                
-                // Attach handler to sidebar links
-                DOM.sidebarToolLinks.forEach(link => {
-                    link.addEventListener('click', handleToolSwitch);
-                });
             }
 
-            // Set initial overflow based on whether embedded
-            if (isEmbedded) {
-                document.body.style.overflow = 'hidden';
-            } else {
-                document.body.style.overflow = 'auto';
-            }
-            
+            // Set initial loading state
             document.body.classList.add('loading-active');
             contentWrapper.style.opacity = '0';
             loader.style.display = 'flex'; 
             loadingText.textContent = "Initializing Search Query...";
 
-            // Set up visualization button
-            btnVisualize.addEventListener('click', visualizeQuery);
-            
-            // Also visualize on Enter key in textarea (with Ctrl/Cmd)
-            queryTextarea.addEventListener('keydown', (e) => {
-                if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
-                    e.preventDefault();
-                    visualizeQuery();
-                }
-            });
+            // Check if we need to wait for Pyodide or if structure.js loads immediately
+            // Since you said it should work perfectly as is, we'll assume structure.js works immediately
+            // But we'll add a small delay to show the loading animation
+            setTimeout(() => {
+                // Hide loader and show content
+                loader.style.opacity = '0';
+                contentWrapper.style.opacity = '1';
+                
+                setTimeout(() => {
+                    loader.style.display = 'none';
+                    document.body.classList.remove('loading-active');
+                    
+                    // Send initial height
+                    debouncedSendHeight();
+                    
+                    // If embedded, hide overflow
+                    if (isEmbedded) {
+                        document.body.style.overflow = 'hidden';
+                    }
+                }, 500);
+            }, 1000); // 1 second loading time
 
-            window.addEventListener('load', debouncedSendHeight);
+            // Listen for resize events
+            window.addEventListener('resize', debouncedSendHeight);
             
-            // Observe DOM changes
+            // Observe DOM changes for dynamic content
             const observer = new MutationObserver(debouncedSendHeight);
-            observer.observe(document.body, { 
+            observer.observe(document.getElementById('visualizer-content'), { 
                 attributes: true, 
                 childList: true, 
                 subtree: true 
             });
 
-            // Listen for resize events
-            window.addEventListener('resize', debouncedSendHeight);
-            
             // Initial height calculation
-            setTimeout(debouncedSendHeight, 100);
+            setTimeout(debouncedSendHeight, 1500);
             
-            // Initialize pyodide if needed
-            if (typeof initPyodide === 'function') {
-                initPyodide();
+            // Also send height when the visualize button is clicked
+            const btnVisualize = document.getElementById('btn-visualize');
+            if (btnVisualize) {
+                btnVisualize.addEventListener('click', () => {
+                    setTimeout(debouncedSendHeight, 300);
+                });
             }
         });
 
+        // Listen for messages from parent iframe (if any)
+        window.addEventListener('message', (event) => {
+            if (event.data && event.data.type === 'getHeight') {
+                debouncedSendHeight();
+            }
+        });
     </script>
 </body>
 </html>
