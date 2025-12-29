@@ -656,10 +656,23 @@
             backdrop: document.getElementById('backdrop'),
             sidebarToolLinks: document.querySelectorAll('.sidebar-tool-link')
         };
+                // Apply iframe mode immediately
+        if (isEmbedded) {
+            document.body.classList.add('iframe-mode');
+            DOM.sidebar.style.display = 'none';
+            DOM.menuToggle.style.display = 'none';
+            DOM.closeMenuBtn.style.display = 'none';
+            DOM.backdrop.style.display = 'none';
+            // Hide sidebar and header for iframe mode
+            DOM.sidebar.style.display = 'none';
+            document.getElementById('mobile-header').style.display = 'none';
+            document.getElementById('backdrop').style.display = 'none';
+        }
 
-        /* --- UI/VISUAL CONTROLS --- */
+
+         /* --- UI/VISUAL CONTROLS --- */
         function toggleSidebar(forceClose = false) {
-            // Only work in normal webpage mode
+            // Don't toggle sidebar in iframe mode
             if (isEmbedded) return;
             
             const isOpen = DOM.sidebar.classList.contains('open');
