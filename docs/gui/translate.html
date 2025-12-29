@@ -627,6 +627,7 @@
             URL.revokeObjectURL(url);
         }
 
+        // ==================== EXACT HEIGHT CALCULATION FROM WORKING EXAMPLE ====================
         // Debounce to prevent excessive height updates
         let heightTimeout;
         function debouncedSendHeight() {
@@ -634,7 +635,6 @@
             heightTimeout = setTimeout(sendHeight, 150);
         }
 
-        // SEND HEIGHT FUNCTION
         function sendHeight() {
             // Only adjust iframe if we're embedded
             if (!isEmbedded) {
@@ -649,15 +649,64 @@
             // Don't calculate during loading
             if (loader.style.display !== 'none') return;
             
-            // Get the exact total height of the document content
-            const height = document.documentElement.scrollHeight;
+            // Get ALL elements inside content-wrapper (the main content area)
+            const wrapper = document.getElementById('content-wrapper');
+            if (!wrapper) return;
             
-            // Send to parent frame with small buffer
+            const allElements = wrapper.getElementsByTagName('*');
+            let lastVisibleElement = null;
+            let maxBottom = 0;
+            
+            // Find the element with the highest bottom position (last visible element)
+            for (let element of allElements) {
+                const style = window.getComputedStyle(element);
+                
+                // Skip hidden elements
+                if (style.display === 'none' || style.visibility === 'hidden') {
+                    continue;
+                }
+                
+                // Get element's position
+                const rect = element.getBoundingClientRect();
+                
+                // Only consider elements that are actually in the view (have height)
+                if (rect.height > 0) {
+                    const elementBottom = rect.bottom + window.pageYOffset;
+                    
+                    // Track the element with the highest bottom position
+                    if (elementBottom > maxBottom) {
+                        maxBottom = elementBottom;
+                        lastVisibleElement = element;
+                    }
+                }
+            }
+            
+            // If no elements found, use the wrapper itself
+            if (!lastVisibleElement) {
+                lastVisibleElement = wrapper;
+                const rect = wrapper.getBoundingClientRect();
+                maxBottom = rect.bottom + window.pageYOffset;
+            }
+            
+            // Get the top of the document
+            const docTop = document.documentElement.getBoundingClientRect().top + window.pageYOffset;
+            
+            // Calculate height: from top of document to bottom of last visible element
+            const contentHeight = maxBottom - docTop;
+            
+            // Add a small buffer (20px) to prevent cut-off
+            const finalHeight = contentHeight + 20;
+            
+            // Send to parent frame
             window.parent.postMessage(
-                { type: 'setHeight', height: height + 30 },
+                { type: 'setHeight', height: Math.ceil(finalHeight) },
                 '*'
             );
         }
+        // ==================== END OF HEIGHT CALCULATION ====================
+        
+        // Listen for resize events
+        window.addEventListener('resize', debouncedSendHeight);
         
         // --- PYODIDE SETUP ---
         const originalAppendStatus = window.appendStatus || function(msg) { 
@@ -704,7 +753,7 @@
             originalAppendStatus(msg);
             
             // Trigger height check
-            debouncedSendHeight();
+            setTimeout(debouncedSendHeight, 50);
         };
         
         // --- Append module with interval stopped after ready ---
@@ -730,7 +779,7 @@
                 clearInterval(appendInterval);
 
                 // Send final height once
-                debouncedSendHeight();
+                setTimeout(debouncedSendHeight, 100);
             }
         }, 100);
 
@@ -780,7 +829,10 @@
             
             // When translate button is clicked
             btnTranslate.addEventListener('click', () => {
-                setTimeout(debouncedSendHeight, 800);
+                setTimeout(() => {
+                    // After translation completes, calculate the exact height
+                    debouncedSendHeight();
+                }, 800);
             });
             
             // Initial state setup
@@ -797,18 +849,56 @@
             hljs.highlightAll();
 
             // Send initial minimal height
-            window.addEventListener('load', debouncedSendHeight);
+            window.addEventListener('load', () => {
+                setTimeout(debouncedSendHeight, 100);
+            });
             
             // Listen for resize events
             window.addEventListener('resize', debouncedSendHeight);
             
-            // Observe DOM changes
-            const observer = new MutationObserver(debouncedSendHeight);
+            // Observe DOM changes for dynamic content
+            const observer = new MutationObserver((mutations) => {
+                // Only trigger if the mutation affects visible content
+                let shouldUpdate = false;
+                for (const mutation of mutations) {
+                    const target = mutation.target;
+                    // Check if mutation is in content area or affects visibility
+                    if (target.id === 'content-wrapper' || 
+                        target.closest('#content-wrapper') ||
+                        target.id === 'result' || 
+                        target.id === 'messages' ||
+                        mutation.type === 'childList') {
+                        shouldUpdate = true;
+                        break;
+                    }
+                }
+                if (shouldUpdate) {
+                    debouncedSendHeight();
+                }
+            });
+            
             observer.observe(document.body, { 
                 childList: true, 
                 subtree: true,
-                attributes: true 
+                attributes: true,
+                attributeFilter: ['style', 'class']
             });
+            
+            // Also listen for elements being shown/hidden
+            const elementsToMonitor = ['result', 'messages', 'result-title', 'messages-title'];
+            elementsToMonitor.forEach(id => {
+                const element = document.getElementById(id);
+                if (element) {
+                    // Watch for display style changes
+                    observer.observe(element, { 
+                        attributes: true, 
+                        attributeFilter: ['style'] 
+                    });
+                }
+            });
+            
+            // Initial height calculation
+            setTimeout(debouncedSendHeight, 200);
         });
 
     </script>
