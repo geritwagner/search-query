@@ -566,7 +566,7 @@
             URL.revokeObjectURL(url);
         }
 
-        // ==================== EXACT HEIGHT CALCULATION FROM WORKING EXAMPLE ====================
+        // ==================== IMPROVED HEIGHT CALCULATION ====================
         // Debounce to prevent excessive height updates
         let heightTimeout;
         function debouncedSendHeight() {
@@ -588,53 +588,89 @@
             // Don't calculate during loading
             if (loader.style.display !== 'none') return;
             
-            // Get ALL elements inside content-wrapper
-            const wrapper = document.getElementById('content-wrapper');
-            if (!wrapper) return;
+            // Get the main content container - this is the container that holds all tool content
+            const mainContainer = document.querySelector('.main-container');
+            if (!mainContainer) return;
             
-            const allElements = wrapper.getElementsByTagName('*');
+            // Get all direct children of the main container that are visible
+            const containerChildren = Array.from(mainContainer.children);
+            
+            // Find the last visible element in the DOM order
             let lastVisibleElement = null;
             let maxBottom = 0;
             
-            // Find the element with the highest bottom position (last visible element)
-            for (let element of allElements) {
-                const style = window.getComputedStyle(element);
+            // Look through all children in reverse order to find the last visible one
+            for (let i = containerChildren.length - 1; i >= 0; i--) {
+                const child = containerChildren[i];
+                const style = window.getComputedStyle(child);
                 
                 // Skip hidden elements
-                if (style.display === 'none' || style.visibility === 'hidden') {
+                if (style.display === 'none' || style.visibility === 'hidden' || style.opacity === '0') {
                     continue;
                 }
                 
-                // Get element's position
-                const rect = element.getBoundingClientRect();
-                
-                // Only consider elements that are actually in the view (have height)
-                if (rect.height > 0) {
+                // Check if this element is actually in the document flow and visible
+                const rect = child.getBoundingClientRect();
+                if (rect.height > 0 && rect.width > 0) {
                     const elementBottom = rect.bottom + window.pageYOffset;
                     
-                    // Track the element with the highest bottom position
+                    // Track the last visible element
                     if (elementBottom > maxBottom) {
                         maxBottom = elementBottom;
-                        lastVisibleElement = element;
+                        lastVisibleElement = child;
+                        break; // Found the last visible element
                     }
                 }
             }
             
-            // If no elements found, use the wrapper itself
+            // If we didn't find a last element, use the main container itself
             if (!lastVisibleElement) {
-                lastVisibleElement = wrapper;
-                const rect = wrapper.getBoundingClientRect();
+                lastVisibleElement = mainContainer;
+                const rect = mainContainer.getBoundingClientRect();
                 maxBottom = rect.bottom + window.pageYOffset;
+            }
+            
+            // SPECIAL HANDLING: If we have a tool-content element, check its children too
+            const toolContent = document.querySelector('.tool-content');
+            if (toolContent && toolContent.style.display !== 'none') {
+                // Check the last element inside tool-content
+                const toolChildren = Array.from(toolContent.children);
+                for (let i = toolChildren.length - 1; i >= 0; i--) {
+                    const child = toolChildren[i];
+                    const style = window.getComputedStyle(child);
+                    
+                    if (style.display === 'none' || style.visibility === 'hidden') {
+                        continue;
+                    }
+                    
+                    const rect = child.getBoundingClientRect();
+                    if (rect.height > 0) {
+                        const elementBottom = rect.bottom + window.pageYOffset;
+                        if (elementBottom > maxBottom) {
+                            maxBottom = elementBottom;
+                            lastVisibleElement = child;
+                        }
+                    }
+                }
             }
             
             // Get the top of the document
             const docTop = document.documentElement.getBoundingClientRect().top + window.pageYOffset;
             
             // Calculate height: from top of document to bottom of last visible element
-            const contentHeight = maxBottom - docTop;
+            let contentHeight = maxBottom - docTop;
+            
+            // Ensure we're not getting negative or too small height
+            contentHeight = Math.max(contentHeight, 100);
             
             // Add a small buffer (20px) to prevent cut-off
             const finalHeight = contentHeight + 20;
+            
+            // Debug logging
+            console.log('Height calculation:');
+            console.log('- Last element:', lastVisibleElement?.tagName, lastVisibleElement?.id);
+            console.log('- Content height:', contentHeight);
+            console.log('- Final height:', finalHeight);
             
             // Send to parent frame
             window.parent.postMessage(
@@ -803,20 +839,29 @@
             // Listen for resize events
             window.addEventListener('resize', debouncedSendHeight);
             
-            // Observe DOM changes
+            // Observe DOM changes - MORE TARGETED
             const observer = new MutationObserver((mutations) => {
-                // Only trigger height updates for mutations that affect visible content
+                // Check if any mutation affects visible content
                 let shouldUpdate = false;
                 for (const mutation of mutations) {
-                    const target = mutation.target;
-                    // Check if mutation is in the main content area
-                    if (target.id === 'content-wrapper' || 
-                        target.closest('#content-wrapper') ||
-                        target.id === 'output' || 
-                        target.id === 'tokens-table' ||
-                        target.closest('.tool-content')) {
+                    // Check for changes in display, visibility, or content
+                    if (mutation.type === 'attributes' && 
+                        (mutation.attributeName === 'style' || mutation.attributeName === 'class')) {
                         shouldUpdate = true;
                         break;
+                    }
+                    if (mutation.type === 'childList') {
+                        // Check if children were added/removed from visible areas
+                        const target = mutation.target;
+                        if (target.id === 'content-wrapper' || 
+                            target.closest('#content-wrapper') ||
+                            target.id === 'output' || 
+                            target.id === 'tokens-table' ||
+                            target.closest('.tool-content') ||
+                            target.closest('.main-container')) {
+                            shouldUpdate = true;
+                            break;
+                        }
                     }
                 }
                 if (shouldUpdate) {
@@ -828,13 +873,24 @@
                 childList: true, 
                 subtree: true,
                 attributes: true,
-                attributeFilter: ['style', 'class']
+                attributeFilter: ['style', 'class', 'display']
             });
             
             // Also listen for details toggle (expand/collapse)
             document.querySelectorAll('details').forEach(details => {
                 details.addEventListener('toggle', debouncedSendHeight);
             });
+            
+            // Listen for content changes in output
+            const outputElement = document.getElementById('output');
+            if (outputElement) {
+                const outputObserver = new MutationObserver(debouncedSendHeight);
+                outputObserver.observe(outputElement, { 
+                    characterData: true,
+                    childList: true,
+                    subtree: true 
+                });
+            }
             
             // Initial height calculation
             setTimeout(debouncedSendHeight, 100);
