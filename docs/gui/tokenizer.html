@@ -634,7 +634,7 @@
             const contentHeight = maxBottom - docTop;
             
             // Add a small buffer (20px) to prevent cut-off
-            const finalHeight = contentHeight + 20;
+            const finalHeight = contentHeight -20;
             
             // Send to parent frame
             window.parent.postMessage(
