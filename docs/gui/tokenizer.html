@@ -566,14 +566,22 @@
             URL.revokeObjectURL(url);
         }
 
-        // Debounce to prevent excessive height updates
+        // ==================== FIXED HEIGHT CALCULATION ====================
+        // This is the only part that has been significantly changed
+        
+        // Track height state to prevent infinite growth
         let heightTimeout;
+        let lastStableHeight = 0;
+        let heightStabilizationCounter = 0;
+        const MAX_HEIGHT_INCREASES = 3; // Maximum consecutive height increases
+        
+        // Debounce with stabilization logic
         function debouncedSendHeight() {
             clearTimeout(heightTimeout);
-            heightTimeout = setTimeout(sendHeight, 150);
+            heightTimeout = setTimeout(sendHeight, 250); // Increased from 150 to 250ms
         }
 
-        // SEND HEIGHT FUNCTION
+        // Stabilized sendHeight function
         function sendHeight() {
             // Only adjust iframe if we're embedded
             if (!isEmbedded) {
@@ -588,15 +596,54 @@
             // Don't calculate during loading
             if (loader.style.display !== 'none') return;
             
-            // Get the exact total height of the document content
-            const height = document.documentElement.scrollHeight;
+            // Wait for content to be fully visible
+            if (contentWrapper.style.opacity !== '1') return;
             
-            // Send to parent frame with small buffer
-            window.parent.postMessage(
-                { type: 'setHeight', height: height + 30 },
-                '*'
-            );
+            // Get the exact total height of the document content
+            const currentHeight = document.documentElement.scrollHeight;
+            
+            // Calculate viewport height to set reasonable limits
+            const viewportHeight = window.innerHeight;
+            
+            // Set maximum reasonable height (2x viewport or 2500px, whichever is smaller)
+            const maxReasonableHeight = Math.min(viewportHeight * 2, 2500);
+            
+            // Cap the height to prevent excessive growth
+            const cappedHeight = Math.min(currentHeight, maxReasonableHeight);
+            
+            // Check if height is increasing abnormally
+            if (cappedHeight > lastStableHeight) {
+                heightStabilizationCounter++;
+                
+                // If height increases too many times consecutively, stop and use last stable height
+                if (heightStabilizationCounter > MAX_HEIGHT_INCREASES) {
+                    console.log('Height stabilization: Using last stable height');
+                    // Send the last stable height with minimal buffer
+                    window.parent.postMessage(
+                        { type: 'setHeight', height: lastStableHeight + 5 },
+                        '*'
+                    );
+                    return;
+                }
+            } else {
+                // Reset counter when height stabilizes or decreases
+                heightStabilizationCounter = 0;
+            }
+            
+            // Only send if height changed significantly (more than 10 pixels)
+            if (Math.abs(cappedHeight - lastStableHeight) > 10) {
+                // Add small, fixed buffer (reduced from +30 to +5)
+                const finalHeight = Math.ceil(cappedHeight + 5);
+                
+                window.parent.postMessage(
+                    { type: 'setHeight', height: finalHeight },
+                    '*'
+                );
+                
+                lastStableHeight = finalHeight;
+            }
         }
+        // ==================== END OF FIX ====================
         
         // Listen for resize events
         window.addEventListener('resize', debouncedSendHeight);
@@ -635,7 +682,9 @@
                     }
                     
                     btnTokenize.disabled = false;
-                    debouncedSendHeight();
+                    
+                    // Wait a bit before initial height calculation
+                    setTimeout(debouncedSendHeight, 500);
                 }, 500);
             } else {
                 document.body.classList.add('loading-active');
@@ -645,7 +694,7 @@
             }
             
             originalAppendStatus(msg);
-            setTimeout(debouncedSendHeight, 50); 
+            setTimeout(debouncedSendHeight, 100); 
         };
 
         // --- SIDEBAR AND NAVIGATION FUNCTIONALITY ---
@@ -753,19 +802,42 @@
             // Initialize Highlight.js
             hljs.highlightAll();
 
-            window.addEventListener('load', debouncedSendHeight);
+            window.addEventListener('load', () => {
+                setTimeout(debouncedSendHeight, 1000);
+            });
             
-            // Observe DOM changes
-            const observer = new MutationObserver(debouncedSendHeight);
+            // Observe DOM changes with more selective observation
+            const observer = new MutationObserver((mutations) => {
+                // Only trigger if mutations are in the content area
+                const contentMutated = mutations.some(mutation => {
+                    const target = mutation.target;
+                    return target.id === 'tool-area-content' || 
+                           target.closest('#tool-area-content') ||
+                           target.id === 'output' ||
+                           target.closest('.tool-content');
+                });
+                
+                if (contentMutated) {
+                    debouncedSendHeight();
+                }
+            });
+            
             observer.observe(document.body, { 
-                attributes: true, 
+                attributes: false, // Disable attribute observation
                 childList: true, 
-                subtree: true 
+                subtree: true,
+                characterData: false // Disable text content observation
             });
             
             // Also listen for details toggle (expand/collapse)
             document.querySelectorAll('details').forEach(details => {
                 details.addEventListener('toggle', debouncedSendHeight);
+            });
+            
+            // Cleanup on page unload
+            window.addEventListener('beforeunload', () => {
+                clearTimeout(heightTimeout);
+                if (observer) observer.disconnect();
             });
         });
 
