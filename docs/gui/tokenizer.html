@@ -7,8 +7,6 @@
     
     <script src="https://cdn.jsdelivr.net/pyodide/v0.26.2/full/pyodide.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github-dark.min.css">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
     
     <style>
         /* --- CSS VARIABLES --- */
@@ -27,7 +25,6 @@
             --sidebar-width: 280px;
             --error-red: #dc2626;     
             --warning-yellow: #d97706;
-            --success-green: #059669;
         }
 
         /* --- Global Resets & Body --- */
@@ -151,7 +148,7 @@
             color: white;
         }
 
-        /* --- TOKENIZER CSS --- */
+        /* --- CORE LINTER CSS --- */
         .main-content-card {
             margin-top: 1.5rem;
             background: var(--bg-card);
@@ -225,121 +222,26 @@
         .json-btn:hover { background: rgba(255, 255, 255, 0.1) !important; color: #ffffff; }
         .json-btn.copied { color: #4CAF50 !important; }
 
-        /* --- TOKEN VISUALIZATION --- */
-        .token-container {
-            margin-top: 1.5rem;
-            background: white;
-            border: 1px solid var(--border-color);
-            border-radius: 0.75rem;
-            padding: 1.5rem;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-        }
-
-        .token-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-            gap: 1rem;
-            margin-top: 1rem;
-        }
-
-        .token-card {
-            background: var(--bg-base);
-            border: 1px solid var(--border-color);
-            border-radius: 0.5rem;
-            padding: 1rem;
-            transition: transform 0.2s ease, box-shadow 0.2s ease;
-        }
-
-        .token-card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-        }
-
-        .token-type {
-            display: inline-block;
-            padding: 0.25rem 0.5rem;
-            border-radius: 0.25rem;
-            font-size: 0.75rem;
-            font-weight: 600;
-            margin-bottom: 0.5rem;
-        }
-
-        .token-type-field { background-color: #e0f2fe; color: #0369a1; }
-        .token-type-operator { background-color: #fef3c7; color: #92400e; }
-        .token-type-value { background-color: #dcfce7; color: #166534; }
-        .token-type-group { background-color: #f3e8ff; color: #7c3aed; }
-        .token-type-error { background-color: #fee2e2; color: #991b1b; }
-
-        .token-value {
-            font-family: 'Courier New', monospace;
-            font-weight: 600;
-            font-size: 1rem;
-            margin: 0.5rem 0;
-            word-break: break-all;
-        }
-
-        .token-position {
-            font-size: 0.75rem;
-            color: var(--text-body);
-            margin-top: 0.5rem;
-        }
-
-        /* --- QUERY VISUALIZATION --- */
-        .query-visualization {
-            background: #0f0f0f;
-            color: #fff;
-            padding: 1.5rem;
-            border-radius: 0.75rem;
-            border: 1px solid #2b2b2b;
-            margin-top: 1.5rem;
-            margin-bottom: 1.5rem;
+        #lint-view { 
+            padding: 1rem; 
+            margin-bottom: 10px; 
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            background-color: #f6f8fa;
+            color: #24292e;
+            font-family: Consolas, "Liberation Mono", Menlo, monospace;
+            font-size: 14px;
+            padding: 12px 16px;
+            border-radius: 6px;
+            border: 1px solid #d0d7de;
+            display: block;
             overflow-x: auto;
-            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
-            font-size: 1rem;
-            line-height: 1.6;
+            line-height: 1.5;
         }
 
-        .token-highlight {
-            padding: 0.125rem 0.25rem;
-            border-radius: 0.25rem;
-            margin: 0 0.125rem;
-        }
-
-        .highlight-field { background-color: rgba(14, 165, 233, 0.3); color: #38bdf8; }
-        .highlight-operator { background-color: rgba(251, 191, 36, 0.3); color: #fbbf24; }
-        .highlight-value { background-color: rgba(34, 197, 94, 0.3); color: #4ade80; }
-        .highlight-group { background-color: rgba(168, 85, 247, 0.3); color: #a855f7; }
-        .highlight-error { background-color: rgba(239, 68, 68, 0.3); color: #ef4444; text-decoration: line-through; }
-
-        /* --- STATS DISPLAY --- */
-        .stats-container {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-            gap: 1rem;
-            margin-top: 1.5rem;
-        }
-
-        .stat-card {
-            background: white;
-            border: 1px solid var(--border-color);
-            border-radius: 0.5rem;
-            padding: 1rem;
-            text-align: center;
-        }
-
-        .stat-value {
-            font-size: 1.5rem;
-            font-weight: 700;
-            color: var(--primary);
-            margin-bottom: 0.25rem;
-        }
-
-        .stat-label {
-            font-size: 0.875rem;
-            color: var(--text-body);
-        }
-
-        /* --- LOADING OVERLAY --- */
+        #lint-view .ansi-red { color: var(--error-red); font-weight: 600; }
+        #lint-view .ansi-yellow { color: var(--warning-yellow); font-weight: 600; }
+        #lint-view .lint-title { font-weight: 700; font-size: 1rem; margin-bottom: 0.5rem;}
+       
         #loading-overlay { 
             position: fixed; 
             inset: 0; 
@@ -357,6 +259,48 @@
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         #content-wrapper { transition: opacity 0.5s ease; opacity: 0; }
         
+        .lint-item { border-top: 1px solid #e5e7eb; margin-top: 16px; padding-top: 8px; background-color: inherit; }
+        .lint-message { font-size: 0.95rem; color: #374151; white-space: pre-wrap; margin-bottom: 4px; }
+        .lint-separator { border-top: 1px solid #e5e7eb; margin: 8px 0; }
+
+        #lint-container { margin-top: 18px; }
+        .lint-card {
+            padding: 14px;
+            box-shadow: 0 6px 18px rgba(0,0,0,0.35);
+            background-color: #f6f8fa;
+            color: #24292e;
+            font-family: Consolas, "Liberation Mono", Menlo, monospace;
+            font-size: 14px;
+            padding: 12px 16px;
+            border-radius: 6px;
+            border: 1px solid #d0d7de;
+            display: block;
+            overflow-x: auto;
+            line-height: 1.5;
+        }
+        .lint-title { color: #ff7474; font-weight: 700; margin-bottom: px; font-size: 1rem; }
+        .lint-meta { color: #cfcfcf; margin-bottom: 8px; }
+        .lint-details { color: #d3c48c; margin-bottom: 10px; white-space: pre-wrap; }
+        .lint-links a { color: #4fc1ff; text-decoration: none; margin-right: 8px; font-weight: 600; }
+        .lint-links a:hover { text-decoration: underline; }
+        .lint-report { color: #ffb74d !important; }
+        .lint-links-spacer { display:inline-block; width:8px; }
+
+        .lint-query {
+            background: #0f0f0f;
+            color: #fff;
+            padding: 10px;
+            border-radius: 8px;
+            border: 1px solid #2b2b2b;
+            margin-top: 10px;
+            margin-bottom: 70px;
+            overflow-x: auto;
+            font-family: Consolas, monospace;
+            font-size: 13px;
+        }
+        .lint-hl-0 { color: #ff6b6b; font-weight:700; }
+        .lint-hl-1 { color: #ffd86b; font-weight:700; }
+
         /* Tool content styles */
         .tool-header h1 { font-size: 1.5rem; font-weight: bold; margin-bottom: 0.25rem; }
         .tool-header p { color: var(--text-body); margin-top: 0; font-size: 0.95rem; }
@@ -415,45 +359,6 @@
         body.iframe-mode .tool-header p {
             font-size: 0.875rem !important;
             margin-bottom: 1rem !important;
-        }
-
-        /* --- TABS --- */
-        .tab-container {
-            margin-top: 1.5rem;
-        }
-
-        .tab-buttons {
-            display: flex;
-            border-bottom: 1px solid var(--border-color);
-            margin-bottom: 1rem;
-        }
-
-        .tab-button {
-            padding: 0.75rem 1.5rem;
-            background: none;
-            border: none;
-            border-bottom: 3px solid transparent;
-            font-weight: 600;
-            color: var(--text-body);
-            cursor: pointer;
-            transition: all 0.2s ease;
-        }
-
-        .tab-button:hover {
-            color: var(--primary);
-        }
-
-        .tab-button.active {
-            color: var(--primary);
-            border-bottom-color: var(--primary);
-        }
-
-        .tab-content {
-            display: none;
-        }
-
-        .tab-content.active {
-            display: block;
         }
     </style>
 </head>
@@ -559,7 +464,6 @@
                                 <option value="wos">WoS</option>
                                 <option value="pubmed">PubMed</option>
                                 <option value="ebscohost">EBSCOhost</option>
-                                <option value="generic">Generic</option>
                             </select>
 
                             <div class="row">
@@ -567,58 +471,25 @@
                             </div>
                         </div>
 
-                        <!-- Token Visualization Area -->
-                        <div id="visualization-area" style="display: none;">
-                            <!-- Tabs for different views -->
-                            <div class="tab-container">
-                                <div class="tab-buttons">
-                                    <button class="tab-button active" data-tab="tokens">Tokens Grid</button>
-                                    <button class="tab-button" data-tab="visual">Query Visualization</button>
-                                    <button class="tab-button" data-tab="stats">Statistics</button>
-                                    <button class="tab-button" data-tab="json">Raw JSON</button>
-                                </div>
-                                
-                                <!-- Tokens Grid Tab -->
-                                <div class="tab-content active" id="tokens-tab">
-                                    <div class="token-container">
-                                        <h3 style="margin-bottom: 1rem;">Tokenized Components</h3>
-                                        <div id="tokens-grid" class="token-grid">
-                                            <!-- Tokens will be inserted here -->
-                                        </div>
+                        <div style="margin-top: 1.5rem;">
+                            <details id="output-wrap" style="margin-bottom: 1rem;">
+                                <summary style="font-weight: 600; color: var(--text-body); cursor: pointer; padding: 0.5rem 0; position: relative;">
+                                    Raw Tokenizer Output (JSON)
+                                </summary>
+                                <div style="position: relative;">
+                                    <div class="json-actions">
+                                        <button class="json-btn" id="copy-json" title="Copy JSON">
+                                            <i class="far fa-copy"></i>
+                                        </button>
+                                        <button class="json-btn" id="download-json" title="Download JSON">
+                                            <i class="fas fa-download"></i>
+                                        </button>
                                     </div>
+                                    <pre id="pre"><code style="font-size: 16px; font-family: 'Consolas', 'Monaco', monospace;" id="output"></code></pre>
                                 </div>
-                                
-                                <!-- Query Visualization Tab -->
-                                <div class="tab-content" id="visual-tab">
-                                    <div class="query-visualization" id="query-visualization">
-                                        <!-- Query with colored tokens will be displayed here -->
-                                    </div>
-                                </div>
-                                
-                                <!-- Statistics Tab -->
-                                <div class="tab-content" id="stats-tab">
-                                    <div class="stats-container" id="stats-container">
-                                        <!-- Statistics will be inserted here -->
-                                    </div>
-                                </div>
-                                
-                                <!-- JSON Tab -->
-                                <div class="tab-content" id="json-tab">
-                                    <div id="output-wrap" style="margin-top: 0;">
-                                        <div style="position: relative;">
-                                            <div class="json-actions">
-                                                <button class="json-btn" id="copy-json" title="Copy JSON">
-                                                    <i class="far fa-copy"></i>
-                                                </button>
-                                                <button class="json-btn" id="download-json" title="Download JSON">
-                                                    <i class="fas fa-download"></i>
-                                                </button>
-                                            </div>
-                                            <pre id="pre"><code style="font-size: 14px; font-family: 'Consolas', 'Monaco', monospace;" id="output" class="language-json"></code></pre>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
+                            </details>
+                            <h2 id="messages-title" style="display:none; font-size: 1.25rem; font-weight: 600; margin-top: 1rem;">Tokens</h2>
+                            <div id="lint-view" style="display:none;"></div>
                         </div>
                     </div>
                 </div>
@@ -627,6 +498,7 @@
     </div>
 
     <script src="search_query_pkg_tree.js"></script>
+    <script src="lint.js"></script>
     <script>
         // --- SIDEBAR AND NAVIGATION FUNCTIONALITY ---
         const DOM = {
@@ -639,7 +511,7 @@
 
         // Detect if we're in an iframe
         const isEmbedded = window.parent !== window;
-
+        
         // Apply iframe mode immediately
         if (isEmbedded) {
             document.body.classList.add('iframe-mode');
@@ -711,7 +583,7 @@
 
         // --- UTILITIES ---
         function copyJsonToClipboard() {
-            const jsonText = document.getElementById('output').textContent; 
+            const jsonText = codeBlock.textContent; 
             navigator.clipboard.writeText(jsonText).then(() => {
                 const copyBtn = document.getElementById('copy-json');
                 const originalHTML = copyBtn.innerHTML;
@@ -725,7 +597,7 @@
         }
 
         function downloadJson() {
-            const jsonText = document.getElementById('output').textContent;
+            const jsonText = codeBlock.textContent;
             const blob = new Blob([jsonText], { type: 'application/json' });
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
@@ -737,7 +609,7 @@
             URL.revokeObjectURL(url);
         }
 
-        // --- HEIGHT MANAGEMENT FOR IFRAME ---
+        // --- HEIGHT MANAGEMENT FUNCTIONS (ADDED FROM LINTER PATTERN) ---
         // Debounce to prevent excessive height updates
         let heightTimeout;
         function debouncedSendHeight() {
@@ -757,8 +629,7 @@
             document.body.style.overflow = 'hidden';
             
             // Don't calculate during loading
-            const loader = document.getElementById('loading-overlay');
-            if (loader && loader.style.display !== 'none') return;
+            if (loader.style.display !== 'none') return;
             
             // Get ALL elements inside content-wrapper
             const wrapper = document.getElementById('content-wrapper');
@@ -815,234 +686,6 @@
             );
         }
 
-        // --- TOKENIZER FUNCTIONALITY ---
-        function tokenizeQuery() {
-            const query = document.getElementById('query').value;
-            const platform = document.getElementById('platform').value;
-            
-            if (!query.trim()) {
-                alert('Please enter a query to tokenize.');
-                return;
-            }
-            
-            try {
-                // Use the pyodide interface
-                const tokens = window.pyodide.runPython(`
-import json
-from search_query import tokenize
-
-query = """${query.replace(/"/g, '\\"')}"""
-platform = "${platform}"
-
-try:
-    tokens = tokenize(query, platform)
-    # Convert tokens to JSON-serializable format
-    result = []
-    for token in tokens:
-        token_dict = {
-            'type': token.type.name,
-            'value': str(token.value),
-            'start': token.start,
-            'end': token.end,
-            'field': token.field if hasattr(token, 'field') else None,
-            'operator': token.operator if hasattr(token, 'operator') else None
-        }
-        result.append(token_dict)
-    
-    json.dumps({
-        'success': True,
-        'tokens': result,
-        'platform': platform,
-        'original_query': query,
-        'token_count': len(tokens)
-    })
-except Exception as e:
-    json.dumps({
-        'success': False,
-        'error': str(e),
-        'platform': platform,
-        'original_query': query
-    })
-`);
-                
-                const result = JSON.parse(tokens);
-                displayResults(result);
-                
-            } catch (error) {
-                console.error('Tokenization error:', error);
-                displayError(error.message);
-            }
-        }
-
-        function displayResults(result) {
-            if (!result.success) {
-                displayError(result.error);
-                return;
-            }
-            
-            // Show visualization area
-            const vizArea = document.getElementById('visualization-area');
-            vizArea.style.display = 'block';
-            
-            // Update JSON output
-            const outputElement = document.getElementById('output');
-            outputElement.textContent = JSON.stringify(result, null, 2);
-            hljs.highlightElement(outputElement);
-            
-            // Display tokens in grid
-            displayTokensGrid(result.tokens);
-            
-            // Display query visualization
-            displayQueryVisualization(result.original_query, result.tokens);
-            
-            // Display statistics
-            displayStatistics(result);
-            
-            // Trigger height recalculation
-            debouncedSendHeight();
-        }
-
-        function displayTokensGrid(tokens) {
-            const grid = document.getElementById('tokens-grid');
-            grid.innerHTML = '';
-            
-            tokens.forEach((token, index) => {
-                const tokenCard = document.createElement('div');
-                tokenCard.className = 'token-card';
-                
-                const typeClass = `token-type-${token.type.toLowerCase()}`;
-                
-                tokenCard.innerHTML = `
-                    <div class="token-type ${typeClass}">${token.type}</div>
-                    <div class="token-value">${escapeHtml(token.value)}</div>
-                    ${token.field ? `<div><small><strong>Field:</strong> ${escapeHtml(token.field)}</small></div>` : ''}
-                    ${token.operator ? `<div><small><strong>Operator:</strong> ${escapeHtml(token.operator)}</small></div>` : ''}
-                    <div class="token-position">
-                        Position: ${token.start}-${token.end}
-                    </div>
-                `;
-                
-                grid.appendChild(tokenCard);
-            });
-        }
-
-        function displayQueryVisualization(query, tokens) {
-            const vizElement = document.getElementById('query-visualization');
-            let html = '';
-            
-            // Sort tokens by start position
-            const sortedTokens = [...tokens].sort((a, b) => a.start - b.start);
-            
-            let lastPos = 0;
-            sortedTokens.forEach(token => {
-                // Add text before token
-                if (token.start > lastPos) {
-                    html += escapeHtml(query.substring(lastPos, token.start));
-                }
-                
-                // Add highlighted token
-                const highlightClass = `highlight-${token.type.toLowerCase()}`;
-                const tokenText = escapeHtml(query.substring(token.start, token.end));
-                html += `<span class="token-highlight ${highlightClass}" title="${token.type}: ${token.value}">${tokenText}</span>`;
-                
-                lastPos = token.end;
-            });
-            
-            // Add remaining text
-            if (lastPos < query.length) {
-                html += escapeHtml(query.substring(lastPos));
-            }
-            
-            vizElement.innerHTML = html;
-        }
-
-        function displayStatistics(result) {
-            const statsContainer = document.getElementById('stats-container');
-            
-            // Calculate statistics
-            const tokens = result.tokens;
-            const typeCounts = {};
-            let hasFields = false;
-            let hasOperators = false;
-            
-            tokens.forEach(token => {
-                typeCounts[token.type] = (typeCounts[token.type] || 0) + 1;
-                if (token.field) hasFields = true;
-                if (token.operator) hasOperators = true;
-            });
-            
-            statsContainer.innerHTML = `
-                <div class="stat-card">
-                    <div class="stat-value">${result.token_count}</div>
-                    <div class="stat-label">Total Tokens</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-value">${Object.keys(typeCounts).length}</div>
-                    <div class="stat-label">Token Types</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-value">${hasFields ? '✓' : '✗'}</div>
-                    <div class="stat-label">Contains Fields</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-value">${hasOperators ? '✓' : '✗'}</div>
-                    <div class="stat-label">Contains Operators</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-value">${result.platform}</div>
-                    <div class="stat-label">Platform</div>
-                </div>
-            `;
-            
-            // Add type-specific counts
-            Object.entries(typeCounts).forEach(([type, count]) => {
-                const statCard = document.createElement('div');
-                statCard.className = 'stat-card';
-                statCard.innerHTML = `
-                    <div class="stat-value">${count}</div>
-                    <div class="stat-label">${type} Tokens</div>
-                `;
-                statsContainer.appendChild(statCard);
-            });
-        }
-
-        function displayError(errorMessage) {
-            const outputElement = document.getElementById('output');
-            outputElement.textContent = JSON.stringify({
-                success: false,
-                error: errorMessage
-            }, null, 2);
-            hljs.highlightElement(outputElement);
-            
-            // Show visualization area with error
-            const vizArea = document.getElementById('visualization-area');
-            vizArea.style.display = 'block';
-            
-            // Clear other visualizations
-            document.getElementById('tokens-grid').innerHTML = 
-                `<div class="error-message" style="grid-column: 1 / -1; text-align: center; padding: 2rem; color: var(--error-red);">
-                    <i class="fas fa-exclamation-triangle" style="font-size: 2rem; margin-bottom: 1rem;"></i>
-                    <p>Error: ${escapeHtml(errorMessage)}</p>
-                </div>`;
-            
-            document.getElementById('query-visualization').innerHTML = 
-                `<span class="token-highlight highlight-error">Error: ${escapeHtml(errorMessage)}</span>`;
-            
-            document.getElementById('stats-container').innerHTML = 
-                `<div class="stat-card">
-                    <div class="stat-value">Error</div>
-                    <div class="stat-label">Could not tokenize query</div>
-                </div>`;
-            
-            debouncedSendHeight();
-        }
-
-        function escapeHtml(text) {
-            const div = document.createElement('div');
-            div.textContent = text;
-            return div.innerHTML;
-        }
-
         // --- INIT ---
         document.addEventListener('DOMContentLoaded', () => {
             // Get DOM elements
@@ -1051,7 +694,8 @@ except Exception as e:
             const loadingText = document.getElementById('loading-text');
             const btnTokenize = document.getElementById('btn-tokenize');
             const statusDisplay = document.getElementById('status-display');
-            
+            const codeBlock = document.getElementById('output');
+
             // Only initialize sidebar functionality if not in iframe
             if (!isEmbedded) {
                 updateActiveSidebarItem('tokenizer.html');
@@ -1097,66 +741,26 @@ except Exception as e:
                 document.body.style.overflow = 'auto';
             }
             
-            // Initialize loading state
-            if (contentWrapper && loader) {
-                document.body.classList.add('loading-active');
-                contentWrapper.style.opacity = '0';
-                loader.style.display = 'flex'; 
-            }
-            
-            if (loadingText) {
-                loadingText.textContent = "Initializing Search Query...";
-            }
-            
-            if (btnTokenize) {
-                btnTokenize.disabled = true;
-            }
+            document.body.classList.add('loading-active');
+            contentWrapper.style.opacity = '0';
+            loader.style.display = 'flex'; 
+            loadingText.textContent = "Initializing Search Query...";
+            btnTokenize.disabled = true;
 
-            // Add event listeners if buttons exist
-            const copyBtn = document.getElementById('copy-json');
-            const downloadBtn = document.getElementById('download-json');
-            
-            if (copyBtn) {
-                copyBtn.addEventListener('click', copyJsonToClipboard);
-            }
-            
-            if (downloadBtn) {
-                downloadBtn.addEventListener('click', downloadJson);
-            }
-            
-            // Tab functionality
-            document.querySelectorAll('.tab-button').forEach(button => {
-                button.addEventListener('click', () => {
-                    // Remove active class from all buttons and contents
-                    document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
-                    document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
-                    
-                    // Add active class to clicked button
-                    button.classList.add('active');
-                    
-                    // Show corresponding content
-                    const tabId = button.getAttribute('data-tab');
-                    document.getElementById(`${tabId}-tab`).classList.add('active');
-                    
-                    // Recalculate height
-                    debouncedSendHeight();
-                });
-            });
+            document.getElementById('copy-json').addEventListener('click', copyJsonToClipboard);
+            document.getElementById('download-json').addEventListener('click', downloadJson);
             
             // When tokenize button is clicked
-            if (btnTokenize) {
-                btnTokenize.addEventListener('click', () => {
-                    tokenizeQuery();
-                    setTimeout(debouncedSendHeight, 800);
-                });
-            }
+            btnTokenize.addEventListener('click', () => {
+                setTimeout(debouncedSendHeight, 800);
+            });
 
             // Initialize Highlight.js if available
             if (typeof hljs !== 'undefined') {
                 hljs.highlightAll();
             }
 
-            // Setup pyodide
+            // Setup pyodide status handler with height updates
             const originalAppendStatus = window.appendStatus || function(msg) { 
                 if (statusDisplay) statusDisplay.textContent = msg; 
             };
@@ -1167,12 +771,12 @@ except Exception as e:
 
                 if (cleanMsg.includes('Done') || cleanMsg.includes('ready') || cleanMsg.includes('Ready')) {
                     // Done loading
-                    if (statusDisplay) statusDisplay.innerText = 'Search Query loaded…';
-                    if (loader) loader.style.opacity = '0';
-                    if (contentWrapper) contentWrapper.style.opacity = '1';
+                    statusDisplay.innerText = 'Search Query loaded…';
+                    loader.style.opacity = '0';
+                    contentWrapper.style.opacity = '1';
                 
                     setTimeout(() => {
-                        if (loader) loader.style.display = 'none';
+                        loader.style.display = 'none';
                         
                         // CRITICAL: Only lock overflow if embedded
                         if (isEmbedded) {
@@ -1181,16 +785,14 @@ except Exception as e:
                             document.body.style.overflow = 'auto';
                         }
                         
-                        if (btnTokenize) btnTokenize.disabled = false;
+                        btnTokenize.disabled = false;
                         debouncedSendHeight();
                     }, 500);
                 } else {
-                    if (loader && contentWrapper) {
-                        document.body.classList.add('loading-active');
-                        loader.style.display = 'flex';
-                        loader.style.opacity = '1';
-                        contentWrapper.style.opacity = '0';
-                    }
+                    document.body.classList.add('loading-active');
+                    loader.style.display = 'flex';
+                    loader.style.opacity = '1';
+                    contentWrapper.style.opacity = '0';
                 }
                 
                 originalAppendStatus(msg);
@@ -1206,15 +808,10 @@ except Exception as e:
                 childList: true, 
                 subtree: true 
             });
-            
+
             // Also listen for details toggle (expand/collapse)
             document.querySelectorAll('details').forEach(details => {
                 details.addEventListener('toggle', debouncedSendHeight);
-            });
-            
-            // Listen for tab changes
-            document.querySelectorAll('.tab-button').forEach(button => {
-                button.addEventListener('click', debouncedSendHeight);
             });
             
             // Listen for resize events
