@@ -2,51 +2,153 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8" />
-    <title>search-query Visualizer</title>
+    <title>Search-Query Visualizer</title>
     <meta name="viewport" content="width=device-width,initial-scale=1" />
-
+    
+    <script src="https://cdn.jsdelivr.net/pyodide/v0.26.2/full/pyodide.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
-
+    
     <style>
+        /* --- CSS VARIABLES --- */
         :root {
             --primary: #4f46e5;
             --primary-dark: #3f35c5;
+            --primary-accent: #6366f1;
+            --bg-base: #f9fafb;
+            --bg-base-lighter: #eef2ff;
             --bg-card: #ffffff;
             --border-color: #e5e7eb;
-            --text-main: #1f2937;
-            --text-secondary: #6b7280;
+            --text-heading: #1f2937;
+            --text-body: #6b7280;
+            --font-stack: 'Inter', sans-serif;
+            --font-display: 'Space Grotesk', sans-serif;
+            --sidebar-width: 280px;
+            --error-red: #dc2626;     
+            --warning-yellow: #d97706;
         }
 
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            line-height: 1.5;
-            font-family: 'Inter', sans-serif;
-        }
-
-        body {
-            background-color: var(--bg-card);
-            color: var(--text-main);
-            padding: 1.5rem;
-            min-height: 100vh;
+        /* --- Global Resets & Body --- */
+        * { box-sizing: border-box; margin: 0; padding: 0; line-height: 1.5; font-family: var(--font-stack); }
+        body { 
+            background-color: var(--bg-base); 
+            color: var(--text-heading); 
+            min-height: 100vh; 
+            scroll-behavior: smooth;
             overflow-x: hidden;
-            overflow-y: hidden;
-            position: relative;
         }
+        
+        /* --- Custom Scrollbar --- */
+        body::-webkit-scrollbar { width: 8px; }
+        body::-webkit-scrollbar-thumb { background-color: var(--primary-accent); border-radius: 10px; }
 
-        header h1 {
-            font-size: 1.5rem;
+        /* --- Layout & Responsiveness --- */
+        #mobile-header { 
+            position: fixed; top: 0; left: 0; width: 100%; height: 64px; 
+            background-color: var(--bg-card); border-bottom: 1px solid var(--border-color); 
+            z-index: 50; display: flex; align-items: center; padding: 0 1rem; 
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1); 
+        }
+        #mobile-header h1 { 
+            font-size: 1.25rem; font-weight: bold; margin-left: 1rem; 
+            display: flex; align-items: center;
+        }
+        #menu-toggle { border: none; background: none; color: var(--text-heading); cursor: pointer; padding: 0.5rem; }
+
+        #sidebar { 
+            position: fixed; top: 0; left: 0; height: 100vh; width: var(--sidebar-width); background-color: var(--bg-card); 
+            border-right: 1px solid var(--border-color); z-index: 60; transform: translateX(-100%); 
+            transition: transform 0.3s ease-out; box-shadow: 4px 0 15px rgba(0, 0, 0, 0.2); 
+            padding: 1.5rem 1rem; overflow-y: auto; display: flex; flex-direction: column; 
+        }
+        #sidebar.open { transform: translateX(0); }
+        #backdrop { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.5); z-index: 55; display: none; }
+        
+        #main-content { padding-top: 64px; transition: margin-left 0.3s ease-out; padding-left: 0; }
+        .main-container { max-width: 76rem; margin: 0 auto; padding: 2.5rem 1.5rem; }
+
+        @media (min-width: 1024px) {
+            #mobile-header { display: none; }
+            #sidebar { transform: translateX(0); width: var(--sidebar-width); position: fixed; padding-top: 2rem; }
+            #main-content { padding-left: var(--sidebar-width); padding-top: 2rem; }
+            .main-container { padding: 0 1.5rem 2.5rem; }
+            #close-menu { display: none !important; }
+        }
+        
+        /* --- Mobile Specific Styles --- */
+        #close-menu {
+            display: block !important;
+            border: none; background: none; color: var(--text-heading); cursor: pointer; padding: 0.5rem;
+        }
+        
+        /* --- Logo and Branding --- */
+        .logo-container {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 1.5rem;
+        }
+        .logo-icon {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, #4f46e5, #6366f1);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
             font-weight: bold;
+            font-size: 1.2rem;
+        }
+        .logo-text {
+            font-size: 1.5rem;
+            font-weight: 700;
+            background: linear-gradient(90deg, #4f46e5, #6366f1);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        /* --- Hero Section --- */
+        #hero-headline { 
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin: 0;
+            line-height: 1.1;
+            background: linear-gradient(90deg, var(--text-heading), var(--primary), var(--primary-accent));
+            background-size: 200% auto;
+            animation: text-flow 4s linear infinite;
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            color: transparent;
+        }
+        
+        @keyframes text-flow {
+            0% { background-position: 0% 50%; }
+            100% { background-position: 100% 50%; }
+        }
+
+        /* --- Sidebar Navigation --- */
+        .sidebar-tool-link {
+            display: flex;
+            align-items: center;
+            padding: 0.5rem 0.75rem;
+            border-radius: 0.375rem;
+            color: var(--text-heading);
+            transition: all 0.2s ease;
             margin-bottom: 0.25rem;
+            text-decoration: none;
+        }
+        .sidebar-tool-link:hover {
+            background-color: var(--bg-base-lighter);
+            color: var(--primary);
+        }
+        .sidebar-tool-link.active {
+            background-color: var(--primary);
+            color: white;
         }
 
-        header p {
-            color: var(--text-secondary);
-            margin-top: 0;
-            font-size: 0.95rem;
-        }
-
+        /* --- TOOL SPECIFIC STYLES --- */
         .main-content-card {
             margin-top: 1.5rem;
             background: var(--bg-card);
@@ -56,14 +158,8 @@
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
         }
 
-        label {
-            display: block;
-            margin-top: 1.25rem;
-            margin-bottom: 0.25rem;
-            font-weight: 600;
-            font-size: 0.875rem;
-        }
-
+        label { display: block; margin-top: 1.25rem; margin-bottom: 0.25rem; font-weight: 600; font-size: 0.875rem; }
+        
         #query {
             font-size: 1.1rem !important;
             line-height: 1.6;
@@ -71,50 +167,35 @@
             min-height: 160px;
             font-family: 'Courier New', monospace;
         }
-
-        textarea {
-            display: block;
-            width: 100%;
-            padding: 0.75rem;
-            border: 1px solid var(--border-color);
-            border-radius: 0.5rem;
-            box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.07);
-            transition: border-color 0.2s, box-shadow 0.2s;
-            color: var(--text-main);
+        
+        textarea { 
+            display: block; width: 100%; padding: 0.75rem; border: 1px solid var(--border-color); 
+            border-radius: 0.5rem; box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.07); 
+            transition: border-color 0.2s, box-shadow 0.2s; color: var(--text-heading);
             max-width: 100%;
         }
-
-        textarea:focus {
-            border-color: var(--primary);
-            box-shadow: 0 0 0 1px var(--primary);
-            outline: none;
+        
+        textarea:focus { 
+            border-color: var(--primary); box-shadow: 0 0 0 1px var(--primary); outline: none; 
         }
 
         #btn-visualize {
-            width: auto;
-            min-width: 200px;
-            padding: 0.75rem 2rem;
-            border: none;
-            border-radius: 0.5rem;
-            font-weight: 600;
-            color: white;
-            background-color: var(--primary);
-            cursor: pointer;
-            transition: background-color 0.2s;
-            box-shadow: 0 2px 4px rgba(79, 70, 229, 0.4);
-            margin-top: 1.5rem;
-            font-size: 1rem;
-            display: block;
-            margin-left: auto;
-            margin-right: auto;
+            width: auto; min-width: 200px; padding: 0.75rem 2rem; border: none; border-radius: 0.5rem; 
+            font-weight: 600; color: white; background-color: var(--primary); cursor: pointer; 
+            transition: background-color 0.2s; box-shadow: 0 2px 4px rgba(79, 70, 229, 0.4); 
+            margin-top: 1.5rem; font-size: 1rem; display: block; margin-left: auto; margin-right: auto;
         }
+        #btn-visualize:hover { background-color: var(--primary-dark); }
+        #btn-visualize:disabled { opacity: 0.6; cursor: not-allowed; box-shadow: none; }
 
-        #btn-visualize:hover {
-            background-color: var(--primary-dark);
+        #result-container {
+            display: none; margin-top: 1.5rem; padding: 1rem; background: var(--bg-card);
+            border: 1px solid var(--border-color); border-radius: 0.75rem;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
         }
 
         #pretty-title {
-            margin-top: 1.5rem;
+            margin-top: 0;
             font-size: 1.25rem;
         }
 
@@ -134,37 +215,539 @@
         .hint {
             margin-top: 0.5rem;
             font-size: 0.8rem;
-            color: var(--text-secondary);
+            color: var(--text-body);
+        }
+
+        /* --- Loading Overlay --- */
+        #loading-overlay { 
+            position: fixed; 
+            inset: 0; 
+            background-color: rgba(255, 255, 255, 0.95); 
+            z-index: 1000; 
+            display: flex; 
+            flex-direction: column; 
+            justify-content: center; 
+            align-items: center; 
+            transition: opacity 0.5s ease; 
+            opacity: 1; 
+        }
+        .loader { border: 4px solid var(--border-color); border-top: 4px solid var(--primary); border-radius: 50%; width: 50px; height: 50px; animation: spin 1s linear infinite; margin-bottom: 1rem; }
+        #loading-text { font-size: 1.1rem; color: var(--text-heading); font-weight: 500; text-align: center; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        #content-wrapper { transition: opacity 0.5s ease; opacity: 0; }
+        
+        /* --- IFRAME MODE STYLES --- */
+        body.iframe-mode #mobile-header,
+        body.iframe-mode #sidebar,
+        body.iframe-mode #backdrop {
+            display: none !important;
+        }
+
+        body.iframe-mode #main-content {
+            padding-left: 0 !important;
+            padding-top: 0 !important;
+        }
+
+        body.iframe-mode .main-container {
+            padding: 0 1rem 1.5rem !important;
+        }
+
+        body.iframe-mode #hero-headline,
+        body.iframe-mode #documentation p {
+            display: none !important;
+        }
+
+        body.iframe-mode #interactive-tool-wrap {
+            padding-top: 0 !important;
+        }
+
+        body.iframe-mode .tool-header h1 {
+            font-size: 1.25rem !important;
+            margin-top: 0.5rem !important;
+        }
+
+        body.iframe-mode .tool-header p {
+            font-size: 0.875rem !important;
+            margin-bottom: 1rem !important;
+        }
+        
+        /* Tool content styles */
+        .tool-header h1 { font-size: 1.5rem; font-weight: bold; margin-bottom: 0.25rem; }
+        .tool-header p { color: var(--text-body); margin-top: 0; font-size: 0.95rem; }
+        
+        /* Ensure content is visible in iframe context */
+        body.loading-active {
+            height: 100vh;
+        }
+        
+        /* Footer Links */
+        .footer-links {
+            display: flex;
+            gap: 1.5rem;
+            justify-content: center;
+            margin-top: 1rem;
+        }
+        .footer-links a {
+            color: var(--text-body);
+            font-size: 0.875rem;
+            transition: color 0.2s;
+        }
+        .footer-links a:hover {
+            color: var(--primary);
         }
     </style>
 </head>
+
 <body>
+    <!-- Mobile Header (Hidden in iframe) -->
+    <header id="mobile-header">
+        <button id="menu-toggle" class="p-2">
+            <i class="fas fa-bars text-xl"></i>
+        </button>
+        <h1 class="text-xl font-bold ml-4" style="padding-top: 25px;">
+            <div class="logo-container">
+                <img src="https://raw.githubusercontent.com/CoLRev-Environment/search-query/refs/heads/main/docs/source/_static/search_query_logo.svg" width="100px" >
+            </div>
+        </h1>
+    </header>
 
-<header>
-    <h1>Search-Query Visualizer</h1>
-    <p>Indent and visualize nested subqueries based on parentheses.</p>
-</header>
+    <!-- Sidebar Backdrop (Hidden in iframe) -->
+    <div id="backdrop" style="display:none;"></div>
 
-<div class="main-content-card">
-    <label for="query">Query</label>
-    <textarea id="query" rows="8">TS=(("large language model*" OR "LLM*" OR "generative AI" OR "genAI" OR "foundation model*") AND ("work performance" OR "job performance" OR "individual performance" OR productivity OR efficiency OR effectiveness) AND (workplace OR "knowledge worker*" OR employee* OR worker* OR "organizational context" OR "organizational setting" OR "professional" OR "business"))</textarea>
+    <!-- Sidebar Navigation (Hidden in iframe) -->
+    <nav id="sidebar">
+        <header style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 1rem; border-bottom: 1px solid var(--border-color);">
+            <div class="logo-container">
+                <img src="https://raw.githubusercontent.com/CoLRev-Environment/search-query/refs/heads/main/docs/source/_static/search_query_logo.svg" width="200px" >
+            </div>
+            <button id="close-menu" style="border: none; background: none; color: var(--text-heading); cursor: pointer; padding: 0.5rem;" class="lg:hidden">
+                <i class="fas fa-times text-xl"></i>
+            </button>
+        </header>
+        
+        <div style="display: flex; flex-direction: column; margin-top: 1rem; color: var(--text-heading);">
+            <div style="padding: 1rem 0; font-size: 0.75rem; font-weight: bold; color: var(--text-body); text-transform: uppercase;">Features</div>
+            <a href="https://geritwagner.github.io/search-query/gui/lint.html" class="sidebar-tool-link">
+                <i class="fas fa-tasks w-5 mr-3"></i> <p style="display: inline-block; margin: 0 0 0 0; padding-left: 10px;">Lint</p>
+            </a>
+            <a href="https://geritwagner.github.io/search-query/gui/translate.html" class="sidebar-tool-link">
+                <i class="fas fa-language w-5 mr-3"></i>  <p style="display: inline-block; margin: 0 0 0 0; padding-left: 10px;">Translate</p>
+            </a>
+            
+            <div style="padding: 1rem 0; font-size: 0.75rem; font-weight: bold; color: var(--text-body); text-transform: uppercase;">Debug</div>
+            <a href="https://geritwagner.github.io/search-query/gui/tokenizer.html" class="sidebar-tool-link">
+                <i class="fas fa-microchip w-5 mr-3"></i>  <p style="display: inline-block; margin: 0 0 0 0; padding-left: 10px;">Tokenize</p>
+            </a>
+            <a href="https://geritwagner.github.io/search-query/gui/structure.html" class="sidebar-tool-link active">
+                <i class="fas fa-sitemap w-5 mr-3"></i>
+                <p style="display: inline-block; margin: 0 0 0 0; padding-left: 10px;">Structure</p>
+            </a>
 
-    <button id="btn-visualize">Visualize structure</button>
-</div>
+            <div style="padding: 1rem 0; font-size: 0.75rem; font-weight: bold; color: var(--text-body); text-transform: uppercase;">Resources</div>
+            <a href="https://github.com/CoLRev-Environment/search-query" target="_blank" class="sidebar-tool-link">
+                <i class="fab fa-github w-5 mr-3"></i><p style="display: inline-block; margin: 0 0 0 0; padding-left: 10px;">GitHub</p>
+            </a>
+            <a href="https://colrev-environment.github.io/search-query/" target="_blank" class="sidebar-tool-link">
+                <i class="fas fa-book w-5 mr-3"></i> <p style="display: inline-block; margin: 0 0 0 0; padding-left: 10px;">Documentation</p>
+            </a>
+            <a href="https://github.com/CoLRev-Environment/search-query/blob/main/LICENSE" target="_blank" class="sidebar-tool-link">
+                <i class="fas fa-file-contract w-5 mr-3"></i> <p style="display: inline-block; margin: 0 0 0 0; padding-left: 10px;">License</p>
+            </a>
+        </div>
+        
+        <footer style="margin-top: auto; padding-top: 1rem; border-top: 1px solid var(--border-color); font-size: 0.75rem; color: var(--text-body);">
+            Search-Query Studio © 2025
+        </footer>
+    </nav>
+    
+    <!-- Main Content Area -->
+    <div id="main-content">
+        <div id="interactive-tool-wrap">
+            <div class="main-container">
+                <!-- Hero Section (Hidden in iframe) -->
+                <section id="documentation" style="width: 100%; padding-top: 0;">
+                    <h1 id="hero-headline" style="margin-bottom: 0.5rem; color: var(--text-heading); text-align: center;">
+                        Search Query Studio
+                    </h1>
+                    <p style="font-size: 1.25rem; color: var(--text-body); text-align: center; max-width: 42rem; margin: 0 auto 2rem;">
+                        The web interface for search-query.
+                    </p>
+                </section>
 
-<!-- AFTER: hidden by default -->
-<div id="result-container"
-     style="display: none; margin-top: 1.5rem; padding: 1rem; background: var(--bg-card);
-            border: 1px solid var(--border-color); border-radius: 0.75rem;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.05);">
-    <h2 id="pretty-title">Indented structure</h2>
-    <pre id="pretty-output"></pre>
-    <p class="hint">
-        Parentheses define the indentation levels. Quoted phrases are kept together; boolean operators are placed on separate lines.
-    </p>
-</div>
+                <!-- Tool Content Area -->
+                <div id="tool-area-content" style="padding-bottom:50px;">
+                    <div id="loading-overlay">
+                        <div class="loader"></div>
+                        <div id="loading-text">Initializing Search Query...</div>
+                    </div>
+                    
+                    <div id="content-wrapper">
+                        <div class="tool-header">
+                            <h1>Search-Query Visualizer</h1>
+                            <p>Indent and visualize nested subqueries based on parentheses.</p>
+                        </div>
 
+                        <div class="main-content-card">
+                            <label for="query">Query</label>
+                            <textarea id="query" rows="8">TS=(("large language model*" OR "LLM*" OR "generative AI" OR "genAI" OR "foundation model*") AND ("work performance" OR "job performance" OR "individual performance" OR productivity OR efficiency OR effectiveness) AND (workplace OR "knowledge worker*" OR employee* OR worker* OR "organizational context" OR "organizational setting" OR "professional" OR "business"))</textarea>
 
-<script src="structure.js"></script>
+                            <button id="btn-visualize" disabled>Visualize structure</button>
+                        </div>
+
+                        <!-- AFTER: hidden by default -->
+                        <div id="result-container">
+                            <h2 id="pretty-title">Indented structure</h2>
+                            <pre id="pretty-output"></pre>
+                            <p class="hint">
+                                Parentheses define the indentation levels. Quoted phrases are kept together; boolean operators are placed on separate lines.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="search_query_pkg_tree.js"></script>
+    <script src="structure.js"></script>
+    <script>
+        // --- SIDEBAR AND NAVIGATION FUNCTIONALITY ---
+        const DOM = {
+            sidebar: document.getElementById('sidebar'),
+            menuToggle: document.getElementById('menu-toggle'),
+            closeMenuBtn: document.getElementById('close-menu'),
+            backdrop: document.getElementById('backdrop'),
+            sidebarToolLinks: document.querySelectorAll('.sidebar-tool-link')
+        };
+
+        // Detect if we're in an iframe
+        const isEmbedded = window.parent !== window;
+        
+        // Apply iframe mode immediately
+        if (isEmbedded) {
+            document.body.classList.add('iframe-mode');
+            DOM.sidebar.style.display = 'none';
+            DOM.menuToggle.style.display = 'none';
+            DOM.closeMenuBtn.style.display = 'none';
+            DOM.backdrop.style.display = 'none';
+            // Hide sidebar and header for iframe mode
+            DOM.sidebar.style.display = 'none';
+            document.getElementById('mobile-header').style.display = 'none';
+            document.getElementById('backdrop').style.display = 'none';
+        }
+
+        // Storage keys
+        const STORAGE_KEYS = {
+            TOOL_URL: 'selectedToolUrl',
+            TOOL_NAME: 'selectedToolName'
+        };
+
+        /* --- UI/VISUAL CONTROLS --- */
+        function toggleSidebar(forceClose = false) {
+            // Don't toggle sidebar in iframe mode
+            if (isEmbedded) return;
+            
+            const isOpen = DOM.sidebar.classList.contains('open');
+            const shouldOpen = forceClose ? false : !isOpen;
+
+            if (shouldOpen) {
+                DOM.sidebar.classList.add('open');
+                DOM.backdrop.style.display = 'block';
+                document.body.style.overflow = 'hidden'; 
+            } else {
+                DOM.sidebar.classList.remove('open');
+                DOM.backdrop.style.display = 'none';
+                document.body.style.overflow = '';
+            }
+        }
+
+        function updateActiveSidebarItem(activeTool) {
+            if (isEmbedded) return; // Skip in iframe mode
+            
+            DOM.sidebarToolLinks.forEach(link => {
+                link.classList.remove('active');
+                const toolUrl = link.getAttribute('data-tool-url') || link.getAttribute('href');
+                if (toolUrl && toolUrl.includes(activeTool)) {
+                    link.classList.add('active');
+                }
+            });
+        }
+
+        function saveSelectedTool(toolUrl, toolName) {
+            if (isEmbedded) return; // Skip in iframe mode
+            localStorage.setItem(STORAGE_KEYS.TOOL_URL, toolUrl);
+            localStorage.setItem(STORAGE_KEYS.TOOL_NAME, toolName);
+        }
+
+        function getSelectedTool() {
+            if (isEmbedded) return { toolUrl: null, toolName: null };
+            const toolUrl = localStorage.getItem(STORAGE_KEYS.TOOL_URL);
+            const toolName = localStorage.getItem(STORAGE_KEYS.TOOL_NAME);
+            return { toolUrl, toolName };
+        }
+
+        function clearSelectedTool() {
+            if (isEmbedded) return; // Skip in iframe mode
+            localStorage.removeItem(STORAGE_KEYS.TOOL_URL);
+            localStorage.removeItem(STORAGE_KEYS.TOOL_NAME);
+        }
+
+        // --- TOOL FUNCTIONALITY ---
+        const loader = document.getElementById('loading-overlay');
+        const loadingText = document.getElementById('loading-text');
+        const contentWrapper = document.getElementById('content-wrapper');
+        const btnVisualize = document.getElementById('btn-visualize');
+        const resultContainer = document.getElementById('result-container');
+        const prettyOutput = document.getElementById('pretty-output');
+        const queryTextarea = document.getElementById('query');
+
+        // Debounce to prevent excessive height updates
+        let heightTimeout;
+        function debouncedSendHeight() {
+            clearTimeout(heightTimeout);
+            heightTimeout = setTimeout(sendHeight, 150);
+        }
+
+        function sendHeight() {
+            // Only adjust iframe if we're embedded
+            if (!isEmbedded) {
+                document.body.style.overflowY = 'auto';
+                document.body.style.overflowX = 'auto';
+                return;
+            }
+            
+            // Hide scrollbars when embedded
+            document.body.style.overflow = 'hidden';
+            
+            // Don't calculate during loading
+            if (loader.style.display !== 'none') return;
+            
+            // Get ALL elements inside content-wrapper
+            const wrapper = document.getElementById('content-wrapper');
+            if (!wrapper) return;
+            
+            const allElements = wrapper.getElementsByTagName('*');
+            let lastVisibleElement = null;
+            let maxBottom = 0;
+            
+            // Find the element with the highest bottom position (last visible element)
+            for (let element of allElements) {
+                const style = window.getComputedStyle(element);
+                
+                // Skip hidden elements
+                if (style.display === 'none' || style.visibility === 'hidden') {
+                    continue;
+                }
+                
+                // Get element's position
+                const rect = element.getBoundingClientRect();
+                
+                // Only consider elements that are actually in the view (have height)
+                if (rect.height > 0) {
+                    const elementBottom = rect.bottom + window.pageYOffset;
+                    
+                    // Track the element with the highest bottom position
+                    if (elementBottom > maxBottom) {
+                        maxBottom = elementBottom;
+                        lastVisibleElement = element;
+                    }
+                }
+            }
+            
+            // If no elements found, use the wrapper itself
+            if (!lastVisibleElement) {
+                lastVisibleElement = wrapper;
+                const rect = wrapper.getBoundingClientRect();
+                maxBottom = rect.bottom + window.pageYOffset;
+            }
+            
+            // Get the top of the document
+            const docTop = document.documentElement.getBoundingClientRect().top + window.pageYOffset;
+            
+            // Calculate height: from top of document to bottom of last visible element
+            const contentHeight = maxBottom - docTop;
+            
+            // Add a small buffer (20px) to prevent cut-off
+            const finalHeight = contentHeight + 20;
+            
+            // Send to parent frame
+            window.parent.postMessage(
+                { type: 'setHeight', height: Math.ceil(finalHeight) },
+                '*'
+            );
+        }
+        
+        // --- PYODIDE SETUP ---
+        const originalAppendStatus = window.appendStatus || function(msg) { 
+            console.log('Status:', msg);
+        };
+
+        window.appendStatus = function(msg) {
+            const cleanMsg = msg.replace(/\u001b\[.*?m/g, '').trim(); 
+            if (loadingText) loadingText.textContent = cleanMsg;
+
+            if (cleanMsg.includes('Done') || cleanMsg.includes('ready') || cleanMsg.includes('Ready')) {
+                // Done loading
+                loader.style.opacity = '0';
+                contentWrapper.style.opacity = '1';
+            
+                setTimeout(() => {
+                    loader.style.display = 'none';
+                    
+                    // CRITICAL: Only lock overflow if embedded
+                    if (isEmbedded) {
+                        document.body.style.overflow = 'hidden';
+                    } else {
+                        document.body.style.overflow = 'auto';
+                    }
+                    
+                    btnVisualize.disabled = false;
+                    debouncedSendHeight();
+                }, 500);
+            } else {
+                document.body.classList.add('loading-active');
+                loader.style.display = 'flex';
+                loader.style.opacity = '1';
+                contentWrapper.style.opacity = '0';
+            }
+            
+            originalAppendStatus(msg);
+            setTimeout(debouncedSendHeight, 50); 
+        };
+
+        // --- VISUALIZATION FUNCTIONALITY ---
+        function visualizeQuery() {
+            const query = queryTextarea.value.trim();
+            if (!query) return;
+            
+            try {
+                // Call the structure visualization function from structure.js
+                if (typeof window.visualizeStructure === 'function') {
+                    const result = window.visualizeStructure(query);
+                    prettyOutput.textContent = result;
+                    resultContainer.style.display = 'block';
+                } else {
+                    // Fallback simple visualization
+                    const lines = [];
+                    let indent = 0;
+                    
+                    for (let i = 0; i < query.length; i++) {
+                        const char = query[i];
+                        if (char === '(') {
+                            lines.push('  '.repeat(indent) + '(');
+                            indent++;
+                        } else if (char === ')') {
+                            indent--;
+                            lines.push('  '.repeat(indent) + ')');
+                        } else if (char === ' ' && i > 0 && query[i-1] !== '(' && query[i-1] !== ')') {
+                            // Handle boolean operators on new lines
+                            const nextWord = query.slice(i+1).split(' ')[0];
+                            if (nextWord.toUpperCase() === 'AND' || 
+                                nextWord.toUpperCase() === 'OR' || 
+                                nextWord.toUpperCase() === 'NOT') {
+                                lines.push('');
+                                lines.push('  '.repeat(indent) + nextWord);
+                                i += nextWord.length;
+                            }
+                        }
+                    }
+                    
+                    prettyOutput.textContent = lines.join('\n');
+                    resultContainer.style.display = 'block';
+                }
+                
+                debouncedSendHeight();
+            } catch (error) {
+                prettyOutput.textContent = 'Error: ' + error.message;
+                resultContainer.style.display = 'block';
+                debouncedSendHeight();
+            }
+        }
+
+        // --- INIT ---
+        document.addEventListener('DOMContentLoaded', () => {
+            // Only initialize sidebar functionality if not in iframe
+            if (!isEmbedded) {
+                updateActiveSidebarItem('structure.html');
+                
+                // Mobile Menu Toggles
+                DOM.menuToggle.addEventListener('click', () => toggleSidebar());
+                DOM.backdrop.addEventListener('click', () => toggleSidebar(true));
+                DOM.closeMenuBtn.addEventListener('click', () => toggleSidebar(true));
+
+                // Sidebar Navigation Handler
+                const handleToolSwitch = (e) => {
+                    const link = e.target.closest('a');
+                    if (link && link.classList.contains('sidebar-tool-link')) {
+                        const toolUrl = link.getAttribute('href');
+                        const toolName = link.textContent.trim();
+                        
+                        // Save selection to localStorage
+                        saveSelectedTool(toolUrl, toolName);
+                        
+                        // Close mobile sidebar if open
+                        if (window.innerWidth < 1024) {
+                            toggleSidebar(true);
+                        }
+                        
+                        // Update active state
+                        updateActiveSidebarItem(toolUrl);
+                        
+                        // Note: Navigation happens via link href
+                    }
+                };
+                
+                // Attach handler to sidebar links
+                DOM.sidebarToolLinks.forEach(link => {
+                    link.addEventListener('click', handleToolSwitch);
+                });
+            }
+
+            // Set initial overflow based on whether embedded
+            if (isEmbedded) {
+                document.body.style.overflow = 'hidden';
+            } else {
+                document.body.style.overflow = 'auto';
+            }
+            
+            document.body.classList.add('loading-active');
+            contentWrapper.style.opacity = '0';
+            loader.style.display = 'flex'; 
+            loadingText.textContent = "Initializing Search Query...";
+
+            // Set up visualization button
+            btnVisualize.addEventListener('click', visualizeQuery);
+            
+            // Also visualize on Enter key in textarea (with Ctrl/Cmd)
+            queryTextarea.addEventListener('keydown', (e) => {
+                if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+                    e.preventDefault();
+                    visualizeQuery();
+                }
+            });
+
+            window.addEventListener('load', debouncedSendHeight);
+            
+            // Observe DOM changes
+            const observer = new MutationObserver(debouncedSendHeight);
+            observer.observe(document.body, { 
+                attributes: true, 
+                childList: true, 
+                subtree: true 
+            });
+
+            // Listen for resize events
+            window.addEventListener('resize', debouncedSendHeight);
+            
+            // Initial height calculation
+            setTimeout(debouncedSendHeight, 100);
+            
+            // Initialize pyodide if needed
+            if (typeof initPyodide === 'function') {
+                initPyodide();
+            }
+        });
+
+    </script>
 </body>
 </html>
